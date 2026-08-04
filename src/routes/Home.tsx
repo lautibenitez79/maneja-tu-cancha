@@ -57,18 +57,7 @@ function Home() {
   {/* Glow */}
   <div className="absolute left-1/2 top-24 -z-10 h-[550px] w-[550px] -translate-x-1/2 rounded-full bg-primary/20 blur-[140px]" />
 
-  <div className="mx-auto flex w-full max-w-7xl flex-col items-center px-6 text-center">
-
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: .5 }}
-      className="rounded-full border border-border bg-card/70 px-5 py-2 backdrop-blur-xl"
-    >
-      <span className="text-sm font-medium text-primary">
-        Plataforma para clubes deportivos
-      </span>
-    </motion.div>
+  <div className="mx-auto flex w-full max-w-7xl flex-col items-center px-6 text-center mt-14 mb-4 md:mt-2 mb-2">
 
     <motion.h1
       initial={{ opacity: 0, y: 20 }}
@@ -204,7 +193,7 @@ function Home() {
 
           <div className="relative">
 
-            <div className="mb-10 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+            <div className="mb-10 flex h-16 w-16 items-center justify-center rounded-[var(--radius-card)] bg-primary/10 text-primary">
 
               <step.icon className="h-8 w-8" />
 
@@ -285,7 +274,7 @@ function Home() {
 
           <div className="relative">
 
-            <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10">
+            <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-[var(--radius-card)] bg-primary/10">
 
               <Check className="h-7 w-7 text-primary" />
 
@@ -397,7 +386,7 @@ function Home() {
 
               <div
                 key={item}
-                className="flex items-center gap-4 rounded-2xl border border-border bg-background/70 p-5 backdrop-blur-xl"
+                className="flex items-center gap-4 rounded-[var(--radius-card)] border border-border bg-background/70 p-5 backdrop-blur-xl"
               >
 
                 <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">

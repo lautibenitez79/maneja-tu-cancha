@@ -98,7 +98,7 @@ export function Footer() {
 
             <div className="flex items-center gap-3">
 
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-blue-500 text-xl font-bold text-white">
+              <div className="flex h-12 w-12 items-center justify-center rounded-[var(--radius-card)] bg-gradient-to-br from-primary to-blue-500 text-xl font-bold text-white">
 
                 M
 
@@ -204,7 +204,7 @@ export function Footer() {
 
               <a
                 href="#"
-                className="flex h-12 w-12 items-center justify-center rounded-2xl border border-border transition hover:bg-secondary"
+                className="flex h-12 w-12 items-center justify-center rounded-[var(--radius-card)] border border-border transition hover:bg-secondary"
               >
 
                 <SortDescIcon />

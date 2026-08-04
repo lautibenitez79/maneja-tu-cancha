@@ -48,7 +48,7 @@ export function Header() {
     >
 
       <div
-        className={`mx-auto flex max-w-7xl items-center justify-between rounded-2xl border px-6 transition-all duration-500 md:px-8 ${
+        className={`mx-auto flex max-w-7xl items-center justify-between rounded-[var(--radius-card)] border px-6 transition-all duration-500 md:px-8 ${
           scrolled
             ? "border-border bg-background/70 shadow-xl backdrop-blur-2xl"
             : "border-transparent bg-transparent"
@@ -60,7 +60,7 @@ export function Header() {
           className="flex h-16 items-center gap-3"
         >
 
-          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-blue-500 text-lg font-bold text-white shadow-[0_0_40px_rgba(59,130,246,.40)]">
+          <div className="flex h-11 w-11 items-center justify-center rounded-[var(--radius-card)] bg-gradient-to-br from-primary to-blue-500 text-lg font-bold text-white shadow-[0_0_40px_rgba(59,130,246,.40)]">
 
             M
 
@@ -139,7 +139,7 @@ export function Header() {
             initial={{ opacity: 0, y: -15 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -15 }}
-            className="mx-5 mt-4 rounded-2xl border border-border bg-card p-6 shadow-xl backdrop-blur-xl lg:hidden"
+            className="mx-5 mt-4 rounded-[var(--radius-card)] border border-border bg-card p-6 shadow-xl backdrop-blur-xl lg:hidden"
           >
 
             <div className="flex flex-col gap-5">

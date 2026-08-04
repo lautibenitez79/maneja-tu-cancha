@@ -92,7 +92,7 @@ function Contacto() {
                 name="message"
                 required
                 rows={5}
-                className="w-full resize-none rounded-2xl border border-input bg-background px-5 py-4 text-base outline-none transition-colors focus:border-primary"
+                className="w-full resize-none rounded-[var(--radius-card)] border border-input bg-background px-5 py-4 text-base outline-none transition-colors focus:border-primary"
                 placeholder="Contanos sobre tu cancha..."
               />
             </div>
@@ -146,7 +146,7 @@ function Field({
         name={name}
         type={type}
         required={required}
-        className="h-14 w-full rounded-2xl border border-input bg-background px-4 text-sm outline-none transition-colors focus:border-primary"
+        className="h-14 w-full rounded-[var(--radius-card)] border border-input bg-background px-4 text-sm outline-none transition-colors focus:border-primary"
       />
     </div>
   );
@@ -164,7 +164,7 @@ function InfoCard({
   accent?: "success";
 }) {
   return (
-    <div className="flex items-start gap-3 rounded-2xl border border-border/70 bg-card p-4 shadow-[var(--shadow-soft)]">
+    <div className="flex items-start gap-3 rounded-[var(--radius-card)] border border-border/70 bg-card p-4 shadow-[var(--shadow-soft)]">
       <span
         className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl ${
           accent === "success" ? "bg-success/15 text-success" : "bg-primary/10 text-primary"

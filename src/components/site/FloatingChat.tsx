@@ -13,7 +13,7 @@ export function FloatingChat() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 16, scale: 0.96 }}
             transition={{ duration: 0.18 }}
-            className="mb-3 w-[86vw] max-w-sm overflow-hidden rounded-2xl border border-border/70 bg-card shadow-[var(--shadow-soft)]"
+            className="mb-3 w-[86vw] max-w-sm overflow-hidden rounded-[var(--radius-card)] border border-border/70 bg-card shadow-[var(--shadow-soft)]"
           >
             <div className="flex items-center justify-between border-b border-border/60 bg-primary px-4 py-3 text-primary-foreground">
               <div>
@@ -28,10 +28,10 @@ export function FloatingChat() {
               </button>
             </div>
             <div className="max-h-64 space-y-3 overflow-y-auto p-4 text-sm">
-              <div className="max-w-[85%] rounded-2xl rounded-tl-sm bg-secondary px-3 py-2 text-foreground">
+              <div className="max-w-[85%] rounded-[var(--radius-card)] rounded-tl-sm bg-secondary px-3 py-2 text-foreground">
                 ¡Hola! 👋 Somos el equipo de Maneja Tu Cancha. ¿En qué te ayudamos?
               </div>
-              <div className="max-w-[85%] rounded-2xl rounded-tl-sm bg-secondary px-3 py-2 text-foreground">
+              <div className="max-w-[85%] rounded-[var(--radius-card)] rounded-tl-sm bg-secondary px-3 py-2 text-foreground">
                 Configurá tu cancha en menos de 5 minutos.
               </div>
             </div>

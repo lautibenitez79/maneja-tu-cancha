@@ -62,7 +62,7 @@ function QuienesSomos() {
                 <span className="absolute -left-6 top-1 grid h-8 w-8 place-items-center rounded-full border border-border bg-card text-primary shadow-[var(--shadow-soft)] md:-left-10">
                   <t.icon className="h-4 w-4" />
                 </span>
-                <div className="rounded-2xl border border-border/70 bg-card p-5 shadow-[var(--shadow-soft)]">
+                <div className="rounded-[var(--radius-card)] border border-border/70 bg-card p-5 shadow-[var(--shadow-soft)]">
                   <h3 className="text-lg font-semibold">{t.title}</h3>
                   <p className="mt-1 text-sm text-muted-foreground">{t.text}</p>
                 </div>
