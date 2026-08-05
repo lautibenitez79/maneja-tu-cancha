@@ -33,7 +33,7 @@ export default function StepLocation({
           📍 Ubicación
         </h1>
 
-        <p className="mt-2 text-gray-500">
+        <p className="mt-2 text-[var(--color-muted)]">
           ¿Dónde se encuentra tu complejo?
         </p>
       </div>

@@ -2,41 +2,71 @@
 
   /* Primary */
 
-  --color-primary: #2563eb;
-  --color-primary-hover: #1d4ed8;
+  --color-primary:#2563eb;
+  --color-primary-hover:#1d4ed8;
 
   /* Success */
 
-  --color-success: #16a34a;
+  --color-success:#16a34a;
 
-  /* bg-[var(--color-danger)] */
+  /* Danger */
 
-  --color-bg-[var(--color-danger)]: #dc2626;
+  --color-danger:#dc2626;
 
   /* Background */
 
-  --color-background: #f1f5f9;
-
-  --color-card: #ffffff;
+  --color-background:#f8fafc;
+  --color-card:#ffffff;
 
   /* Text */
 
-  --color-title: #0f172a;
-  --color-text: #475569;
+  --color-title:#0f172a;
+  --color-text:#64748b;
 
   /* Border */
 
-  --color-border: #e2e8f0;
+  --color-border:#e2e8f0;
 
   /* Radius */
 
-  --radius-card: 18px;
-  --radius-button: 14px;
-  --radius-input: 14px;
+  --radius-card:18px;
+  --radius-button:14px;
+  --radius-input:14px;
 
-  /* Shadows */
+  /* Shadow */
 
   --shadow-card:
-    0 4px 18px rgba(15,23,42,.06);
+    0 8px 30px rgba(15,23,42,.06);
+
+    --color-hover:#f8fafc;
+
+    --color-muted:#94a3b8;
+
+    --color-overlay:rgba(0,0,0,.45);
+
+}
+
+/* --------------------- */
+
+.dark{
+
+  --color-background:#020617;
+
+  --color-card:#0f172a;
+
+  --color-title:#f8fafc;
+
+  --color-text:#94a3b8;
+
+  --color-border:#1e293b;
+
+  --shadow-card:
+    0 10px 35px rgba(0,0,0,.45);
+
+    --color-hover:#1e293b;
+
+    --color-muted:#64748b;
+
+    --color-overlay:rgba(0,0,0,.65);
 
 }

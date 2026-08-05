@@ -28,7 +28,7 @@ export default function StepSettings({
           ⚙ Configuración
         </h1>
 
-        <p className="mt-2 text-gray-500">
+        <p className="mt-2 text-[var(--color-muted)]">
           Últimos datos para crear tu complejo.
         </p>
       </div>

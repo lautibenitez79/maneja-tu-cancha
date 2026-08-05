@@ -54,14 +54,14 @@ export default function Button({
 
         {
 
-          "bg-[var(--color-primary)] text-white hover:bg-blue-700":
+          "bg-[var(--color-primary)] text-white hover:bg-[var(--color-primary-hover)]":
             variant === "primary",
 
-          "border bg-white":
+          "border bg-[var(--color-card)]":
             variant === "secondary",
 
-          "bg-red-600 text-white":
-            variant === "primary",
+          "bg-red-600 text-white hover:bg-red-700":
+            variant === "danger",
 
           "opacity-50":
             disabled || loading,

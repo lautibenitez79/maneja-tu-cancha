@@ -5,6 +5,7 @@ import SetupChecklist from "../widgets/SetupChecklist";
 
 import { useDashboard } from "../hooks/useDashboard";
 import Loading from "@/components/ui/Loading";
+import Page from "@/components/ui/Page/index";
 
 export default function DashboardHome() {
   const {
@@ -17,7 +18,7 @@ if (loading) {
 }
 
   return (
-    <div className="space-y-8">
+    <Page>
 
       <DashboardHeader />
 
@@ -30,6 +31,6 @@ if (loading) {
         hasWorkingHours={stats.hasWorkingHours}
       />
 
-    </div>
+    </Page>
   );
 }

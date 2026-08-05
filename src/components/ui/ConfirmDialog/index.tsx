@@ -1,3 +1,5 @@
+import Button from "../Button/index";
+
 interface Props {
   open: boolean;
 
@@ -24,9 +26,9 @@ export default function ConfirmDialog({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--color-overlay)]">
 
-      <div className="w-full max-w-md rounded-[var(--radius-card)] bg-white p-6 shadow-xl">
+      <div className="w-full max-w-md rounded-[var(--radius-card)] bg-[var(--color-card)] p-6 shadow-xl">
 
         <h2 className="text-xl font-semibold">
           {title}
@@ -38,7 +40,7 @@ export default function ConfirmDialog({
 
         <div className="mt-8 flex justify-end gap-3">
 
-          <button
+          {/* <button
             onClick={onCancel}
             className="rounded-xl border px-5 py-2"
           >
@@ -53,7 +55,15 @@ export default function ConfirmDialog({
             {loading
               ? "Eliminando..."
               : "Eliminar"}
-          </button>
+          </button> */}
+
+          <Button
+          variant="secondary"
+          />
+
+          <Button
+          variant="danger"
+          />
 
         </div>
 

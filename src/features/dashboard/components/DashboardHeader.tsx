@@ -1,23 +1,22 @@
-import { useAuth } from "@/hooks/useAuth";
+import {
+  PageHeader,
+  ThemeToggle,
+} from "@/components/ui";
 
 export default function DashboardHeader() {
-  const { profile } = useAuth();
 
   return (
-    <div className="flex items-center justify-between">
 
-      <div>
+    <PageHeader
 
-        <h1 className="text-3xl font-bold">
-          ¡Bienvenido!
-        </h1>
+      title="Dashboard"
 
-        <p className="mt-2 text-gray-500">
-          {profile?.full_name}
-        </p>
+      subtitle="Resumen general del complejo."
 
-      </div>
+      action={<ThemeToggle />}
 
-    </div>
+    />
+
   );
+
 }

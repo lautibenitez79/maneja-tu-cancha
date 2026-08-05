@@ -37,7 +37,7 @@ export default function StepCapacity({
           Configuración
         </h1>
 
-        <p className="mt-2 text-gray-500">
+        <p className="mt-2 text-[var(--color-muted)]">
           {mode === "create"
             ? "Último paso para crear el recurso."
             : "Último paso para guardar los cambios."}

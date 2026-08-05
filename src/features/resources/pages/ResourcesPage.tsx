@@ -14,6 +14,8 @@ import ConfirmDialog from "@/components/ui/ConfirmDialog/index";
 import type { Resource } from "../types/resource.types";
 import { toast } from "sonner";
 import Loading from "@/components/ui/Loading";
+import Page from "@/components/ui/Page/index";
+import Button from "@/components/ui/Button/index";
 
 
 export default function ResourcesPage() {
@@ -29,7 +31,7 @@ export default function ResourcesPage() {
   } = useResources();
 
   const [openDelete,setOpenDelete]= useState(false);
-  
+
   const [resourceToDelete, setResourceToDelete] =
     useState<Resource | null>(null);
 
@@ -90,30 +92,35 @@ export default function ResourcesPage() {
 
   return (
 
-    <div className="space-y-8">
+    // <div className="space-y-8">
 
-      <div className="flex items-center justify-between">
+    //   <div className="flex items-center justify-between">
 
-        <h1 className="text-3xl font-bold">
+    //     <h1 className="text-3xl font-bold">
 
-          Recursos
+    //       Recursos
 
-        </h1>
+    //     </h1>
 
-        <Link
+    //
 
-          to="/dashboard/resources/new"
+    //   </div>
 
-          className="rounded-lg bg-[var(--color-primary)] px-5 py-3 text-white"
+    <Page
+        title="Recursos"
+        subtitle="Administrá todas las canchas y espacios deportivos."
 
-        >
+        action={
+            <Link
 
-          Nuevo recurso
+              to="/dashboard/resources/new"
 
-        </Link>
+              className="rounded-lg bg-[var(--color-primary)] px-5 py-3 text-white">
 
-      </div>
-
+              Nuevo recurso
+            </Link>
+        }
+    >
       <ResourceList
         resources={resources}
         onEdit={handleEdit}
@@ -129,7 +136,7 @@ export default function ResourcesPage() {
         onConfirm={confirmDelete}
       />
 
-    </div>
+    </Page>
 
   );
 

@@ -13,11 +13,11 @@ const items = [
 
 export default function Sidebar() {
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-full flex-col"> 
 
-      <div className="border-b p-6">
+      <div className="border-b border-[var(--color-border)] p-6">
 
-        <h1 className="text-2xl font-bold text-blue-600">
+        <h1 className="text-2xl font-bold text-[var(--color-primary)]">
           Maneja Tu Cancha
         </h1>
 
@@ -34,7 +34,7 @@ export default function Sidebar() {
               `mb-2 flex rounded-xl px-4 py-3 transition ${
                 isActive
                   ? "bg-[var(--color-primary)] text-white"
-                  : "hover:bg-slate-100"
+                  : "hover:bg-[var(--color-hover)]"
               }`
             }
           >

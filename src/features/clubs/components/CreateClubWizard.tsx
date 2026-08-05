@@ -51,7 +51,7 @@ export default function CreateClubWizard() {
         Bienvenido 👋
       </h1>
 
-      <p className="mt-2 text-gray-500">
+      <p className="mt-2 text-[var(--color-muted)]">
         Antes de comenzar, creemos tu primer complejo.
       </p>
 

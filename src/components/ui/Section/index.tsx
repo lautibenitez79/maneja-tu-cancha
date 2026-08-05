@@ -6,7 +6,7 @@ interface Props {
 
   description?: string;
 
-  children: ReactNode;
+  children: React.ReactNode;
 
   className?: string;
 

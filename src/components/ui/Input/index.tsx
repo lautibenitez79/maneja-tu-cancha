@@ -25,9 +25,9 @@ export default function Input({
 
         w-full
 
-        rounded-xl
+        rounded-[var(--radius-input)]
 
-        border
+        border-[var(--color-border)]
 
         px-4
 
@@ -37,7 +37,7 @@ export default function Input({
 
         transition
 
-        focus:border-blue-600
+        focus:border-[var(--color-primary)]
 
         ${className}
 

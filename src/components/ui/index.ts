@@ -33,3 +33,10 @@ from "./Select/index";
 
 export { default as Textarea }
 from "./Textarea/index";
+
+export { default as Page }
+from "./Page";
+
+export {
+  default as ThemeToggle,
+} from "./ThemeToggle";

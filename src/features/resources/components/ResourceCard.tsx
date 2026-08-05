@@ -56,7 +56,7 @@ export default function ResourceCard({
           </Button>
 
           <Button
-            variant="bg-[var(--color-danger)]"
+            variant="danger"
             onClick={onDelete}
           >
             Eliminar

@@ -42,7 +42,7 @@ export default function StepSchedule({
 
         </h1>
 
-        <p className="mt-2 text-gray-500">
+        <p className="mt-2 text-[var(--color-muted)]">
 
           Seleccioná los horarios en los que este recurso estará disponible.
 

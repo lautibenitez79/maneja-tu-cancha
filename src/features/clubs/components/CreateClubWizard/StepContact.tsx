@@ -25,7 +25,7 @@ export default function StepContact({
           Información de contacto
         </h1>
 
-        <p className="mt-2 text-gray-500">
+        <p className="mt-2 text-[var(--color-muted)]">
           Estos datos se utilizarán para identificar tu complejo.
         </p>
       </div>

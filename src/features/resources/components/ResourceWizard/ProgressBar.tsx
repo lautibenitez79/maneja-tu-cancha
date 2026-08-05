@@ -23,7 +23,7 @@ export default function ProgressBar({
 
       <div className="mb-3 flex justify-between">
 
-        <span className="text-sm text-gray-500">
+        <span className="text-sm text-[var(--color-muted)]">
 
           Paso {step} de {total}
 

@@ -38,15 +38,14 @@ export default function StatsCards({
       {cards.map((card) => (
         <Card
           key={card.title}
-          className="rounded-xl border bg-white p-6 shadow-[var(--shadow-card)]"
         >
-          <p className="text-gray-500">
+          <p className="text-[var(--color-text)]">
 
             {card.title}
 
           </p>
 
-          <h2 className="mt-3 text-4xl font-bold">
+          <h2 className="mt-3 text-4xl font-bold text-[var(--color-title)]">
 
             {card.value}
 

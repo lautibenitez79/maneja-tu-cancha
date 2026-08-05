@@ -33,6 +33,13 @@
     font-family: Inter, system-ui, sans-serif;
     margin:0;
     overflow-x:hidden;
+    background:
+
+        var(--color-background);
+
+    color:
+
+        var(--color-title);
   }
 
   a{

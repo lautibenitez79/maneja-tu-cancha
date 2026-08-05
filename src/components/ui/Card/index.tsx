@@ -32,11 +32,9 @@ export default function Card({
 
         rounded-[var(--radius-card)]
 
-        border
+        border-[var(--color-border)]
 
-        bg-white
-
-        p-6
+        bg-[var(--color-card)]
 
         shadow-[var(--shadow-card)]
 

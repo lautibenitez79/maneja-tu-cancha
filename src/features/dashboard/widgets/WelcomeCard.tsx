@@ -33,24 +33,24 @@ export default function WelcomeCard() {
 
   return (
 
-    <Card className="relative rounded-[var(--radius-card)] border bg-white p-8 shadow-[var(--shadow-card)]">
+    <Card className="relative rounded-[var(--radius-card)] border bg-[var(--color-card)] p-8 shadow-[var(--shadow-card)]">
 
       <button
         onClick={close}
-        className="absolute right-5 top-5 rounded-lg p-2 hover:bg-slate-100"
+        className="absolute right-5 top-5 rounded-lg p-2 hover:bg-[var(--color-hover)]"
       >
 
         <X size={18} />
 
       </button>
 
-      <h2 className="text-2xl font-semibold">
+      <h2 className="text-2xl font-semibold text-[var(--color-title)]">
 
         Tu complejo fue creado correctamente 🎉
 
       </h2>
 
-      <p className="mt-3 text-gray-500">
+      <p className="mt-3 text-[var(--color-text)]">
 
         Ahora configurá el resto del sistema.
 

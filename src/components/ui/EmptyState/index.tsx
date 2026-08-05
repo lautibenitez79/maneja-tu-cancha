@@ -22,7 +22,7 @@ export default function EmptyState({
 
   return (
 
-    <div className="rounded-2xl border border-dashed p-12 text-center">
+    <div className="rounded-2xl border-[var(--color-border)] border-dashed p-12 text-center">
 
       <h3 className="text-xl font-semibold">
 
@@ -30,7 +30,7 @@ export default function EmptyState({
 
       </h3>
 
-      <p className="mt-3 text-slate-500">
+      <p className="mt-3 text-[var(--color-text)]">
 
         {description}
 
