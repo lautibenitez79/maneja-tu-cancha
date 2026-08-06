@@ -67,7 +67,7 @@ export default function StepInfo({
 
         <select
 
-          className="w-full rounded-lg border p-3"
+          className="w-full rounded-lg bg-[var(--color-card)]  border p-3"
 
           value={type}
 

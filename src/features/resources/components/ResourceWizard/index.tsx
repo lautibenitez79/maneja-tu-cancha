@@ -150,8 +150,7 @@ export default function ResourceWizard({ mode = "create", resourceId }: Props) {
           capacity: form.type === "gym" ? form.capacity : 1,
         });
       }
-      // TODO:
-      // Guardar week usando weekToWorkingHours().
+      
       await workingHoursService.save(resourceIdToSave! , workingHours);
 
       toast.success(
@@ -175,7 +174,7 @@ export default function ResourceWizard({ mode = "create", resourceId }: Props) {
   }
 
   return (
-    <div className="mx-auto max-w-6xl rounded-[var(--radius-card)] border bg-white p-8 shadow-[var(--shadow-card)]">
+    <div className="mx-auto max-w-6xl rounded-[var(--radius-card)] border-[var(--color-border)] bg-[var(--color-card)] p-8 shadow-[var(--shadow-card)]">
       <ProgressBar step={step} total={TOTAL_RESOURCE_STEPS} />
 
       {step === RESOURCE_STEPS.INFO && (
