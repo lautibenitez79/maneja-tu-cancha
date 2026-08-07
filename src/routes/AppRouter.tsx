@@ -11,6 +11,7 @@ import DashboardHome from "@/features/dashboard/pages/DashboardHome";
 import ResourcesPage from "@/features/resources/pages/ResourcesPage";
 import CreateResourcePage from "@/features/resources/pages/CreateResourcePage";
 import EditResourcePage from "@/features/resources/pages/EditResourcePage";
+import CustomersPage from "@/features/customers/pages/CustomersPage";
 
 export function AppRouter() {
   return (
@@ -62,6 +63,10 @@ export function AppRouter() {
           path="resources/:id/edit"
           element={<EditResourcePage />}
         />
+        {/* <Route
+            path="customers"
+            element={<CustomersPage />}
+        /> */}
       </Route>
 
     </Routes>

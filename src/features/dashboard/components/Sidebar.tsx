@@ -9,6 +9,10 @@ const items = [
     label: "Recursos",
     href: "/dashboard/resources",
   },
+  // {
+  //   label: "Clientes",
+  //   href: "/dashboard/customers",
+  // },
 ];
 
 export default function Sidebar() {
