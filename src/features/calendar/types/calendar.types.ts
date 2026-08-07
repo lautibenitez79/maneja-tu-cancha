@@ -1,23 +1,35 @@
-export interface CalendarColumn {
+export type CalendarCellStatus =
+  | "available"
+  | "reserved"
+  | "pending_payment"
+  | "closed";
 
-  date: string;
-
-  day: string;
-
-  isToday: boolean;
-
-}
-
-export interface CalendarRow {
+export interface CalendarCell {
 
   hour: string;
 
+  status: CalendarCellStatus;
+
+  reservationId?: string;
+
+  clickable: boolean;
+
 }
 
-export interface CalendarGrid {
+export interface CalendarDay {
 
-  columns: CalendarColumn[];
+  date: string;
 
-  rows: CalendarRow[];
+  title: string;
+
+  isToday: boolean;
+
+  cells: CalendarCell[];
+
+}
+
+export interface CalendarWeek {
+
+  days: CalendarDay[];
 
 }

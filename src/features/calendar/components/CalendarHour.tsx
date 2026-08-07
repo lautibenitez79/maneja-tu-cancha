@@ -1,27 +1,36 @@
-interface Props{
+interface Props {
 
-    hour:string;
+  hour: string;
 
 }
 
 export default function CalendarHour({
 
-    hour,
+  hour,
 
-}:Props){
+}: Props) {
 
-    return(
+  return (
 
-        <div
+    <div
+      className="
+        flex
+        h-14
+        items-center
+        justify-end
+        border-b
+        border-r
+        px-4
+        text-sm
+        font-medium
+        text-slate-500
+      "
+    >
 
-            className="flex h-14 items-center border-b px-4 font-medium"
+      {hour}
 
-        >
+    </div>
 
-            {hour}
-
-        </div>
-
-    );
+  );
 
 }

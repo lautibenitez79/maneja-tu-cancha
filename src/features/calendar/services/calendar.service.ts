@@ -1,47 +1,38 @@
-import { resourceService } from "@/features/resources/services/resource.service";
-import { availabilityService } from "@/features/reservations/services/availability.service";
+import { availabilityService }
+from "@/features/reservations/services/availability.service";
+
+import { mapAvailabilityToCalendar }
+from "../utils/calendarMapper";
 
 class CalendarService {
 
   async getWeek(
 
-    clubId: string,
+    resourceId: string,
 
     weekStart: Date,
 
   ) {
 
-    const resources =
-      await resourceService.list(clubId);
+    const availability =
 
-    const result = [];
+      await availabilityService.getWeek(
 
-    for (const resource of resources) {
+        resourceId,
 
-      const week =
-        await availabilityService.getWeek(
+        weekStart,
 
-          resource.id,
+      );
 
-          weekStart,
+    return mapAvailabilityToCalendar(
 
-        );
+      availability,
 
-      result.push({
-
-        resource,
-
-        week,
-
-      });
-
-    }
-
-    return result;
+    );
 
   }
 
 }
 
 export const calendarService =
-  new CalendarService();
+new CalendarService();

@@ -13,6 +13,13 @@ const items = [
   //   label: "Clientes",
   //   href: "/dashboard/customers",
   // },
+  {
+
+    label: "Calendario",
+
+    href: "/dashboard/calendar",
+
+  }
 ];
 
 export default function Sidebar() {

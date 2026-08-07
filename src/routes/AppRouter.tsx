@@ -11,7 +11,8 @@ import DashboardHome from "@/features/dashboard/pages/DashboardHome";
 import ResourcesPage from "@/features/resources/pages/ResourcesPage";
 import CreateResourcePage from "@/features/resources/pages/CreateResourcePage";
 import EditResourcePage from "@/features/resources/pages/EditResourcePage";
-import CustomersPage from "@/features/customers/pages/CustomersPage";
+// import CustomersPage from "@/features/customers/pages/CustomersPage";
+import CalendarPage from "@/features/calendar/pages/CalendarPage";
 
 export function AppRouter() {
   return (
@@ -67,6 +68,21 @@ export function AppRouter() {
             path="customers"
             element={<CustomersPage />}
         /> */}
+        <Route
+
+          path="calendar"
+
+          element={
+
+            <CalendarPage
+
+              resourceId="ID_DEL_RECURSO"
+
+            />
+
+          }
+
+        />
       </Route>
 
     </Routes>
