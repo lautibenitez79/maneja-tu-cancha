@@ -186,32 +186,21 @@ function SignupView({ onBack }: { onBack: () => void }) {
   async function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
 
-    console.log("Submit ejecutado");
-
     const fd = new FormData(e.currentTarget);
 
     const fullName = String(fd.get("full_name") ?? "");
     const email = String(fd.get("email") ?? "");
     const password = String(fd.get("password") ?? "");
 
-    console.log({
-      fullName,
-      email,
-      password,
-    });
 
     try {
       setLoading(true);
-
-      console.log("Llamando register...");
 
       await register({
         email,
         password,
         fullName,
       });
-
-      console.log("Register OK");
 
       toast.success("Cuenta creada");
     } catch (err) {

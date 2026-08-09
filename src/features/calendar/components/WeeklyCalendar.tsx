@@ -6,6 +6,7 @@ import type {
   CalendarCell as CalendarCellType,
   CalendarWeek,
 } from "../types/calendar.types";
+import React, { Fragment } from "react";
 
 interface Props {
 
@@ -17,7 +18,7 @@ interface Props {
 
 }
 
-export default function WeeklyCalendar({
+function WeeklyCalendar({
 
   week,
 
@@ -31,14 +32,13 @@ export default function WeeklyCalendar({
 
   const rows =
     week.days[0].cells.length;
-
   return (
 
     <div
-      className="grid"
+      className="grid bg-[var(--color-card)]"
       style={{
         gridTemplateColumns:
-          "100px repeat(7,1fr)",
+          "100px repeat(7,1fr) ",
       }}
     >
 
@@ -46,36 +46,25 @@ export default function WeeklyCalendar({
         days={week.days}
       />
 
-      {Array.from({
-        length: rows,
-      }).map((_, row) => (
+      {Array.from({ length: rows }).map((_, row) => (
 
-        <>
+        <Fragment key={row}>
 
           <CalendarHour
-            key={`hour-${row}`}
-            hour={
-              week.days[0]
-                .cells[row]
-                .hour
-            }
+            hour={week.days[0].cells[row].hour}
           />
 
           {week.days.map(day => (
 
             <CalendarCell
-
               key={`${day.date}-${row}`}
-
               cell={day.cells[row]}
-
               onClick={onCellClick}
-
             />
 
           ))}
 
-        </>
+        </Fragment>
 
       ))}
 
@@ -84,3 +73,5 @@ export default function WeeklyCalendar({
   );
 
 }
+
+export default React.memo(WeeklyCalendar);

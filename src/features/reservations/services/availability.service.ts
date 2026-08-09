@@ -2,7 +2,7 @@ import { resourceService } from "@/features/resources/services/resource.service"
 import { workingHoursService } from "@/features/resources/services/working-hours.service";
 
 import { reservationService } from "./reservation.service";
-import { resourceBlockService } from "./resource-block.service";
+// import { resourceBlockService } from "./resource-block.service";
 
 import { AvailabilityEngine } from "../engine/AvailabilityEngine";
 
@@ -57,16 +57,17 @@ class AvailabilityService {
 
       );
 
-    const resourceBlocks =
-    await resourceBlockService.listByWeek(
+    // const resourceBlocks =
+    // await resourceBlockService.listByWeek(
 
-      resourceId,
+    //   resourceId,
 
-      `${monday}T00:00:00`,
+    //   `${monday}T00:00:00`,
 
-      `${sunday}T23:59:59`,
+    //   `${sunday}T23:59:59`,
 
-    );
+    // );
+    const resourceBlocks = [];
 
     return this.engine.generateWeek({
 

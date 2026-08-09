@@ -18,6 +18,10 @@
   --color-background:#f8fafc;
   --color-card:#ffffff;
 
+  /*Background Cell*/
+
+  --color-cell-disponible:#16a34a;
+
   /* Text */
 
   --color-title:#0f172a;
@@ -53,6 +57,8 @@
   --color-background:#020617;
 
   --color-card:#0f172a;
+
+  --color-card-disponible:#0f172a;
 
   --color-title:#f8fafc;
 

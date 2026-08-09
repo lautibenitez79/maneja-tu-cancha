@@ -7,154 +7,68 @@ import EmptyState from "@/components/ui/EmptyState";
 import { useCalendar } from "../hooks/useCalendar";
 import WeeklyCalendar from "../components/WeeklyCalendar";
 import { useResources } from "@/features/resources/hooks/useResources";
-import type {
-  CalendarCell,
-} from "../types/calendar.types";
+import type { CalendarCell } from "../types/calendar.types";
+import ReservationModal from "@/features/reservations/components/ReservationModal";
 
 export default function CalendarPage() {
+  const {
+    resources,
 
-    const {
+    loading: loadingResources,
+  } = useResources();
 
-        resources,
+  const [weekStart] = useState(new Date());
 
-        loading: loadingResources,
+  const [selectedCell, setSelectedCell] = useState<CalendarCell | null>(null);
 
-    } = useResources();
+  const resourceId = resources[0]?.id;
 
-  const [
-
+  const {
+    week,
+    loading,
+    refresh,
+  } = useCalendar(
+    resourceId!,
     weekStart,
-
-  ] = useState(
-
-    new Date(),
-
   );
 
-  const [
+  if (loadingResources) {
+    return <Loading />;
+  }
 
-  selectedCell,
-
-  setSelectedCell,
-
-] = useState<CalendarCell | null>(null);
-
-const resourceId =
-
-  resources[0]?.id;
-
-const {
-
-  week,
-
-  loading,
-
-} = useCalendar(
-
-  resourceId ?? "",
-
-  weekStart,
-
-);
-
-if (
-
-    loading ||
-
-    loadingResources
-
-    ) {
-
-  return <Loading />;
-
-}
-
-if (
-
-  resources.length === 0
-
-) {
-
-  return (
-
-    <Page title="Calendario">
-
-      <EmptyState
-
-        title="No hay recursos"
-
-        description="Primero creá un recurso."
-
-      />
-
-    </Page>
-
-  );
-
-}
+  if (resources.length === 0) {
+    return (
+      <Page title="Calendario">
+        <EmptyState
+          title="No hay recursos"
+          description="Primero creá un recurso."
+        />
+      </Page>
+    );
+  }
 
   if (!week) {
-
     return (
-
       <Page title="Calendario">
-
         <EmptyState
-
           title="No hay datos"
-
           description="No fue posible cargar el calendario."
-
         />
-
       </Page>
-
     );
-
   }
 
   return (
+    <Page title="Calendario" subtitle="Reservas semanales">
+      <WeeklyCalendar week={week} onCellClick={setSelectedCell} />
 
-    <Page
-
-      title="Calendario"
-
-      subtitle="Reservas semanales"
-
-    >
-
-    <WeeklyCalendar
-
-    week={week}
-
-    onCellClick={setSelectedCell}
-
-    />
-
-    {
-
-        selectedCell && (
-
-            <pre className="mt-6 rounded-xl bg-slate-100 p-4">
-
-            {JSON.stringify(
-
-                selectedCell,
-
-                null,
-
-                2,
-
+      {selectedCell && (
+        <ReservationModal
+        open={selectedCell !== null}
+        cell={selectedCell}
+        onClose={() => setSelectedCell(null)}
+      />
             )}
-
-            </pre>
-
-        )
-
-        }
-
     </Page>
-
   );
-
 }

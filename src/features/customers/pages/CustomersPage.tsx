@@ -47,8 +47,6 @@ export default function CustomersPage() {
     values: CreateCustomerForm,
   ) {
 
-    console.log(values);
-
     setOpen(false);
 
     setSelectedCustomer(null);

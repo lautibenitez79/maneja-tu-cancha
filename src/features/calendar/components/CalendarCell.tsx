@@ -5,6 +5,7 @@ import type {
   CalendarCell as Cell,
 
 } from "../types/calendar.types";
+import React from "react";
 
 interface Props {
 
@@ -16,7 +17,7 @@ interface Props {
 
 }
 
-export default function CalendarCell({
+function CalendarCell({
 
   cell,
   
@@ -34,23 +35,23 @@ export default function CalendarCell({
 
       className={clsx(
 
-        "h-14 w-full border-b border-r transition",
+        "h-14 w-full bg-[var(--color-card)] border-b border-r transition",
 
         {
 
-          "bg-green-50 hover:bg-green-100":
+          "text-[var(--color-title)] hover:text-green-500 hover:bg-green-50":
 
             cell.status === "available",
 
-          "bg-red-100":
+          "text-red-400":
 
             cell.status === "reserved",
 
-          "bg-yellow-100":
+          "text-yellow-400":
 
             cell.status === "pending_payment",
 
-          "bg-slate-100":
+          "text-black":
 
             cell.status === "closed",
 
@@ -83,3 +84,5 @@ export default function CalendarCell({
   );
 
 }
+
+export default React.memo(CalendarCell);

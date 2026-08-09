@@ -1,10 +1,12 @@
+import React from "react";
+
 interface Props {
 
   hour: string;
 
 }
 
-export default function CalendarHour({
+function CalendarHour({
 
   hour,
 
@@ -34,3 +36,5 @@ export default function CalendarHour({
   );
 
 }
+
+export default React.memo(CalendarHour);

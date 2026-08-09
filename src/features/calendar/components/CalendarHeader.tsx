@@ -42,7 +42,7 @@ export default function CalendarHeader({
 
                 day.isToday
 
-                  ? "bg-blue-50 text-blue-600"
+                  ? "text-green-50"
 
                   : ""
 

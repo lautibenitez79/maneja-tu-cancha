@@ -1,95 +1,58 @@
-import {
+import { useEffect, useState } from "react";
 
-useEffect,
-
-useState,
-
-} from "react";
-
-import {
-
-calendarService,
-
-} from "../services/calendar.service";
+import { calendarService } from "../services/calendar.service";
 
 import type {
   CalendarWeek,
 } from "../types/calendar.types";
 
 export function useCalendar(
-
-resourceId: string,
-
-weekStart: Date,
-
+  resourceId: string,
+  weekStart: Date,
 ) {
 
-const [
+  const [week, setWeek] =
+    useState<CalendarWeek>();
 
-  week,
+  const [loading, setLoading] =
+    useState(true);
 
-  setWeek,
+  async function refresh() {
 
-] =
+    if (!resourceId) {
+      setWeek(undefined);
+      setLoading(false);
+      return;
+    }
 
-useState<CalendarWeek>();
+    try {
 
-const [
+      setLoading(true);
 
-loading,
+      const data =
+        await calendarService.getWeek(
+          resourceId,
+          weekStart,
+        );
 
-setLoading,
+      setWeek(data);
 
-] =
+    } finally {
 
-useState(true);
+      setLoading(false);
 
-useEffect(() => {
+    }
 
-async function load() {
+  }
 
-setLoading(true);
+  useEffect(() => {
+    refresh();
+  }, [resourceId, weekStart]);
 
-try {
-
-const data =
-
-await calendarService.getWeek(
-
-resourceId,
-
-weekStart,
-
-);
-
-setWeek(data);
-
-}
-
-finally {
-
-setLoading(false);
-
-}
-
-}
-
-load();
-
-}, [
-
-resourceId,
-
-weekStart,
-
-]);
-
-return {
-
-week,
-
-loading,
-
-};
+  return {
+    week,
+    loading,
+    refresh,
+  };
 
 }
