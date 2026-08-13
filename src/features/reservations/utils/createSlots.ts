@@ -1,68 +1,71 @@
-import { addMinutes, format } from "date-fns";
-
-import { TIME_SLOTS }
-from "@/features/resources/utils/timeSlots";
-
 export interface Slot {
-
   starts_at: string;
-
   ends_at: string;
+}
 
+function timeToMinutes(
+  time: string,
+): number {
+  const [
+    hours,
+    minutes,
+  ] = time
+    .substring(0, 5)
+    .split(":")
+    .map(Number);
+
+  return hours * 60 + minutes;
+}
+
+function minutesToTime(
+  totalMinutes: number,
+): string {
+  const hours =
+    Math.floor(totalMinutes / 60);
+
+  const minutes =
+    totalMinutes % 60;
+
+  return `${String(hours).padStart(
+    2,
+    "0",
+  )}:${String(minutes).padStart(
+    2,
+    "0",
+  )}`;
 }
 
 export function createSlots(
-
   duration: number,
-
+  opensAt: string,
 ): Slot[] {
+  if (!duration || duration <= 0) {
+    return [];
+  }
 
-  return TIME_SLOTS.map(hour => {
+  const startMinutes =
+    timeToMinutes(opensAt);
 
-    const [h, m] =
+  const minutesInDay =
+    24 * 60;
 
-      hour.split(":").map(Number);
+  const slots: Slot[] = [];
 
-    const start =
+  for (
+    let current = startMinutes;
+    current + duration <= minutesInDay;
+    current += duration
+  ) {
+    slots.push({
+      starts_at:
+        minutesToTime(current),
 
-      new Date();
+      ends_at:
+        minutesToTime(
+          current + duration,
+        ),
+    });
+  }
 
-    start.setHours(
-
-        h,
-
-        m,
-
-        0,
-
-        0,
-
-    );
-
-    const end =
-
-      addMinutes(
-
-        start,
-
-        duration,
-
-      );
-
-    return {
-
-      starts_at: hour,
-
-      ends_at: format(
-
-        end,
-
-        "HH:mm",
-
-      ),
-
-    };
-
-  });
-
+  return slots;
 }

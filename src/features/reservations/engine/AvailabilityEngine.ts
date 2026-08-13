@@ -1,4 +1,7 @@
-import { addDays, format } from "date-fns";
+import {
+  addDays,
+  format,
+} from "date-fns";
 
 import { createSlots } from "../utils/createSlots";
 import { getSlotStatus } from "../utils/getSlotStatus";
@@ -16,15 +19,13 @@ import type {
 } from "../types/engine.types";
 
 export class AvailabilityEngine {
-
   private generateDay(
     input: GenerateDayInput,
   ): AvailabilitySlot[] {
-
     return createSlots(
       input.reservationDuration,
-    ).map(slot => ({
-
+      input.workingHour.opens_at,
+    ).map((slot) => ({
       starts_at:
         `${input.date}T${slot.starts_at}:00`,
 
@@ -32,31 +33,21 @@ export class AvailabilityEngine {
         `${input.date}T${slot.ends_at}:00`,
 
       ...getSlotStatus(
-
         slot.starts_at,
-
         slot.ends_at,
-
         input.workingHour,
-
         input.reservations,
-
         input.resourceBlocks,
-
       ),
-
     }));
-
   }
 
   public generateWeek(
     input: GenerateWeekInput,
   ): AvailabilityWeek {
-
     const days: AvailabilityDay[] = [];
 
     for (let i = 0; i < 7; i++) {
-
       const currentDate =
         addDays(input.weekStart, i);
 
@@ -68,87 +59,55 @@ export class AvailabilityEngine {
 
       const workingHour =
         input.workingHours.find(
-
-          hour =>
-
+          (hour) =>
             hour.day_of_week ===
-
             getWorkingDayIndex(
               currentDate,
             ),
-
         );
 
       days.push({
-
         date,
 
-        slots:
+        slots: workingHour
+          ? this.generateDay({
+              workingHour,
 
-          workingHour
+              reservations:
+                input.reservations.filter(
+                  (reservation) =>
+                    reservation.starts_at.startsWith(
+                      date,
+                    ),
+                ),
 
-            ? this.generateDay({
+              resourceBlocks:
+                input.resourceBlocks.filter(
+                  (block) =>
+                    block.starts_at.startsWith(
+                      date,
+                    ),
+                ),
 
-                workingHour,
+              reservationDuration:
+                input.reservationDuration,
 
-                reservations:
-
-                  input.reservations.filter(
-
-                    reservation =>
-
-                      reservation.starts_at.startsWith(
-
-                        date,
-
-                      ),
-
-                  ),
-
-                resourceBlocks:
-
-                  input.resourceBlocks.filter(
-
-                    block =>
-
-                      block.starts_at.startsWith(
-
-                        date,
-
-                      ),
-
-                  ),
-
-                reservationDuration:
-
-                  input.reservationDuration,
-
-                date,
-
-              })
-
-            : [],
-
+              date,
+            })
+          : [],
       });
-
     }
 
     return {
+      resourceId: input.resourceId,
 
-      resourceId: "",
-
-      weekStart: format(
-
-        input.weekStart,
-
-        "yyyy-MM-dd",
-
-      ),
+      weekStart:
+        format(
+          input.weekStart,
+          "yyyy-MM-dd",
+        ),
 
       days,
-
     };
-
   }
-
 }

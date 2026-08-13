@@ -41,9 +41,7 @@ export default function Input({
 
         ${className}
 
-      `}
-
-    />
+      `}/>
 
   );
 

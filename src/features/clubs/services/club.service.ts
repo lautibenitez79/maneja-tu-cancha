@@ -44,25 +44,15 @@ class ClubService {
       .from("clubs")
       .insert({
         owner_id: ownerId,
-
         name: form.name,
-
         slug,
-
         phone: form.phone,
-
         email: form.email,
-
         address: form.address,
-
         city: form.city,
-
         province: form.province,
-
         country: form.country,
-
         timezone: form.timezone,
-
         currency: form.currency,
       })
       .select()
@@ -100,6 +90,22 @@ class ClubService {
 
     return data;
   }
+
+  async getClubBySlug(
+    slug: string
+  ): Promise<Club | null> {
+    const { data, error } = await supabase
+      .from("clubs")
+      .select("*")
+      .eq("slug", slug)
+      .eq("active", true)
+      .maybeSingle();
+
+    if (error) throw error;
+
+    return data;
+  }
 }
 
-export const clubService = new ClubService();
+export const clubService =
+  new ClubService();

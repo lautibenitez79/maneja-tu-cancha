@@ -1,4 +1,12 @@
-import type { Reservation } from "../types/reservation.types";
+import type {
+  Reservation,
+} from "../types/reservation.types";
+
+function toTimestamp(
+  value: string,
+): number {
+  return new Date(value).getTime();
+}
 
 export function hasReservationCollision(
 
@@ -10,13 +18,33 @@ export function hasReservationCollision(
 
 ) {
 
+  const newStart =
+    toTimestamp(startsAt);
+
+  const newEnd =
+    toTimestamp(endsAt);
+
   return reservations.some(
+    reservation => {
 
-    reservation =>
+      const reservationStart =
+        toTimestamp(
+          reservation.starts_at,
+        );
 
-      startsAt < reservation.ends_at &&
-      endsAt > reservation.starts_at,
+      const reservationEnd =
+        toTimestamp(
+          reservation.ends_at,
+        );
 
+      return (
+        newStart <
+          reservationEnd &&
+        newEnd >
+          reservationStart
+      );
+
+    },
   );
 
 }

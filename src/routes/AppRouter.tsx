@@ -13,6 +13,7 @@ import CreateResourcePage from "@/features/resources/pages/CreateResourcePage";
 import EditResourcePage from "@/features/resources/pages/EditResourcePage";
 // import CustomersPage from "@/features/customers/pages/CustomersPage";
 import CalendarPage from "@/features/calendar/pages/CalendarPage";
+import PublicBookingPage from "@/features/public-booking/pages/PublicBookingPage";
 
 export function AppRouter() {
   return (
@@ -31,6 +32,11 @@ export function AppRouter() {
       <Route
         path="/quienes-somos"
         element={<QuienesSomos />}
+      />
+
+      <Route
+        path="/reservar/:slug"
+        element={<PublicBookingPage />}
       />
 
       <Route

@@ -6,7 +6,6 @@ import type {
 } from "@/features/resources/types/working-hours.types";
 
 export interface GenerateDayInput {
-
   workingHour: WorkingHour;
 
   reservations: Reservation[];
@@ -16,10 +15,10 @@ export interface GenerateDayInput {
   reservationDuration: number;
 
   date: string;
-
 }
 
 export interface GenerateWeekInput {
+  resourceId: string;
 
   weekStart: Date;
 
@@ -30,5 +29,4 @@ export interface GenerateWeekInput {
   reservations: Reservation[];
 
   resourceBlocks: ResourceBlock[];
-
 }

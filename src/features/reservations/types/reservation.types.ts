@@ -78,6 +78,6 @@ export interface UpdateReservationForm {
 
   amount_paid?: number;
 
-  notes?: string;
+  status?: ReservationStatus;
 
 }

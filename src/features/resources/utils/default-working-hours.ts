@@ -6,9 +6,9 @@ export const defaultWorkingHours: WorkingHourForm[] =
 
     enabled: false,
 
-    opens_at: "08:00",
+    opens_at: "00:00",
 
-    closes_at: "22:00",
+    closes_at: "23:00",
 
     reopens_at: null,
 

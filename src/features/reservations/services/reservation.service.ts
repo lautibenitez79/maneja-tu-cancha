@@ -4,150 +4,127 @@ import type {
   Reservation,
   CreateReservationForm,
   ReservationStatus,
+  UpdateReservationForm,
 } from "../types/reservation.types";
-import {
-  validateReservation,
-} from "../utils/reservationValidator";
+import { validateReservation } from "../utils/reservationValidator";
 import { canCreateReservation } from "../utils/canCreateReservation";
 
 class ReservationService {
-
-  async listByDay(
-    resourceId: string,
-    date: string,
-  ): Promise<Reservation[]> {
-
+  async listByDay(resourceId: string, date: string): Promise<Reservation[]> {
     const start = `${date}T00:00:00`;
     const end = `${date}T23:59:59`;
 
-    const { data, error } =
-      await supabase
+    const { data, error } = await supabase
 
-        .from("reservations")
+      .from("reservations")
 
-        .select("*")
+      .select("*")
 
-        .eq("resource_id", resourceId)
+      .eq("resource_id", resourceId)
 
-        .gte("starts_at", start)
+      .gte("starts_at", start)
 
-        .lte("starts_at", end)
+      .lte("starts_at", end)
 
-        .order("starts_at");
+      .order("starts_at");
 
     if (error) throw error;
 
     return data;
   }
 
-  async create(
+  async listByClubAndDate(
     clubId: string,
-    form: CreateReservationForm,
-  ) {
-    
+    startAt: string,
+    endAt: string,
+  ): Promise<Reservation[]> {
+    const { data, error } = await supabase
+      .from("reservations")
+      .select("*")
+      .eq("club_id", clubId)
+      .gte("starts_at", startAt)
+      .lt("starts_at", endAt)
+      .order("starts_at");
+
+    if (error) throw error;
+
+    return data;
+  }
+
+  async create(clubId: string, form: CreateReservationForm) {
     const date = form.starts_at.substring(0, 10);
 
-    const reservations =
-      await this.listByDay(
-        form.resource_id,
-        date,
-    );
+    const reservations = await this.listByDay(form.resource_id, date);
 
     canCreateReservation(
-
       reservations,
 
       form.starts_at,
 
       form.ends_at,
-
     );
 
     validateReservation(form);
 
-    const { data, error } =
-      await supabase
+    const { data, error } = await supabase
 
-        .from("reservations")
+      .from("reservations")
 
-        .insert({
+      .insert({
+        club_id: clubId,
 
-          club_id: clubId,
+        ...form,
 
-          ...form,
+        status: form.source === "admin" ? "confirmed" : "pending_payment",
+      })
 
-          status:
-            form.source === "admin"
-              ? "confirmed"
-              : "pending_payment",
+      .select()
 
-        })
-
-        .select()
-
-        .single();
+      .single();
 
     if (error) throw error;
 
     return data;
-
   }
 
   async updateStatus(
-
     id: string,
 
     status: ReservationStatus,
-
   ) {
+    const { error } = await supabase
 
-    const { error } =
-      await supabase
+      .from("reservations")
 
-        .from("reservations")
+      .update({
+        status,
 
-        .update({
+        updated_at: new Date().toISOString(),
+      })
 
-          status,
-
-          updated_at:
-            new Date().toISOString(),
-
-        })
-
-        .eq("id", id);
+      .eq("id", id);
 
     if (error) throw error;
-
   }
 
-  async remove(
-    id: string,
-  ) {
+  async remove(id: string) {
+    const { error } = await supabase
 
-    const { error } =
-      await supabase
+      .from("reservations")
 
-        .from("reservations")
+      .delete()
 
-        .delete()
-
-        .eq("id", id);
+      .eq("id", id);
 
     if (error) throw error;
-
   }
 
-  async getById(
-    id: string,
-  ): Promise<Reservation> {
-
-    const { data, error } =
-      await supabase
-        .from("reservations")
-        .select("*")
-        .eq("id", id)
-        .single();
+  async getById(id: string): Promise<Reservation> {
+    const { data, error } = await supabase
+      .from("reservations")
+      .select("*")
+      .eq("id", id)
+      .single();
 
     if (error) throw error;
 
@@ -155,17 +132,13 @@ class ReservationService {
   }
 
   async listByWeek(
+    resourceId: string,
 
-  resourceId: string,
+    weekStart: string,
 
-  weekStart: string,
-
-  weekEnd: string,
-
-): Promise<Reservation[]> {
-
-  const { data, error } =
-    await supabase
+    weekEnd: string,
+  ): Promise<Reservation[]> {
+    const { data, error } = await supabase
 
       .from("reservations")
 
@@ -179,46 +152,67 @@ class ReservationService {
 
       .order("starts_at");
 
-  if (error) throw error;
+    if (error) throw error;
 
-  return data;
+    return data;
+  }
+  async update(id: string, values: UpdateReservationForm) {
+    const current = await this.getById(id);
 
-}
-async update(
+    const resourceId = current.resource_id;
 
-  id: string,
+    const startsAt = values.starts_at ?? current.starts_at;
 
-  values: Partial<CreateReservationForm>,
+    const endsAt = values.ends_at ?? current.ends_at;
 
-) {
+    const date = startsAt.substring(0, 10);
 
-  const { data, error } =
-    await supabase
+    const reservations = await this.listByDay(resourceId, date);
 
+    const collision = reservations.find((reservation) => {
+      // Ignoramos la propia reserva
+      if (reservation.id === id) {
+        return false;
+      }
+
+      // Una reserva cancelada
+      // no bloquea el horario
+      if (reservation.status === "cancelled") {
+        return false;
+      }
+
+      const reservationStart = reservation.starts_at.substring(11, 16);
+
+      const reservationEnd = reservation.ends_at.substring(11, 16);
+
+      const newStart = startsAt.substring(11, 16);
+
+      const newEnd = endsAt.substring(11, 16);
+
+      return newStart < reservationEnd && newEnd > reservationStart;
+    });
+
+    if (collision) {
+      throw new Error("Ese horario ya se encuentra reservado.");
+    }
+
+    const { data, error } = await supabase
       .from("reservations")
-
       .update({
-
         ...values,
 
-        updated_at:
-          new Date().toISOString(),
-
+        updated_at: new Date().toISOString(),
       })
-
       .eq("id", id)
-
       .select()
-
       .single();
 
-  if (error) throw error;
+    if (error) {
+      throw error;
+    }
 
-  return data;
-
+    return data;
+  }
 }
 
-}
-
-export const reservationService =
-  new ReservationService();
+export const reservationService = new ReservationService();

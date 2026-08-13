@@ -18,10 +18,10 @@ export function weekToWorkingHours(
         schedule.closes_at !== null,
 
       opens_at:
-        schedule.opens_at ?? "08:00",
+        schedule.opens_at ?? "00:00",
 
       closes_at:
-        schedule.closes_at ?? "22:00",
+        schedule.closes_at ?? "23:00",
 
       reopens_at:
         schedule.reopens_at,

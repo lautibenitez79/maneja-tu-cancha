@@ -1,6 +1,6 @@
 import type {
-  Reservation,
-} from "../types/reservation.types";
+  ResourceBlock,
+} from "../types/resource-block.types";
 
 function timeToMinutes(
   time: string,
@@ -13,14 +13,11 @@ function timeToMinutes(
     .split(":")
     .map(Number);
 
-  return (
-    hours * 60 +
-    minutes
-  );
+  return hours * 60 + minutes;
 }
 
-export function isSlotReserved(
-  reservations: Reservation[],
+export function isSlotBlocked(
+  resourceBlocks: ResourceBlock[],
   slotStart: string,
   slotEnd: string,
 ) {
@@ -30,28 +27,28 @@ export function isSlotReserved(
   const slotEndMinutes =
     timeToMinutes(slotEnd);
 
-  return reservations.find(
-    (reservation) => {
-      const reservationStartMinutes =
+  return resourceBlocks.some(
+    (block) => {
+      const blockStartMinutes =
         timeToMinutes(
-          reservation.starts_at.substring(
+          block.starts_at.substring(
             11,
             16,
           ),
         );
 
-      const reservationEndMinutes =
+      const blockEndMinutes =
         timeToMinutes(
-          reservation.ends_at.substring(
+          block.ends_at.substring(
             11,
             16,
           ),
         );
 
       return (
-        reservationStartMinutes <
+        blockStartMinutes <
           slotEndMinutes &&
-        reservationEndMinutes >
+        blockEndMinutes >
           slotStartMinutes
       );
     },

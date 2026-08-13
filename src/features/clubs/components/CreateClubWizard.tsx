@@ -34,8 +34,6 @@ export default function CreateClubWizard() {
             }
         );
 
-        await refreshProfile();
-
       await refreshProfile();
     } catch (err) {
       console.error(err);

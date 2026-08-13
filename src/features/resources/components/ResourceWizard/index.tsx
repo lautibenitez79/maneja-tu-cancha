@@ -24,6 +24,8 @@ import { workingHoursToSchedule } from "../../utils/workingHoursToSchedule";
 import { weekToWorkingHours }
 from "../../utils/weekToWorkingHours";
 
+import { getReservationDuration } from "../../utils/getReservationDuration";
+
 interface Props {
   mode?: "create" | "edit";
   resourceId?: string;
@@ -40,12 +42,9 @@ export default function ResourceWizard({ mode = "create", resourceId }: Props) {
 
   const [form, setForm] = useState<CreateResourceForm>({
     name: "",
-
     type: "football",
-
     capacity: 1,
-
-    reservation_duration: 30,
+    reservation_duration: 60,
   });
 
   const [week, setWeek] = useState(createEmptyWeek());
@@ -65,12 +64,10 @@ export default function ResourceWizard({ mode = "create", resourceId }: Props) {
 
         setForm({
           name: resource.name,
-
           type: resource.type,
-
           capacity: resource.capacity,
-
-          reservation_duration: resource.reservation_duration,
+          reservation_duration:
+            getReservationDuration(resource.type),
         });
 
         setWeek(
@@ -92,10 +89,21 @@ export default function ResourceWizard({ mode = "create", resourceId }: Props) {
     key: K,
     value: CreateResourceForm[K],
   ) {
-    setForm((prev) => ({
-      ...prev,
-      [key]: value,
-    }));
+    setForm((prev) => {
+      const next = {
+        ...prev,
+        [key]: value,
+      };
+
+      if (key === "type") {
+        next.reservation_duration =
+          getReservationDuration(
+            value as CreateResourceForm["type"],
+          );
+      }
+
+      return next;
+    });
   }
 
   function nextStep() {
@@ -117,6 +125,7 @@ export default function ResourceWizard({ mode = "create", resourceId }: Props) {
   async function handleSubmit() {
 
     const workingHours = weekToWorkingHours(week);
+    const reservationDuration = getReservationDuration(form.type);
 
     if (!profile?.club_id) return;
 
@@ -138,17 +147,33 @@ export default function ResourceWizard({ mode = "create", resourceId }: Props) {
       let resourceIdToSave = resourceId;
 
       if (mode === "create") {
-        const resource = await resourceService.create(profile.club_id, {
-          ...form,
-          capacity: form.type === "gym" ? form.capacity : 1,
-        });
+        const resource = await resourceService.create(
+          profile.club_id,
+          {
+            ...form,
+            reservation_duration:
+              reservationDuration,
+            capacity:
+              form.type === "gym"
+                ? form.capacity
+                : 1,
+          },
+        );
 
         resourceIdToSave = resource.id;
       } else {
-        await resourceService.update(resourceId!, {
-          ...form,
-          capacity: form.type === "gym" ? form.capacity : 1,
-        });
+        await resourceService.update(
+          resourceId!,
+          {
+            ...form,
+            reservation_duration:
+              reservationDuration,
+            capacity:
+              form.type === "gym"
+                ? form.capacity
+                : 1,
+          },
+        );
       }
       
       await workingHoursService.save(resourceIdToSave! , workingHours);

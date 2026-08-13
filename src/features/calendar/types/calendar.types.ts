@@ -8,11 +8,19 @@ export interface CalendarCell {
 
   hour: string;
 
-  status: CalendarCellStatus;
+  starts_at: string;
 
-  reservationId?: string;
+  ends_at: string;
+
+  status:
+    | "available"
+    | "reserved"
+    | "pending_payment"
+    | "closed";
 
   clickable: boolean;
+
+  reservationId?: string;
 
 }
 
