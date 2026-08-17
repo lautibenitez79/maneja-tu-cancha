@@ -2,6 +2,10 @@ import type {
   Reservation,
 } from "../types/reservation.types";
 
+import {
+  formatInTimeZone,
+} from "date-fns-tz";
+
 function timeToMinutes(
   time: string,
 ): number {
@@ -23,30 +27,59 @@ export function isSlotReserved(
   reservations: Reservation[],
   slotStart: string,
   slotEnd: string,
+  timezone: string,
 ) {
   const slotStartMinutes =
-    timeToMinutes(slotStart);
+    timeToMinutes(
+      slotStart,
+    );
 
-  const slotEndMinutes =
-    timeToMinutes(slotEnd);
+  let slotEndMinutes =
+    timeToMinutes(
+      slotEnd,
+    );
+
+  if (
+    slotEndMinutes === 0 &&
+    slotStartMinutes > 0
+  ) {
+    slotEndMinutes =
+      24 * 60;
+  }
 
   return reservations.find(
     (reservation) => {
-      const reservationStartMinutes =
-        timeToMinutes(
-          reservation.starts_at.substring(
-            11,
-            16,
-          ),
+      const reservationStart =
+        formatInTimeZone(
+          reservation.starts_at,
+          timezone,
+          "HH:mm",
         );
 
-      const reservationEndMinutes =
-        timeToMinutes(
-          reservation.ends_at.substring(
-            11,
-            16,
-          ),
+      const reservationEnd =
+        formatInTimeZone(
+          reservation.ends_at,
+          timezone,
+          "HH:mm",
         );
+
+      const reservationStartMinutes =
+        timeToMinutes(
+          reservationStart,
+        );
+
+      let reservationEndMinutes =
+        timeToMinutes(
+          reservationEnd,
+        );
+
+      if (
+        reservationEndMinutes === 0 &&
+        reservationStartMinutes > 0
+      ) {
+        reservationEndMinutes =
+          24 * 60;
+      }
 
       return (
         reservationStartMinutes <

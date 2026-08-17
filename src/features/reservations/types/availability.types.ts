@@ -23,15 +23,10 @@ export interface AvailabilityWeek {
 }
 
 export interface AvailabilitySlot {
-
   starts_at: string;
-
   ends_at: string;
-
   status: AvailabilityStatus;
-
   clickable: boolean;
-
   reservationId?: string;
-
+  resourceBlockId?: string;
 }

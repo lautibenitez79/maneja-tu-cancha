@@ -1,7 +1,6 @@
-import {
-  addDays,
-  format,
-} from "date-fns";
+import { addDays, format } from "date-fns";
+
+import { formatInTimeZone } from "date-fns-tz";
 
 import { createSlots } from "../utils/createSlots";
 import { getSlotStatus } from "../utils/getSlotStatus";
@@ -19,18 +18,11 @@ import type {
 } from "../types/engine.types";
 
 export class AvailabilityEngine {
-  private generateDay(
-    input: GenerateDayInput,
-  ): AvailabilitySlot[] {
-    return createSlots(
-      input.reservationDuration,
-      input.workingHour.opens_at,
-    ).map((slot) => ({
-      starts_at:
-        `${input.date}T${slot.starts_at}:00`,
+  private generateDay(input: GenerateDayInput): AvailabilitySlot[] {
+    return createSlots(input.reservationDuration).map((slot) => ({
+      starts_at: `${input.date}T${slot.starts_at}:00`,
 
-      ends_at:
-        `${input.date}T${slot.ends_at}:00`,
+      ends_at: `${input.date}T${slot.ends_at}:00`,
 
       ...getSlotStatus(
         slot.starts_at,
@@ -38,33 +30,22 @@ export class AvailabilityEngine {
         input.workingHour,
         input.reservations,
         input.resourceBlocks,
+        input.timezone,
       ),
     }));
   }
 
-  public generateWeek(
-    input: GenerateWeekInput,
-  ): AvailabilityWeek {
+  public generateWeek(input: GenerateWeekInput): AvailabilityWeek {
     const days: AvailabilityDay[] = [];
 
     for (let i = 0; i < 7; i++) {
-      const currentDate =
-        addDays(input.weekStart, i);
+      const currentDate = addDays(input.weekStart, i);
 
-      const date =
-        format(
-          currentDate,
-          "yyyy-MM-dd",
-        );
+      const date = format(currentDate, "yyyy-MM-dd");
 
-      const workingHour =
-        input.workingHours.find(
-          (hour) =>
-            hour.day_of_week ===
-            getWorkingDayIndex(
-              currentDate,
-            ),
-        );
+      const workingHour = input.workingHours.find(
+        (hour) => hour.day_of_week === getWorkingDayIndex(currentDate),
+      );
 
       days.push({
         date,
@@ -73,26 +54,29 @@ export class AvailabilityEngine {
           ? this.generateDay({
               workingHour,
 
-              reservations:
-                input.reservations.filter(
-                  (reservation) =>
-                    reservation.starts_at.startsWith(
-                      date,
-                    ),
-                ),
+              reservations: input.reservations.filter(
+                (reservation) =>
+                  formatInTimeZone(
+                    reservation.starts_at,
+                    input.timezone,
+                    "yyyy-MM-dd",
+                  ) === date,
+              ),
 
-              resourceBlocks:
-                input.resourceBlocks.filter(
-                  (block) =>
-                    block.starts_at.startsWith(
-                      date,
-                    ),
-                ),
+              resourceBlocks: input.resourceBlocks.filter(
+                (block) =>
+                  formatInTimeZone(
+                    block.starts_at,
+                    input.timezone,
+                    "yyyy-MM-dd",
+                  ) === date,
+              ),
 
-              reservationDuration:
-                input.reservationDuration,
+              reservationDuration: input.reservationDuration,
 
               date,
+
+              timezone: input.timezone,
             })
           : [],
       });
@@ -101,11 +85,7 @@ export class AvailabilityEngine {
     return {
       resourceId: input.resourceId,
 
-      weekStart:
-        format(
-          input.weekStart,
-          "yyyy-MM-dd",
-        ),
+      weekStart: format(input.weekStart, "yyyy-MM-dd"),
 
       days,
     };

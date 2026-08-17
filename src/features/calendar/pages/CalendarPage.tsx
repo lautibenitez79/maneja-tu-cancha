@@ -22,6 +22,9 @@ import { reservationService } from "@/features/reservations/services/reservation
 
 import type { CreateReservationForm } from "@/features/reservations/types/reservation.types";
 
+import { clubService } from "@/features/clubs/services/club.service";
+import { localDateTimeToUtc } from "@/utils/timezone";
+
 import { useAuth } from "@/hooks/useAuth";
 
 export default function CalendarPage() {
@@ -29,14 +32,10 @@ export default function CalendarPage() {
 
   const { resources, loading: loadingResources } = useResources();
 
-  const [weekStart, setWeekStart] =
-  useState(
-    startOfWeek(
-      new Date(),
-      {
-        weekStartsOn: 1,
-      },
-    ),
+  const [weekStart, setWeekStart] = useState(
+    startOfWeek(new Date(), {
+      weekStartsOn: 1,
+    }),
   );
 
   const [selectedBlockCell, setSelectedBlockCell] =
@@ -59,12 +58,24 @@ export default function CalendarPage() {
   async function handleCreateReservation(values: CreateReservationForm) {
     if (!profile?.club_id) {
       toast.error("No se encontró el club del usuario.");
-
       return;
     }
 
     try {
-      await reservationService.create(profile.club_id, values);
+      const club = await clubService.getClub(profile.club_id);
+
+      if (!club) {
+        toast.error("No se encontró el club.");
+        return;
+      }
+
+      await reservationService.create(profile.club_id, {
+        ...values,
+
+        starts_at: localDateTimeToUtc(values.starts_at, club.timezone),
+
+        ends_at: localDateTimeToUtc(values.ends_at, club.timezone),
+      });
 
       toast.success("Reserva creada correctamente.");
 
@@ -206,13 +217,21 @@ export default function CalendarPage() {
       <WeeklyCalendar
         week={week}
         onCellClick={(cell) => {
-          if (cell.status === "available") {
-            setActionCell(cell);
-            return;
-          }
+        if (
+          cell.status === "closed" &&
+          cell.resourceBlockId
+        ) {
+          setSelectedBlockCell(cell);
+          return;
+        }
 
-          setSelectedCell(cell);
-        }}
+        if (cell.status === "available") {
+          setActionCell(cell);
+          return;
+        }
+
+        setSelectedCell(cell);
+      }}
       />
 
       {/* ACCIONES */}

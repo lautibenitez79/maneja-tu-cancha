@@ -15,6 +15,7 @@ export default function DashboardHome() {
     stats,
     todayReservations,
     loading,
+    timezone
   } = useDashboard();
 
   if (loading) {
@@ -29,6 +30,7 @@ export default function DashboardHome() {
 
       <TodayReservations
         reservations={todayReservations}
+        timezone={timezone}
       />
 
       <WelcomeCard />

@@ -1,11 +1,26 @@
-import type { Reservation } from "../types/reservation.types";
+import type {
+  Reservation,
+} from "../types/reservation.types";
 
-import type { WorkingHour } from "@/features/resources/types/working-hours.types";
+import type {
+  WorkingHour,
+} from "@/features/resources/types/working-hours.types";
 
-import { isSlotOpen } from "./isSlotOpen";
-import { isSlotReserved } from "./isSlotReserved";
-import type { ResourceBlock } from "../types/resource-block.types";
-import { isSlotBlocked } from "./isSlotBlocked";
+import {
+  isSlotOpen,
+} from "./isSlotOpen";
+
+import {
+  isSlotReserved,
+} from "./isSlotReserved";
+
+import type {
+  ResourceBlock,
+} from "../types/resource-block.types";
+
+import {
+  isSlotBlocked,
+} from "./isSlotBlocked";
 
 export function getSlotStatus(
   slotStart: string,
@@ -13,33 +28,44 @@ export function getSlotStatus(
   workingHour: WorkingHour,
   reservations: Reservation[],
   resourceBlocks: ResourceBlock[],
+  timezone: string,
 ) {
   if (
     !isSlotOpen(
       workingHour,
-
       slotStart,
-
       slotEnd,
     )
   ) {
     return {
       status: "closed",
-
       clickable: false,
     } as const;
   }
 
-  const blocked = isSlotBlocked(resourceBlocks, slotStart, slotEnd);
+  const blocked =
+    isSlotBlocked(
+      resourceBlocks,
+      slotStart,
+      slotEnd,
+      timezone,
+    );
 
   if (blocked) {
     return {
       status: "closed",
-      clickable: false,
+      clickable: true,
+      resourceBlockId: blocked.id,
     } as const;
   }
 
-  const reservation = isSlotReserved(reservations, slotStart, slotEnd);
+  const reservation =
+    isSlotReserved(
+      reservations,
+      slotStart,
+      slotEnd,
+      timezone,
+    );
 
   if (!reservation) {
     return {
@@ -48,7 +74,10 @@ export function getSlotStatus(
     } as const;
   }
 
-  if (reservation.status === "cancelled") {
+  if (
+    reservation.status ===
+    "cancelled"
+  ) {
     return {
       status: "available",
       clickable: true,
@@ -57,10 +86,14 @@ export function getSlotStatus(
 
   return {
     status:
-      reservation.status === "pending_payment" ? "pending_payment" : "reserved",
+      reservation.status ===
+      "pending_payment"
+        ? "pending_payment"
+        : "reserved",
 
     clickable: true,
 
-    reservationId: reservation.id,
+    reservationId:
+      reservation.id,
   } as const;
 }

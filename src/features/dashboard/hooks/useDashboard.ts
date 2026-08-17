@@ -33,6 +33,9 @@ export function useDashboard() {
     pendingPayments: 0,
     employees: 0,
   });
+  const [timezone, setTimezone] = useState(
+  "America/Argentina/Buenos_Aires",
+);
 
   const [todayReservations, setTodayReservations] =
     useState<DashboardReservation[]>([]);
@@ -60,6 +63,8 @@ export function useDashboard() {
         if (!club) {
           throw new Error("No se encontró el complejo.");
         }
+
+        setTimezone(club.timezone);
 
         // -----------------------------------------
         // RECURSOS
@@ -103,14 +108,15 @@ export function useDashboard() {
         // -----------------------------------------
 
         const reservationsByResource =
-          await Promise.all(
-            resources.map((resource) =>
-              reservationService.listByDay(
-                resource.id,
-                today,
-              ),
+        await Promise.all(
+          resources.map((resource) =>
+            reservationService.listByDay(
+              resource.id,
+              today,
+              club.timezone,
             ),
-          );
+          ),
+        );
 
         const reservations =
           reservationsByResource.flat();
@@ -234,5 +240,6 @@ export function useDashboard() {
     stats,
     todayReservations,
     loading,
+    timezone,
   };
 }

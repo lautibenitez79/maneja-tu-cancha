@@ -1,5 +1,4 @@
 import { resourceService } from "@/features/resources/services/resource.service";
-
 import { workingHoursService } from "@/features/resources/services/working-hours.service";
 
 import { reservationService } from "./reservation.service";
@@ -17,9 +16,10 @@ import {
   format,
 } from "date-fns";
 
+import { clubService } from "@/features/clubs/services/club.service";
+
 class AvailabilityService {
-  private engine =
-    new AvailabilityEngine();
+  private engine = new AvailabilityEngine();
 
   async getWeek(
     resourceId: string,
@@ -34,6 +34,17 @@ class AvailabilityService {
       await workingHoursService.list(
         resourceId,
       );
+
+    const club =
+      await clubService.getClub(
+        resource.club_id,
+      );
+
+    if (!club) {
+      throw new Error(
+        "No se encontró el club del recurso.",
+      );
+    }
 
     const monday =
       startOfWeek(
@@ -62,18 +73,20 @@ class AvailabilityService {
       );
 
     const reservations =
-      await reservationService.listByWeek(
-        resourceId,
-        `${mondayDate}T00:00:00`,
-        `${sundayDate}T23:59:59`,
-      );
+    await reservationService.listByWeek(
+      resourceId,
+      mondayDate,
+      sundayDate,
+      club.timezone,
+    );
 
     const resourceBlocks =
-      await resourceBlockService.listByWeek(
-        resourceId,
-        `${mondayDate}T00:00:00`,
-        `${sundayDate}T23:59:59`,
-      );
+    await resourceBlockService.listByWeek(
+      resourceId,
+      mondayDate,
+      sundayDate,
+      club.timezone,
+    );
 
     return this.engine.generateWeek({
       resourceId,
@@ -88,6 +101,9 @@ class AvailabilityService {
       reservations,
 
       resourceBlocks,
+
+      timezone:
+        club.timezone,
     });
   }
 }

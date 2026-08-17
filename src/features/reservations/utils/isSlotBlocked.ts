@@ -2,6 +2,10 @@ import type {
   ResourceBlock,
 } from "../types/resource-block.types";
 
+import {
+  formatInTimeZone,
+} from "date-fns-tz";
+
 function timeToMinutes(
   time: string,
 ): number {
@@ -13,44 +17,75 @@ function timeToMinutes(
     .split(":")
     .map(Number);
 
-  return hours * 60 + minutes;
+  return (
+    hours * 60 +
+    minutes
+  );
 }
 
 export function isSlotBlocked(
   resourceBlocks: ResourceBlock[],
   slotStart: string,
   slotEnd: string,
-) {
+  timezone: string,
+): ResourceBlock | null {
   const slotStartMinutes =
     timeToMinutes(slotStart);
 
-  const slotEndMinutes =
+  let slotEndMinutes =
     timeToMinutes(slotEnd);
 
-  return resourceBlocks.some(
-    (block) => {
-      const blockStartMinutes =
-        timeToMinutes(
-          block.starts_at.substring(
-            11,
-            16,
-          ),
-        );
+  if (
+    slotEndMinutes === 0 &&
+    slotStartMinutes > 0
+  ) {
+    slotEndMinutes =
+      24 * 60;
+  }
 
-      const blockEndMinutes =
-        timeToMinutes(
-          block.ends_at.substring(
-            11,
-            16,
-          ),
-        );
+  const block =
+    resourceBlocks.find(
+      (block) => {
+        const blockStart =
+          formatInTimeZone(
+            block.starts_at,
+            timezone,
+            "HH:mm",
+          );
 
-      return (
-        blockStartMinutes <
-          slotEndMinutes &&
-        blockEndMinutes >
-          slotStartMinutes
-      );
-    },
-  );
+        const blockEnd =
+          formatInTimeZone(
+            block.ends_at,
+            timezone,
+            "HH:mm",
+          );
+
+        const blockStartMinutes =
+          timeToMinutes(
+            blockStart,
+          );
+
+        let blockEndMinutes =
+          timeToMinutes(
+            blockEnd,
+          );
+
+        if (
+          blockEndMinutes === 0 &&
+          blockStartMinutes > 0
+        ) {
+          blockEndMinutes =
+            24 * 60;
+        }
+
+        return (
+          blockStartMinutes <
+            slotEndMinutes &&
+          blockEndMinutes >
+            slotStartMinutes
+        );
+      },
+    );
+
+  return block ?? null;
 }

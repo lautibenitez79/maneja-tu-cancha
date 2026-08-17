@@ -16,6 +16,22 @@ import type { Resource } from "@/features/resources/types/resource.types";
 import PublicReservationForm from "@/features/reservations/components/PublicReservationForm";
 import type { PublicAvailableSlot } from "../types/public-booking.types";
 
+
+function formatClubTime(
+  value: string,
+  timezone?: string | null,
+) {
+  return new Intl.DateTimeFormat("es-AR", {
+    timeZone:
+      timezone ||
+      "America/Argentina/Buenos_Aires",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).format(new Date(value));
+}
+
+
 export default function PublicBookingPage() {
   const { slug } = useParams<{
     slug: string;
@@ -369,10 +385,17 @@ export default function PublicBookingPage() {
             ) : (
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {slots.map((slot) => {
-                    const starts = slot.starts_at.substring(11, 16);
-                    const ends = slot.ends_at.substring(11, 16);
+                  const starts = formatClubTime(
+                    slot.starts_at,
+                    club.timezone,
+                  );
 
-                    return (
+                  const ends = formatClubTime(
+                    slot.ends_at,
+                    club.timezone,
+                  );
+
+                  return (
                     <button
                       key={slot.starts_at}
                       type="button"
@@ -420,7 +443,7 @@ export default function PublicBookingPage() {
                 </p>
               </div>
 
-              <div className="mb-6 rounded-xl bg-slate-50 p-4">
+              <div className="mb-6 rounded-xl bg-[var(--color-card)] border p-4">
                 <p className="text-sm text-slate-500">Reserva</p>
 
                 <p className="mt-1 font-semibold text-[var(--color-title)]">
@@ -434,8 +457,15 @@ export default function PublicBookingPage() {
                 </p>
 
                 <p className="mt-1 text-sm font-medium text-blue-600">
-                  {format(new Date(selectedSlot.starts_at), "HH:mm")} →{" "}
-                  {format(new Date(selectedSlot.ends_at), "HH:mm")}
+                  {formatClubTime(
+                    selectedSlot.starts_at,
+                    club.timezone,
+                  )}{" "}
+                  →{" "}
+                  {formatClubTime(
+                    selectedSlot.ends_at,
+                    club.timezone,
+                  )}
                 </p>
               </div>
 
@@ -467,7 +497,7 @@ export default function PublicBookingPage() {
                 Tu solicitud de reserva fue registrada correctamente.
               </p>
 
-              <div className="mt-6 rounded-xl bg-slate-50 p-4 text-left">
+              <div className="mt-6 rounded-xl bg-[var(--color-card)] border p-4 text-left">
                 <p className="font-semibold text-[var(--color-title)]">
                   {selectedResource.name}
                 </p>
@@ -479,8 +509,15 @@ export default function PublicBookingPage() {
                 </p>
 
                 <p className="mt-1 text-sm font-medium text-blue-600">
-                  {format(new Date(selectedSlot.starts_at), "HH:mm")} →{" "}
-                  {format(new Date(selectedSlot.ends_at), "HH:mm")}
+                  {formatClubTime(
+                    selectedSlot.starts_at,
+                    club.timezone,
+                  )}{" "}
+                  →{" "}
+                  {formatClubTime(
+                    selectedSlot.ends_at,
+                    club.timezone,
+                  )}
                 </p>
               </div>
 

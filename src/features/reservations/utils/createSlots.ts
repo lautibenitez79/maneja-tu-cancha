@@ -3,28 +3,24 @@ export interface Slot {
   ends_at: string;
 }
 
-function timeToMinutes(
-  time: string,
-): number {
-  const [
-    hours,
-    minutes,
-  ] = time
-    .substring(0, 5)
-    .split(":")
-    .map(Number);
-
-  return hours * 60 + minutes;
-}
+const MINUTES_IN_DAY = 24 * 60;
 
 function minutesToTime(
   totalMinutes: number,
 ): string {
-  const hours =
-    Math.floor(totalMinutes / 60);
+  if (totalMinutes === MINUTES_IN_DAY) {
+    return "00:00";
+  }
+
+  const normalized =
+    totalMinutes % MINUTES_IN_DAY;
+
+  const hours = Math.floor(
+    normalized / 60,
+  );
 
   const minutes =
-    totalMinutes % 60;
+    normalized % 60;
 
   return `${String(hours).padStart(
     2,
@@ -37,23 +33,16 @@ function minutesToTime(
 
 export function createSlots(
   duration: number,
-  opensAt: string,
 ): Slot[] {
   if (!duration || duration <= 0) {
     return [];
   }
 
-  const startMinutes =
-    timeToMinutes(opensAt);
-
-  const minutesInDay =
-    24 * 60;
-
   const slots: Slot[] = [];
 
   for (
-    let current = startMinutes;
-    current + duration <= minutesInDay;
+    let current = 0;
+    current + duration <= MINUTES_IN_DAY;
     current += duration
   ) {
     slots.push({

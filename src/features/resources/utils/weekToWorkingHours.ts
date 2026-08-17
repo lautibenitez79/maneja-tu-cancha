@@ -1,7 +1,14 @@
-import type { DaySchedule } from "../types/schedule.types";
-import type { WorkingHourForm } from "../types/working-hours.types";
+import type {
+  DaySchedule,
+} from "../types/schedule.types";
 
-import { scheduleToWorkingHours } from "./scheduleMapper";
+import type {
+  WorkingHourForm,
+} from "../types/working-hours.types";
+
+import {
+  scheduleToWorkingHours,
+} from "./scheduleMapper";
 
 export function weekToWorkingHours(
   week: DaySchedule[],
@@ -21,7 +28,7 @@ export function weekToWorkingHours(
         schedule.opens_at ?? "00:00",
 
       closes_at:
-        schedule.closes_at ?? "23:00",
+        schedule.closes_at ?? "00:00",
 
       reopens_at:
         schedule.reopens_at,

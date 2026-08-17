@@ -5,7 +5,6 @@ export type CalendarCellStatus =
   | "closed";
 
 export interface CalendarCell {
-
   hour: string;
 
   starts_at: string;
@@ -22,6 +21,7 @@ export interface CalendarCell {
 
   reservationId?: string;
 
+  resourceBlockId?: string;
 }
 
 export interface CalendarDay {

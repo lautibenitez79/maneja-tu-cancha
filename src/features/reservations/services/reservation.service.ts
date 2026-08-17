@@ -1,5 +1,5 @@
 import { supabase } from "@/lib/supabase";
-
+import { fromZonedTime } from "date-fns-tz";
 import type {
   Reservation,
   CreateReservationForm,
@@ -10,22 +10,24 @@ import { validateReservation } from "../utils/reservationValidator";
 import { canCreateReservation } from "../utils/canCreateReservation";
 
 class ReservationService {
-  async listByDay(resourceId: string, date: string): Promise<Reservation[]> {
-    const start = `${date}T00:00:00`;
-    const end = `${date}T23:59:59`;
+  async listByDay(
+    resourceId: string,
+    date: string,
+    timezone = "America/Argentina/Buenos_Aires",
+  ): Promise<Reservation[]> {
+    const localStart = `${date}T00:00:00`;
+    const localEnd = `${date}T23:59:59`;
+
+    const start = fromZonedTime(localStart, timezone).toISOString();
+
+    const end = fromZonedTime(localEnd, timezone).toISOString();
 
     const { data, error } = await supabase
-
       .from("reservations")
-
       .select("*")
-
       .eq("resource_id", resourceId)
-
       .gte("starts_at", start)
-
       .lte("starts_at", end)
-
       .order("starts_at");
 
     if (error) throw error;
@@ -133,23 +135,23 @@ class ReservationService {
 
   async listByWeek(
     resourceId: string,
-
     weekStart: string,
-
     weekEnd: string,
+    timezone = "America/Argentina/Buenos_Aires",
   ): Promise<Reservation[]> {
+    const localStart = `${weekStart}T00:00:00`;
+    const localEnd = `${weekEnd}T23:59:59`;
+
+    const start = fromZonedTime(localStart, timezone).toISOString();
+
+    const end = fromZonedTime(localEnd, timezone).toISOString();
+
     const { data, error } = await supabase
-
       .from("reservations")
-
       .select("*")
-
       .eq("resource_id", resourceId)
-
-      .gte("starts_at", weekStart)
-
-      .lte("starts_at", weekEnd)
-
+      .gte("starts_at", start)
+      .lte("starts_at", end)
       .order("starts_at");
 
     if (error) throw error;

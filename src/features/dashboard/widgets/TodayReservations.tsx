@@ -4,10 +4,15 @@ import type { Reservation } from "@/features/reservations/types/reservation.type
 
 interface Props {
   reservations: Reservation[];
+  timezone: string;
 }
 
-function formatTime(value: string) {
+function formatTime(
+  value: string,
+  timezone: string,
+) {
   return new Date(value).toLocaleTimeString("es-AR", {
+    timeZone: timezone,
     hour: "2-digit",
     minute: "2-digit",
   });
@@ -57,6 +62,7 @@ function getStatusClass(
 
 export default function TodayReservations({
   reservations,
+   timezone,
 }: Props) {
   return (
     <Card padding={false}>
@@ -89,9 +95,15 @@ export default function TodayReservations({
             >
               <div className="min-w-0">
                 <p className="font-semibold text-[var(--color-title)]">
-                  {formatTime(reservation.starts_at)}
+                  {formatTime(
+                    reservation.starts_at,
+                    timezone,
+                  )}
                   {" — "}
-                  {formatTime(reservation.ends_at)}
+                  {formatTime(
+                    reservation.ends_at,
+                    timezone,
+                  )}
                 </p>
 
                 <p className="mt-1 truncate text-sm text-[var(--color-text)]">

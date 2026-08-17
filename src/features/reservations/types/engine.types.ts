@@ -15,6 +15,8 @@ export interface GenerateDayInput {
   reservationDuration: number;
 
   date: string;
+
+  timezone: string;
 }
 
 export interface GenerateWeekInput {
@@ -29,4 +31,6 @@ export interface GenerateWeekInput {
   reservations: Reservation[];
 
   resourceBlocks: ResourceBlock[];
+
+  timezone: string;
 }

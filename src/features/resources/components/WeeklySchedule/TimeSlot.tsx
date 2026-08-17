@@ -46,7 +46,7 @@ export default function TimeSlot({
             ? variant === "primary"
               ? "border-blue-600 bg-[var(--color-primary)] text-white"
               : "border-green-600 bg-green-600 text-white"
-            : "bg-white hover:bg-[var(--color-hover)]"
+            : "bg-[var(--color-card)] hover:bg-[var(--color-hover)]"
         }
       `}
     >
