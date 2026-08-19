@@ -41,11 +41,13 @@ export default function ResourceWizard({ mode = "create", resourceId }: Props) {
   const [loading, setLoading] = useState(false);
 
   const [form, setForm] = useState<CreateResourceForm>({
-    name: "",
-    type: "football",
-    capacity: 1,
-    reservation_duration: 60,
-  });
+  name: "",
+  type: "football",
+  capacity: 1,
+  reservation_duration: 60,
+  price: 0,
+  deposit_amount: 0,
+});
 
   const [week, setWeek] = useState(createEmptyWeek());
 
@@ -68,6 +70,11 @@ export default function ResourceWizard({ mode = "create", resourceId }: Props) {
           capacity: resource.capacity,
           reservation_duration:
             getReservationDuration(resource.type),
+
+          price: resource.price ?? 0,
+
+          deposit_amount:
+            resource.deposit_amount ?? 0,
         });
 
         setWeek(
@@ -225,8 +232,18 @@ export default function ResourceWizard({ mode = "create", resourceId }: Props) {
         <StepCapacity
           type={form.type}
           capacity={form.capacity}
+          price={form.price}
+          depositAmount={form.deposit_amount}
           loading={loading}
-          onCapacityChange={(value) => updateForm("capacity", value)}
+          onCapacityChange={(value) =>
+            updateForm("capacity", value)
+          }
+          onPriceChange={(value) =>
+            updateForm("price", value)
+          }
+          onDepositAmountChange={(value) =>
+            updateForm("deposit_amount", value)
+          }
           onBack={previousStep}
           onSubmit={handleSubmit}
           mode={mode}

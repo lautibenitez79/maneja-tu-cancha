@@ -13,11 +13,17 @@ export interface Resource {
 
   name: string;
 
+  description: string | null;
+
   type: ResourceType;
 
   capacity: number;
 
   reservation_duration: number;
+
+  price: number;
+  
+  deposit_amount: number;
 
   active: boolean;
 
@@ -34,5 +40,8 @@ export interface CreateResourceForm {
   capacity: number;
 
   reservation_duration: number;
-}
 
+  price: number;
+
+  deposit_amount: number;
+}

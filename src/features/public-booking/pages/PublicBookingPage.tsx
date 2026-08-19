@@ -145,21 +145,16 @@ export default function PublicBookingPage() {
       setCreatingReservation(true);
       setReservationError("");
 
-      const reservation =
-        await publicBookingService.createReservation({
-          resourceId: selectedResource.id,
-          customerName: values.customer_name,
-          customerPhone: values.customer_phone,
-          customerEmail: values.customer_email,
-          startsAt: selectedSlot.starts_at,
-          endsAt: selectedSlot.ends_at,
-        });
+      const reservation = await publicBookingService.createReservation({
+        resourceId: selectedResource.id,
+        customerName: values.customer_name,
+        customerPhone: values.customer_phone,
+        customerEmail: values.customer_email,
+        startsAt: selectedSlot.starts_at,
+        endsAt: selectedSlot.ends_at,
+      });
 
-      setCreatedReservation(
-        reservation as Reservation,
-      );
-
-setReservationCreated(true);
+      setCreatedReservation(reservation as Reservation);
 
       setReservationCreated(true);
     } catch (error) {
@@ -281,14 +276,32 @@ setReservationCreated(true);
                       </span>
                     </div>
 
-                    <div className="mt-5 flex items-center justify-between text-sm text-slate-500">
-                      <span>
-                        {resource.reservation_duration === 90
-                          ? "1:30 hs"
-                          : `${resource.reservation_duration / 60} hs`}
-                      </span>
+                    <div className="mt-5 space-y-3">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-slate-500">Precio total</span>
 
-                      <span>→</span>
+                        <span className="font-semibold text-[var(--color-title)]">
+                          ${resource.price.toLocaleString("es-AR")}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-slate-500">Para reservar</span>
+
+                        <span className="font-semibold text-blue-600">
+                          ${resource.deposit_amount.toLocaleString("es-AR")}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center justify-between border-t pt-3 text-sm text-slate-500">
+                        <span>Duración</span>
+
+                        <span>
+                          {resource.reservation_duration === 90
+                            ? "1:30 hs"
+                            : `${resource.reservation_duration / 60} hs`}
+                        </span>
+                      </div>
                     </div>
                   </button>
                 );
@@ -430,15 +443,15 @@ setReservationCreated(true);
             <div className="mx-auto max-w-xl rounded-2xl border bg-[var(--color-card)] p-5 shadow-sm sm:p-6">
               <div className="mb-6">
                 <h2 className="text-xl font-semibold text-[var(--color-title)]">
-                  Confirmá tu reserva
+                  Reservá tu cancha
                 </h2>
 
                 <p className="mt-1 text-sm text-slate-500">
-                  Completá tus datos para registrar la reserva.
+                  Completá tus datos para continuar con la reserva.
                 </p>
               </div>
 
-              <div className="mb-6 rounded-xl bg-[var(--color-card)] border p-4">
+              <div className="mb-6 rounded-xl border bg-[var(--color-card)] p-4">
                 <p className="text-sm text-slate-500">Reserva</p>
 
                 <p className="mt-1 font-semibold text-[var(--color-title)]">
@@ -455,6 +468,26 @@ setReservationCreated(true);
                   {formatClubTime(selectedSlot.starts_at, club.timezone)} →{" "}
                   {formatClubTime(selectedSlot.ends_at, club.timezone)}
                 </p>
+
+                <div className="mt-5 space-y-3 border-t pt-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-slate-500">Precio total</span>
+
+                    <span className="font-semibold text-[var(--color-title)]">
+                      ${selectedResource.price.toLocaleString("es-AR")}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-slate-500">
+                      Para reservar
+                    </span>
+
+                    <span className="text-lg font-bold text-blue-600">
+                      ${selectedResource.deposit_amount.toLocaleString("es-AR")}
+                    </span>
+                  </div>
+                </div>
               </div>
 
               {reservationError && (
