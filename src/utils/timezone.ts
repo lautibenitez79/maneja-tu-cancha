@@ -1,7 +1,7 @@
 import {
   addDays,
-  parse,
   format,
+  parseISO,
 } from "date-fns";
 
 import {
@@ -37,18 +37,32 @@ export function normalizeEndDateTime(
   startsAt: string,
   endsAt: string,
 ): string {
+  /*
+   * Normalmente:
+   *
+   * 14:00 → 15:00
+   *
+   * Pero cuando tenemos:
+   *
+   * 23:00 → 00:00
+   *
+   * el 00:00 pertenece al día siguiente.
+   */
+
   if (endsAt > startsAt) {
     return endsAt;
   }
 
-  const parsed = parse(
-    endsAt,
-    "yyyy-MM-dd'T'HH:mm",
-    new Date(),
-  );
+  const parsedEnd = parseISO(endsAt);
+
+  if (Number.isNaN(parsedEnd.getTime())) {
+    throw new Error(
+      "El horario de fin no es válido.",
+    );
+  }
 
   return format(
-    addDays(parsed, 1),
-    "yyyy-MM-dd'T'HH:mm",
+    addDays(parsedEnd, 1),
+    "yyyy-MM-dd'T'HH:mm:ss",
   );
 }

@@ -37,34 +37,36 @@ export function mapAvailabilityToCalendar(
         isToday:
           isToday(date),
 
-        cells: day.slots.map((slot) => ({
-        hour:
-          `${slot.starts_at.substring(
-            11,
-            16,
-          )} - ${slot.ends_at.substring(
-            11,
-            16,
-          )}`,
+        cells: day.slots.map(
+          (slot) => ({
+            hour:
+              `${slot.starts_at.substring(
+                11,
+                16,
+              )} - ${slot.ends_at.substring(
+                11,
+                16,
+              )}`,
 
-        starts_at:
-          slot.starts_at,
+            starts_at:
+              slot.starts_at,
 
-        ends_at:
-          slot.ends_at,
+            ends_at:
+              slot.ends_at,
 
-        status:
-          slot.status,
+            status:
+              slot.status,
 
-        clickable:
-          slot.clickable,
+            clickable:
+              slot.clickable,
 
-        reservationId:
-          slot.reservationId,
+            reservationId:
+              slot.reservationId,
 
-        resourceBlockId:
-          slot.resourceBlockId,
-      })),
+            resourceBlockId:
+              slot.resourceBlockId,
+          }),
+        ),
       };
     }),
   };

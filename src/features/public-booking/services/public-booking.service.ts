@@ -2,6 +2,8 @@ import { supabase } from "@/lib/supabase";
 
 import type { Club } from "@/features/clubs/types/club.types";
 import type { Resource } from "@/features/resources/types/resource.types";
+import type { Reservation } from "@/features/reservations/types/reservation.types";
+
 import type { PublicAvailableSlot } from "../types/public-booking.types";
 
 class PublicBookingService {
@@ -51,51 +53,39 @@ class PublicBookingService {
     return (data ?? []) as PublicAvailableSlot[];
   }
   async createReservation({
-    clubId,
-    resourceId,
-    customerName,
-    customerPhone,
-    customerEmail,
-    startsAt,
-    endsAt,
-  }: {
-    clubId: string;
-    resourceId: string;
-    customerName: string;
-    customerPhone: string;
-    customerEmail: string;
-    startsAt: string;
-    endsAt: string;
-  }) {
-    const { data, error } = await supabase
-      .from("reservations")
-      .insert({
-        club_id: clubId,
-        resource_id: resourceId,
+  resourceId,
+  customerName,
+  customerPhone,
+  customerEmail,
+  startsAt,
+  endsAt,
+}: {
+  resourceId: string;
+  customerName: string;
+  customerPhone: string;
+  customerEmail: string;
+  startsAt: string;
+  endsAt: string;
+}): Promise<Reservation> {
+  const { data, error } =
+    await supabase.rpc(
+      "create_public_reservation",
+      {
+        p_resource_id: resourceId,
+        p_customer_name: customerName,
+        p_customer_phone: customerPhone,
+        p_customer_email: customerEmail,
+        p_starts_at: startsAt,
+        p_ends_at: endsAt,
+      },
+    );
 
-        customer_name: customerName,
-        customer_phone: customerPhone,
-        customer_email: customerEmail,
-
-        starts_at: startsAt,
-        ends_at: endsAt,
-
-        amount_paid: 0,
-        status: "pending_payment",
-        source: "web",
-
-        payment_id: null,
-        notes: "",
-      })
-      .select()
-      .single();
-
-    if (error) {
-      throw error;
-    }
-
-    return data;
+  if (error) {
+    throw error;
   }
+
+  return data as Reservation;
+}
 }
 
 export const publicBookingService = new PublicBookingService();

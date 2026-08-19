@@ -2,7 +2,8 @@ export type CalendarCellStatus =
   | "available"
   | "reserved"
   | "pending_payment"
-  | "closed";
+  | "closed"
+  | "blocked";
 
 export interface CalendarCell {
   hour: string;
@@ -15,7 +16,8 @@ export interface CalendarCell {
     | "available"
     | "reserved"
     | "pending_payment"
-    | "closed";
+    | "closed"
+    | "blocked"; 
 
   clickable: boolean;
 

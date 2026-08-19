@@ -4,6 +4,7 @@ import type {
   Reservation,
   CreateReservationForm,
   ReservationStatus,
+  PaymentStatus,
   UpdateReservationForm,
 } from "../types/reservation.types";
 import { validateReservation } from "../utils/reservationValidator";
@@ -78,6 +79,8 @@ class ReservationService {
         ...form,
 
         status: form.source === "admin" ? "confirmed" : "pending_payment",
+
+        payment_status: form.source === "admin" ? "not_required" : "pending",
       })
 
       .select()
@@ -85,6 +88,30 @@ class ReservationService {
       .single();
 
     if (error) throw error;
+
+    return data;
+  }
+
+  async createPublic(form: CreateReservationForm) {
+    validateReservation(form);
+
+    if (form.source !== "web") {
+      throw new Error("Una reserva pública debe tener origen web.");
+    }
+
+    const { data, error } = await supabase.rpc("create_public_reservation", {
+      p_resource_id: form.resource_id,
+      p_customer_name: form.customer_name.trim(),
+      p_customer_phone: form.customer_phone.trim(),
+      p_customer_email: form.customer_email.trim(),
+      p_starts_at: form.starts_at,
+      p_ends_at: form.ends_at,
+      p_notes: form.notes?.trim() || null,
+    });
+
+    if (error) {
+      throw error;
+    }
 
     return data;
   }
@@ -107,6 +134,53 @@ class ReservationService {
       .eq("id", id);
 
     if (error) throw error;
+  }
+
+  async updatePaymentStatus(
+    id: string,
+    paymentStatus: PaymentStatus,
+    paymentId?: string | null,
+    amountPaid?: number,
+  ) {
+    const update: {
+      payment_status: PaymentStatus;
+      payment_id?: string | null;
+      amount_paid?: number;
+      status?: ReservationStatus;
+      updated_at: string;
+    } = {
+      payment_status: paymentStatus,
+      updated_at: new Date().toISOString(),
+    };
+
+    if (paymentId !== undefined) {
+      update.payment_id = paymentId;
+    }
+
+    if (amountPaid !== undefined) {
+      update.amount_paid = amountPaid;
+    }
+
+    if (paymentStatus === "approved") {
+      update.status = "confirmed";
+    }
+
+    if (paymentStatus === "rejected") {
+      update.status = "cancelled";
+    }
+
+    const { data, error } = await supabase
+      .from("reservations")
+      .update(update)
+      .eq("id", id)
+      .select()
+      .single();
+
+    if (error) {
+      throw error;
+    }
+
+    return data as Reservation;
   }
 
   async remove(id: string) {

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-
+import { localDateTimeToUtc, normalizeEndDateTime } from "@/utils/timezone";
 import { startOfWeek, addWeeks } from "date-fns";
 import { toast } from "sonner";
 
@@ -23,7 +23,6 @@ import { reservationService } from "@/features/reservations/services/reservation
 import type { CreateReservationForm } from "@/features/reservations/types/reservation.types";
 
 import { clubService } from "@/features/clubs/services/club.service";
-import { localDateTimeToUtc } from "@/utils/timezone";
 
 import { useAuth } from "@/hooks/useAuth";
 
@@ -58,6 +57,7 @@ export default function CalendarPage() {
   async function handleCreateReservation(values: CreateReservationForm) {
     if (!profile?.club_id) {
       toast.error("No se encontró el club del usuario.");
+
       return;
     }
 
@@ -66,15 +66,28 @@ export default function CalendarPage() {
 
       if (!club) {
         toast.error("No se encontró el club.");
+
         return;
       }
+
+      /*
+       * IMPORTANTE:
+       *
+       * 23:00 → 00:00 significa
+       * 23:00 del día actual →
+       * 00:00 del día siguiente.
+       */
+      const normalizedEndsAt = normalizeEndDateTime(
+        values.starts_at,
+        values.ends_at,
+      );
 
       await reservationService.create(profile.club_id, {
         ...values,
 
         starts_at: localDateTimeToUtc(values.starts_at, club.timezone),
 
-        ends_at: localDateTimeToUtc(values.ends_at, club.timezone),
+        ends_at: localDateTimeToUtc(normalizedEndsAt, club.timezone),
       });
 
       toast.success("Reserva creada correctamente.");
@@ -217,21 +230,20 @@ export default function CalendarPage() {
       <WeeklyCalendar
         week={week}
         onCellClick={(cell) => {
-        if (
-          cell.status === "closed" &&
-          cell.resourceBlockId
-        ) {
-          setSelectedBlockCell(cell);
-          return;
-        }
+          if (cell.status === "available") {
+            setActionCell(cell);
+            return;
+          }
 
-        if (cell.status === "available") {
-          setActionCell(cell);
-          return;
-        }
+          if (cell.status === "blocked") {
+            setSelectedBlockCell(cell);
+            return;
+          }
 
-        setSelectedCell(cell);
-      }}
+          if (cell.status === "reserved" || cell.status === "pending_payment") {
+            setSelectedCell(cell);
+          }
+        }}
       />
 
       {/* ACCIONES */}

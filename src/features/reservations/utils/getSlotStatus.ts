@@ -30,6 +30,9 @@ export function getSlotStatus(
   resourceBlocks: ResourceBlock[],
   timezone: string,
 ) {
+  /*
+   * FUERA DEL HORARIO DE FUNCIONAMIENTO
+   */
   if (
     !isSlotOpen(
       workingHour,
@@ -43,6 +46,9 @@ export function getSlotStatus(
     } as const;
   }
 
+  /*
+   * BLOQUEO MANUAL
+   */
   const blocked =
     isSlotBlocked(
       resourceBlocks,
@@ -53,12 +59,15 @@ export function getSlotStatus(
 
   if (blocked) {
     return {
-      status: "closed",
+      status: "blocked",
       clickable: true,
       resourceBlockId: blocked.id,
     } as const;
   }
 
+  /*
+   * RESERVA
+   */
   const reservation =
     isSlotReserved(
       reservations,
@@ -74,6 +83,10 @@ export function getSlotStatus(
     } as const;
   }
 
+  /*
+   * RESERVA CANCELADA
+   * El horario vuelve a estar disponible.
+   */
   if (
     reservation.status ===
     "cancelled"
@@ -84,6 +97,9 @@ export function getSlotStatus(
     } as const;
   }
 
+  /*
+   * RESERVA ACTIVA
+   */
   return {
     status:
       reservation.status ===

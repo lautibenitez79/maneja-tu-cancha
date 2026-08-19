@@ -4,31 +4,35 @@ export type ReservationStatus =
   | "cancelled"
   | "no_show";
 
+export type PaymentStatus =
+  | "pending"
+  | "approved"
+  | "rejected"
+  | "refunded"
+  | "not_required";
+
 export type ReservationSource =
   | "web"
   | "admin";
 
 export interface Reservation {
-
   id: string;
 
   club_id: string;
-
   resource_id: string;
 
   customer_name: string;
-
   customer_phone: string;
-
   customer_email: string;
 
   starts_at: string;
-
   ends_at: string;
 
   amount_paid: number;
 
   status: ReservationStatus;
+
+  payment_status: PaymentStatus;
 
   source: ReservationSource;
 
@@ -37,9 +41,7 @@ export interface Reservation {
   notes: string | null;
 
   created_at: string;
-
   updated_at: string;
-
 }
 
 export interface CreateReservationForm {

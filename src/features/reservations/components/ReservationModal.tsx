@@ -156,8 +156,12 @@ export default function ReservationModal({
       return;
     }
 
-    if (startsAt >= endsAt) {
+    if (
+      localDateTimeToUtc(startsAt, timezone) >=
+      localDateTimeToUtc(normalizedEndsAt, timezone)
+    ) {
       toast.error("La hora de fin debe ser mayor que la de inicio.");
+
       return;
     }
 

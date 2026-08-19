@@ -22,36 +22,55 @@ function CalendarCell({
     cell.status === "available"
       ? "Disponible"
       : cell.status === "reserved"
-      ? "Reservado"
-      : cell.status === "pending_payment"
-      ? "Pendiente"
-      : "Cerrado";
+        ? "Reservado"
+        : cell.status ===
+            "pending_payment"
+          ? "Pendiente"
+          : cell.status === "blocked"
+            ? "Bloqueado"
+            : "Cerrado";
 
   return (
     <button
       disabled={!cell.clickable}
       onClick={() => onClick(cell)}
       className={clsx(
-        "h-16 w-full bg-[var(--color-card)] border-b border-r transition flex flex-col items-center justify-center gap-1",
+        "h-16 w-full border-b border-r bg-[var(--color-card)] transition flex flex-col items-center justify-center gap-1",
         {
-          "text-[var(--color-title)] hover:text-green-500 hover:bg-green-50":
-            cell.status === "available",
+          "text-[var(--color-title)] hover:bg-green-50 hover:text-green-500":
+            cell.status ===
+            "available",
 
           "text-red-400":
-            cell.status === "reserved",
+            cell.status ===
+            "reserved",
 
           "text-yellow-400":
-            cell.status === "pending_payment",
+            cell.status ===
+            "pending_payment",
+
+          "text-orange-500 hover:bg-orange-50":
+            cell.status ===
+            "blocked",
 
           "text-black":
-            cell.status === "closed",
+            cell.status ===
+            "closed",
         },
       )}
     >
       <span className="text-xs font-medium opacity-70">
-        {cell.starts_at.substring(11, 16)}
+        {cell.starts_at.substring(
+          11,
+          16,
+        )}
+
         {" → "}
-        {cell.ends_at.substring(11, 16)}
+
+        {cell.ends_at.substring(
+          11,
+          16,
+        )}
       </span>
 
       <span className="text-sm">
@@ -61,4 +80,6 @@ function CalendarCell({
   );
 }
 
-export default React.memo(CalendarCell);
+export default React.memo(
+  CalendarCell,
+);

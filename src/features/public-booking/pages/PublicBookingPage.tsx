@@ -13,24 +13,18 @@ import { publicBookingService } from "../services/public-booking.service";
 
 import type { Club } from "@/features/clubs/types/club.types";
 import type { Resource } from "@/features/resources/types/resource.types";
+import type { Reservation } from "@/features/reservations/types/reservation.types";
 import PublicReservationForm from "@/features/reservations/components/PublicReservationForm";
 import type { PublicAvailableSlot } from "../types/public-booking.types";
 
-
-function formatClubTime(
-  value: string,
-  timezone?: string | null,
-) {
+function formatClubTime(value: string, timezone?: string | null) {
   return new Intl.DateTimeFormat("es-AR", {
-    timeZone:
-      timezone ||
-      "America/Argentina/Buenos_Aires",
+    timeZone: timezone || "America/Argentina/Buenos_Aires",
     hour: "2-digit",
     minute: "2-digit",
     hour12: false,
   }).format(new Date(value));
 }
-
 
 export default function PublicBookingPage() {
   const { slug } = useParams<{
@@ -56,6 +50,9 @@ export default function PublicBookingPage() {
   const [creatingReservation, setCreatingReservation] = useState(false);
 
   const [reservationCreated, setReservationCreated] = useState(false);
+
+  const [createdReservation, setCreatedReservation] =
+    useState<Reservation | null>(null);
 
   const [reservationError, setReservationError] = useState("");
 
@@ -148,17 +145,21 @@ export default function PublicBookingPage() {
       setCreatingReservation(true);
       setReservationError("");
 
-      await publicBookingService.createReservation({
-        clubId: club.id,
-        resourceId: selectedResource.id,
+      const reservation =
+        await publicBookingService.createReservation({
+          resourceId: selectedResource.id,
+          customerName: values.customer_name,
+          customerPhone: values.customer_phone,
+          customerEmail: values.customer_email,
+          startsAt: selectedSlot.starts_at,
+          endsAt: selectedSlot.ends_at,
+        });
 
-        customerName: values.customer_name,
-        customerPhone: values.customer_phone,
-        customerEmail: values.customer_email,
+      setCreatedReservation(
+        reservation as Reservation,
+      );
 
-        startsAt: selectedSlot.starts_at,
-        endsAt: selectedSlot.ends_at,
-      });
+setReservationCreated(true);
 
       setReservationCreated(true);
     } catch (error) {
@@ -385,15 +386,9 @@ export default function PublicBookingPage() {
             ) : (
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {slots.map((slot) => {
-                  const starts = formatClubTime(
-                    slot.starts_at,
-                    club.timezone,
-                  );
+                  const starts = formatClubTime(slot.starts_at, club.timezone);
 
-                  const ends = formatClubTime(
-                    slot.ends_at,
-                    club.timezone,
-                  );
+                  const ends = formatClubTime(slot.ends_at, club.timezone);
 
                   return (
                     <button
@@ -457,15 +452,8 @@ export default function PublicBookingPage() {
                 </p>
 
                 <p className="mt-1 text-sm font-medium text-blue-600">
-                  {formatClubTime(
-                    selectedSlot.starts_at,
-                    club.timezone,
-                  )}{" "}
-                  →{" "}
-                  {formatClubTime(
-                    selectedSlot.ends_at,
-                    club.timezone,
-                  )}
+                  {formatClubTime(selectedSlot.starts_at, club.timezone)} →{" "}
+                  {formatClubTime(selectedSlot.ends_at, club.timezone)}
                 </p>
               </div>
 
@@ -509,15 +497,8 @@ export default function PublicBookingPage() {
                 </p>
 
                 <p className="mt-1 text-sm font-medium text-blue-600">
-                  {formatClubTime(
-                    selectedSlot.starts_at,
-                    club.timezone,
-                  )}{" "}
-                  →{" "}
-                  {formatClubTime(
-                    selectedSlot.ends_at,
-                    club.timezone,
-                  )}
+                  {formatClubTime(selectedSlot.starts_at, club.timezone)} →{" "}
+                  {formatClubTime(selectedSlot.ends_at, club.timezone)}
                 </p>
               </div>
 

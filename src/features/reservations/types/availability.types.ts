@@ -1,8 +1,9 @@
 export type AvailabilityStatus =
-  | "available"
-  | "reserved"
-  | "pending_payment"
-  | "closed";
+    | "available"
+    | "reserved"
+    | "pending_payment"
+    | "closed"
+    | "blocked";
 
 export interface AvailabilityDay {
 
