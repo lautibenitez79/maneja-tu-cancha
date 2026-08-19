@@ -21,8 +21,7 @@ import { toast } from "sonner";
 import { createEmptyWeek } from "../../utils/createEmptyWeek";
 import { workingHoursToSchedule } from "../../utils/workingHoursToSchedule";
 
-import { weekToWorkingHours }
-from "../../utils/weekToWorkingHours";
+import { weekToWorkingHours } from "../../utils/weekToWorkingHours";
 
 import { getReservationDuration } from "../../utils/getReservationDuration";
 
@@ -41,13 +40,13 @@ export default function ResourceWizard({ mode = "create", resourceId }: Props) {
   const [loading, setLoading] = useState(false);
 
   const [form, setForm] = useState<CreateResourceForm>({
-  name: "",
-  type: "football",
-  capacity: 1,
-  reservation_duration: 60,
-  price: 0,
-  deposit_amount: 0,
-});
+    name: "",
+    type: "football",
+    capacity: 1,
+    reservation_duration: 60,
+    price: 0,
+    deposit_amount: 0,
+  });
 
   const [week, setWeek] = useState(createEmptyWeek());
 
@@ -56,32 +55,26 @@ export default function ResourceWizard({ mode = "create", resourceId }: Props) {
       return;
     }
 
+    const id: string = resourceId;
+
     async function load() {
       try {
         setLoading(true);
 
-        const resource = await resourceService.getById(resourceId);
+        const resource = await resourceService.getById(id);
 
-        const hours = await workingHoursService.list(resourceId);
+        const hours = await workingHoursService.list(id);
 
         setForm({
           name: resource.name,
           type: resource.type,
           capacity: resource.capacity,
-          reservation_duration:
-            getReservationDuration(resource.type),
-
+          reservation_duration: getReservationDuration(resource.type),
           price: resource.price ?? 0,
-
-          deposit_amount:
-            resource.deposit_amount ?? 0,
+          deposit_amount: resource.deposit_amount ?? 0,
         });
 
-        setWeek(
-
-            workingHoursToSchedule(hours)
-
-        );
+        setWeek(workingHoursToSchedule(hours));
       } catch (error) {
         console.error(error);
       } finally {
@@ -103,10 +96,9 @@ export default function ResourceWizard({ mode = "create", resourceId }: Props) {
       };
 
       if (key === "type") {
-        next.reservation_duration =
-          getReservationDuration(
-            value as CreateResourceForm["type"],
-          );
+        next.reservation_duration = getReservationDuration(
+          value as CreateResourceForm["type"],
+        );
       }
 
       return next;
@@ -130,20 +122,13 @@ export default function ResourceWizard({ mode = "create", resourceId }: Props) {
   }
 
   async function handleSubmit() {
-
     const workingHours = weekToWorkingHours(week);
     const reservationDuration = getReservationDuration(form.type);
 
     if (!profile?.club_id) return;
 
-    if (
-      workingHours.every(
-        (day) => !day.enabled
-      )
-    ) {
-      toast.error(
-        "Debés configurar al menos un día."
-      );
+    if (workingHours.every((day) => !day.enabled)) {
+      toast.error("Debés configurar al menos un día.");
 
       return;
     }
@@ -154,36 +139,22 @@ export default function ResourceWizard({ mode = "create", resourceId }: Props) {
       let resourceIdToSave = resourceId;
 
       if (mode === "create") {
-        const resource = await resourceService.create(
-          profile.club_id,
-          {
-            ...form,
-            reservation_duration:
-              reservationDuration,
-            capacity:
-              form.type === "gym"
-                ? form.capacity
-                : 1,
-          },
-        );
+        const resource = await resourceService.create(profile.club_id, {
+          ...form,
+          reservation_duration: reservationDuration,
+          capacity: form.type === "gym" ? form.capacity : 1,
+        });
 
         resourceIdToSave = resource.id;
       } else {
-        await resourceService.update(
-          resourceId!,
-          {
-            ...form,
-            reservation_duration:
-              reservationDuration,
-            capacity:
-              form.type === "gym"
-                ? form.capacity
-                : 1,
-          },
-        );
+        await resourceService.update(resourceId!, {
+          ...form,
+          reservation_duration: reservationDuration,
+          capacity: form.type === "gym" ? form.capacity : 1,
+        });
       }
-      
-      await workingHoursService.save(resourceIdToSave! , workingHours);
+
+      await workingHoursService.save(resourceIdToSave!, workingHours);
 
       toast.success(
         mode === "create"
@@ -235,15 +206,9 @@ export default function ResourceWizard({ mode = "create", resourceId }: Props) {
           price={form.price}
           depositAmount={form.deposit_amount}
           loading={loading}
-          onCapacityChange={(value) =>
-            updateForm("capacity", value)
-          }
-          onPriceChange={(value) =>
-            updateForm("price", value)
-          }
-          onDepositAmountChange={(value) =>
-            updateForm("deposit_amount", value)
-          }
+          onCapacityChange={(value) => updateForm("capacity", value)}
+          onPriceChange={(value) => updateForm("price", value)}
+          onDepositAmountChange={(value) => updateForm("deposit_amount", value)}
           onBack={previousStep}
           onSubmit={handleSubmit}
           mode={mode}

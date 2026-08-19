@@ -49,9 +49,7 @@ const initialForm: CreateClubForm = {
 export default function CreateClubWizard() {
   const { user, refreshProfile } = useAuth();
 
-  const [step, setStep] = useState(
-    WIZARD_STEPS.NAME
-  );
+  const [step, setStep] = useState<number>(WIZARD_STEPS.NAME);
 
   const [loading, setLoading] = useState(false);
 

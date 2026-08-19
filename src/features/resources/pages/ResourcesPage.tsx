@@ -15,7 +15,6 @@ import type { Resource } from "../types/resource.types";
 import { toast } from "sonner";
 import Loading from "@/components/ui/Loading";
 import Page from "@/components/ui/Page/index";
-import Button from "@/components/ui/Button/index";
 
 
 export default function ResourcesPage() {
@@ -29,8 +28,6 @@ export default function ResourcesPage() {
     refresh,
 
   } = useResources();
-
-  const [openDelete,setOpenDelete]= useState(false);
 
   const [resourceToDelete, setResourceToDelete] =
     useState<Resource | null>(null);

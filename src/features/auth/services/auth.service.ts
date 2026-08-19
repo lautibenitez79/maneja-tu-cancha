@@ -1,4 +1,5 @@
 import { supabase } from "../../../lib/supabase";
+import type { AuthChangeEvent, Session } from "@supabase/supabase-js";
 
 import type {
   RegisterData,
@@ -49,7 +50,12 @@ export const authService = {
     return data.user;
   },
 
-  onAuthStateChange(callback: any) {
+  onAuthStateChange(
+    callback: (
+      event: AuthChangeEvent,
+      session: Session | null
+    ) => void | Promise<void>,
+  ) {
     return supabase.auth.onAuthStateChange(callback);
   },
 };

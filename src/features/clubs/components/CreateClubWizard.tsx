@@ -1,7 +1,6 @@
 import { useState } from "react";
 
 import { useAuth } from "@/hooks/useAuth";
-
 import { clubService } from "../services/club.service";
 
 export default function CreateClubWizard() {
@@ -15,7 +14,6 @@ export default function CreateClubWizard() {
     e.preventDefault();
 
     if (loading) return;
-
     if (!user) return;
 
     if (!name.trim()) {
@@ -27,12 +25,17 @@ export default function CreateClubWizard() {
       setLoading(true);
       setError("");
 
-      const club = await clubService.createFirstClub(
-            user.id,
-            {
-                name: name.trim(),
-            }
-        );
+      await clubService.createFirstClub(user.id, {
+        name: name.trim(),
+        phone: "",
+        email: user.email ?? "",
+        address: "",
+        city: "",
+        province: "",
+        country: "Argentina",
+        timezone: "America/Argentina/Buenos_Aires",
+        currency: "ARS",
+      });
 
       await refreshProfile();
     } catch (err) {

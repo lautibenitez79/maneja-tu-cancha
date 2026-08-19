@@ -80,11 +80,7 @@ export function AppRouter() {
 
           element={
 
-            <CalendarPage
-
-              resourceId="ID_DEL_RECURSO"
-
-            />
+            <CalendarPage/>
 
           }
 

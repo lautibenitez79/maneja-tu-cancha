@@ -13,7 +13,6 @@ import { publicBookingService } from "../services/public-booking.service";
 
 import type { Club } from "@/features/clubs/types/club.types";
 import type { Resource } from "@/features/resources/types/resource.types";
-import type { Reservation } from "@/features/reservations/types/reservation.types";
 import PublicReservationForm from "@/features/reservations/components/PublicReservationForm";
 import type { PublicAvailableSlot } from "../types/public-booking.types";
 
@@ -50,9 +49,6 @@ export default function PublicBookingPage() {
   const [creatingReservation, setCreatingReservation] = useState(false);
 
   const [reservationCreated, setReservationCreated] = useState(false);
-
-  const [createdReservation, setCreatedReservation] =
-    useState<Reservation | null>(null);
 
   const [reservationError, setReservationError] = useState("");
 
@@ -145,7 +141,7 @@ export default function PublicBookingPage() {
       setCreatingReservation(true);
       setReservationError("");
 
-      const reservation = await publicBookingService.createReservation({
+      await publicBookingService.createReservation({
         resourceId: selectedResource.id,
         customerName: values.customer_name,
         customerPhone: values.customer_phone,
@@ -153,8 +149,6 @@ export default function PublicBookingPage() {
         startsAt: selectedSlot.starts_at,
         endsAt: selectedSlot.ends_at,
       });
-
-      setCreatedReservation(reservation as Reservation);
 
       setReservationCreated(true);
     } catch (error) {

@@ -29,16 +29,8 @@ type Mode = "choose" | "signin" | "signup";
 
 function LoginPage() {
   const navigate = useNavigate();
-  const {
-    user,
-    profile,
-    loading: authLoading,
-    login,
-    register,
-    loginWithGoogle,
-  } = useAuth();
+  const {user} = useAuth();
   const [mode, setMode] = useState<Mode>("choose");
-  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -77,8 +69,6 @@ function LoginPage() {
             {mode === "choose" && (
               <ChooseView
                 key="choose"
-                loading={loading}
-                setLoading={setLoading}
                 onSignup={() => setMode("signup")}
                 onSignin={() => setMode("signin")}
               />
@@ -97,41 +87,37 @@ function LoginPage() {
 }
 
 function ChooseView({
-  loading,
-  setLoading,
   onSignup,
   onSignin,
 }: {
-  loading: boolean;
-  setLoading: (v: boolean) => void;
   onSignup: () => void;
   onSignin: () => void;
 }) {
-  const {
-    loginWithGoogle,
-    } = useAuth();
+  // const {
+  //   loginWithGoogle,
+  //   } = useAuth();
 
-    async function google() {
+    // async function google() {
 
-      setLoading(true);
+    //   setLoading(true);
 
-      try {
+    //   try {
 
-        await loginWithGoogle();
+    //     await loginWithGoogle();
 
-      } catch {
+    //   } catch {
 
-        toast.error(
-          "No pudimos iniciar sesión con Google."
-        );
+    //     toast.error(
+    //       "No pudimos iniciar sesión con Google."
+    //     );
 
-      } finally {
+    //   } finally {
 
-        setLoading(false);
+    //     setLoading(false);
 
-      }
+    //   }
 
-    }
+    // }
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -144,11 +130,11 @@ function ChooseView({
       </p>
 
       <Button
-        onClick={google}
-        disabled={loading}
+        // // onClick={google}
+        // disabled={loading}
         className="mt-6 flex h-11 w-full items-center justify-center gap-3 rounded-full border border-border bg-background text-sm font-medium transition-colors hover:bg-secondary disabled:opacity-60"
       >
-        {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <GoogleIcon />}
+        <GoogleIcon />
         Ingresar con Google
       </Button>
 

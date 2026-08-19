@@ -44,15 +44,11 @@ export default function CustomersPage() {
   }
 
   async function handleSubmit(
-    values: CreateCustomerForm,
+    _values: CreateCustomerForm,
   ) {
-
     setOpen(false);
-
     setSelectedCustomer(null);
-
     refresh();
-
   }
 
   return (

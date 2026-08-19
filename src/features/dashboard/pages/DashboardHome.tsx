@@ -23,7 +23,7 @@ export default function DashboardHome() {
   }
 
   return (
-    <Page>
+    <Page title="Dashboard">
       <DashboardHeader />
 
       <StatsCards stats={stats} />

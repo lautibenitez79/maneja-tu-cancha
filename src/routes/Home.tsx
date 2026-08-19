@@ -1,14 +1,10 @@
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
-  ArrowRight,
-  Play,
   UserPlus,
   Settings,
   CalendarCheck,
   Check,
-  Sparkles,
-  Headphones,
 } from "lucide-react";
 import { SiteLayout } from "../components/site/SiteLayout";
 import { Typewriter } from "../components/site/Typewriter";
