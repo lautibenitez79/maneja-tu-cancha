@@ -178,6 +178,7 @@ export default async function handler(
 
           notification_url:
       `${apiUrl}/api/mercadopago/webhook`,
+  };
 
     /*
      * IMPORTANTE:
