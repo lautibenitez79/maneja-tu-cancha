@@ -144,6 +144,12 @@ export default async function handler(
      * ---------------------------------------------------------
      */
 
+    const appUrl =
+      process.env.PUBLIC_APP_URL?.replace(/\/+$/, "");
+
+    const apiUrl =
+      process.env.PUBLIC_API_URL?.replace(/\/+$/, "");
+
     const preferenceBody = {
       items: [
         {
@@ -161,16 +167,17 @@ export default async function handler(
       external_reference: reservation.id,
 
       back_urls: {
-        success: `${process.env.PUBLIC_APP_URL}/pago/exito`,
-        failure: `${process.env.PUBLIC_APP_URL}/pago/error`,
-        pending: `${process.env.PUBLIC_APP_URL}/pago/pendiente`,
-      },
+      success: `${appUrl}/pago/exito`,
+      failure: `${appUrl}/pago/error`,
+      pending: `${appUrl}/pago/pendiente`,
+    },
 
-      auto_return: "approved",
 
-      notification_url:
-        `${process.env.PUBLIC_API_URL}/api/mercadopago/webhook`,
-    };
+
+          auto_return: "approved",
+
+          notification_url:
+      `${apiUrl}/api/mercadopago/webhook`,
 
     /*
      * IMPORTANTE:
