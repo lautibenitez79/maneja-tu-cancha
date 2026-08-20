@@ -281,26 +281,15 @@ export default async function handler(
       items: [
         {
           id: resource.id,
-          title:
-            `Seña - ${resource.name}`,
-          description:
-            `Seña para reservar ${resource.name}`,
-          currency_id: "ARS",
+          title: `Seña - ${resource.name}`,
+          description: `Seña para reservar ${resource.name}`,
           quantity: 1,
-          unit_price:
-            depositAmount,
+          currency_id: "ARS",
+          unit_price: Number(resource.deposit_amount),
         },
       ],
 
-      payer: {
-        email:
-          reservation.customer_email,
-        name:
-          reservation.customer_name,
-      },
-
-      external_reference:
-        reservation.id,
+      external_reference: reservation.id,
     };
 
     console.log(
