@@ -130,17 +130,11 @@ export default async function handler(
      * utilizabas en tu endpoint anterior.
      */
 
-    const amount = Number(
-      reservation.deposit_amount ??
-        reservation.reservation_amount ??
-        reservation.price ??
-        0,
-    );
+    const amount = Number(reservation.deposit_amount);
 
-    if (!amount || amount <= 0) {
+    if (!Number.isFinite(amount) || amount <= 0) {
       return res.status(400).json({
-        error:
-          "La reserva no tiene un importe válido para cobrar",
+        error: "La reserva no tiene un importe válido para cobrar",
       });
     }
 
@@ -154,7 +148,7 @@ export default async function handler(
       items: [
         {
           id: reservation.id,
-          title: `Seña - Reserva`,
+          title: `Seña - Cancha`,
           description: `Seña para reservar la cancha`,
           quantity: 1,
           currency_id: "ARS",
@@ -162,26 +156,14 @@ export default async function handler(
         },
       ],
 
-      /*
-       * Por ahora dejamos la comisión en 0.
-       *
-       * Primero queremos conseguir que el pago de prueba
-       * funcione correctamente.
-       *
-       * Después configuramos la comisión real de
-       * Maneja Tu Cancha.
-       */
       marketplace_fee: 0,
 
       external_reference: reservation.id,
 
       back_urls: {
-        success:
-          `${process.env.PUBLIC_APP_URL}/pago/exito`,
-        failure:
-          `${process.env.PUBLIC_APP_URL}/pago/error`,
-        pending:
-          `${process.env.PUBLIC_APP_URL}/pago/pendiente`,
+        success: `${process.env.PUBLIC_APP_URL}/pago/exito`,
+        failure: `${process.env.PUBLIC_APP_URL}/pago/error`,
+        pending: `${process.env.PUBLIC_APP_URL}/pago/pendiente`,
       },
 
       auto_return: "approved",
@@ -189,11 +171,6 @@ export default async function handler(
       notification_url:
         `${process.env.PUBLIC_API_URL}/api/mercadopago/webhook`,
     };
-
-    console.log(
-      "Preference body:",
-      JSON.stringify(preferenceBody, null, 2),
-    );
 
     /*
      * IMPORTANTE:
