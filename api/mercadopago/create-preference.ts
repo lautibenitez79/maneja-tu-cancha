@@ -1,9 +1,10 @@
-import type {
-  VercelRequest,
-  VercelResponse,
-} from "@vercel/node";
-
+import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { createClient } from "@supabase/supabase-js";
+
+const supabaseAdmin = createClient(
+  process.env.SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!,
+);
 
 export default async function handler(
   req: VercelRequest,
@@ -11,381 +12,259 @@ export default async function handler(
 ) {
   if (req.method !== "POST") {
     return res.status(405).json({
-      error: "Método no permitido.",
+      error: "Method not allowed",
     });
   }
 
   try {
-    const supabaseUrl =
-      process.env.SUPABASE_URL;
+    const { club_id, reservation_id } = req.body ?? {};
 
-    const supabaseServiceRoleKey =
-      process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-    if (!supabaseUrl) {
-      return res.status(500).json({
-        error: "Falta SUPABASE_URL.",
+    if (!club_id || !reservation_id) {
+      return res.status(400).json({
+        error: "club_id y reservation_id son obligatorios",
       });
     }
 
-    if (!supabaseServiceRoleKey) {
-      return res.status(500).json({
-        error:
-          "Falta SUPABASE_SERVICE_ROLE_KEY.",
-      });
-    }
+    console.log("=== CREATE PREFERENCE ===");
+    console.log("club_id:", club_id);
+    console.log("reservation_id:", reservation_id);
 
     /*
-     * =====================================
-     * DATOS RECIBIDOS
-     * =====================================
+     * ---------------------------------------------------------
+     * 1. Buscar la conexión de Mercado Pago del club
+     * ---------------------------------------------------------
      */
 
-    const {
-      club_id,
-      reservation_id,
-    } = req.body ?? {};
+    const { data: account, error: accountError } =
+      await supabaseAdmin
+        .from("club_marketplace_accounts")
+        .select(
+          `
+          club_id,
+          provider,
+          mp_user_id,
+          access_token,
+          token_type,
+          expires_at
+        `,
+        )
+        .eq("club_id", club_id)
+        .eq("provider", "mercadopago")
+        .maybeSingle();
 
-    if (
-      typeof club_id !== "string" ||
-      !club_id
-    ) {
-      return res.status(400).json({
-        error: "Falta club_id.",
-      });
-    }
-
-    if (
-      typeof reservation_id !== "string" ||
-      !reservation_id
-    ) {
-      return res.status(400).json({
-        error:
-          "Falta reservation_id.",
-      });
-    }
-
-    console.log(
-      "====================================",
-    );
-
-    console.log(
-      "CREATE MERCADO PAGO PREFERENCE",
-    );
-
-    console.log({
-      clubId: club_id,
-      reservationId: reservation_id,
-    });
-
-    console.log(
-      "====================================",
-    );
-
-    const supabaseAdmin =
-      createClient(
-        supabaseUrl,
-        supabaseServiceRoleKey,
+    if (accountError) {
+      console.error(
+        "Error buscando cuenta Mercado Pago:",
+        accountError,
       );
 
+      return res.status(500).json({
+        error: "No se pudo obtener la cuenta de Mercado Pago",
+      });
+    }
+
+    if (!account) {
+      return res.status(400).json({
+        error:
+          "El club no tiene una cuenta de Mercado Pago conectada",
+      });
+    }
+
+    if (!account.access_token) {
+      return res.status(400).json({
+        error:
+          "La cuenta de Mercado Pago no tiene Access Token",
+      });
+    }
+
+    console.log("Mercado Pago seller:", {
+      mp_user_id: account.mp_user_id,
+      token_type: account.token_type,
+      expires_at: account.expires_at,
+      has_access_token: Boolean(account.access_token),
+    });
+
     /*
-     * =====================================
-     * 1. BUSCAR RESERVA
-     * =====================================
+     * ---------------------------------------------------------
+     * 2. Buscar la reserva
+     * ---------------------------------------------------------
      */
 
-    const {
-      data: reservation,
-      error: reservationError,
-    } = await supabaseAdmin
-      .from("reservations")
-      .select(`
-        id,
-        club_id,
-        resource_id,
-        customer_name,
-        customer_email,
-        starts_at,
-        ends_at,
-        status,
-        payment_status
-      `)
-      .eq("id", reservation_id)
-      .eq("club_id", club_id)
-      .single();
+    const { data: reservation, error: reservationError } =
+      await supabaseAdmin
+        .from("reservations")
+        .select("*")
+        .eq("id", reservation_id)
+        .eq("club_id", club_id)
+        .maybeSingle();
 
-    if (
-      reservationError ||
-      !reservation
-    ) {
+    if (reservationError) {
       console.error(
-        "Reservation error:",
+        "Error buscando reserva:",
         reservationError,
       );
 
+      return res.status(500).json({
+        error: "No se pudo obtener la reserva",
+      });
+    }
+
+    if (!reservation) {
       return res.status(404).json({
-        error:
-          "No se encontró la reserva.",
+        error: "Reserva no encontrada",
       });
     }
 
+    console.log("Reserva encontrada:", {
+      id: reservation.id,
+      club_id: reservation.club_id,
+    });
+
     /*
-     * =====================================
-     * 2. VALIDAR RESERVA
-     * =====================================
+     * ---------------------------------------------------------
+     * 3. Determinar el importe de la seña
+     * ---------------------------------------------------------
+     *
+     * Mantenemos la lógica que ya te estaba funcionando.
+     * Si tu columna tiene otro nombre, dejamos la que ya
+     * utilizabas en tu endpoint anterior.
      */
 
-    if (
-      reservation.status ===
-      "cancelled"
-    ) {
+    const amount = Number(
+      reservation.deposit_amount ??
+        reservation.reservation_amount ??
+        reservation.price ??
+        0,
+    );
+
+    if (!amount || amount <= 0) {
       return res.status(400).json({
         error:
-          "La reserva está cancelada.",
+          "La reserva no tiene un importe válido para cobrar",
       });
     }
 
     /*
-     * =====================================
-     * 3. BUSCAR CANCHA
-     * =====================================
+     * ---------------------------------------------------------
+     * 4. Crear Preference usando EL TOKEN DEL VENDEDOR
+     * ---------------------------------------------------------
      */
 
-    const {
-      data: resource,
-      error: resourceError,
-    } = await supabaseAdmin
-      .from("resources")
-      .select(`
-        id,
-        name,
-        price,
-        deposit_amount
-      `)
-      .eq(
-        "id",
-        reservation.resource_id,
-      )
-      .eq(
-        "club_id",
-        club_id,
-      )
-      .single();
-
-    if (
-      resourceError ||
-      !resource
-    ) {
-      console.error(
-        "Resource error:",
-        resourceError,
-      );
-
-      return res.status(404).json({
-        error:
-          "No se encontró la cancha.",
-      });
-    }
-
-    /*
-     * =====================================
-     * 4. OBTENER SEÑA
-     * =====================================
-     */
-
-    const depositAmount =
-      Number(
-        resource.deposit_amount,
-      );
-
-    if (
-      !Number.isFinite(
-        depositAmount,
-      ) ||
-      depositAmount <= 0
-    ) {
-      return res.status(400).json({
-        error:
-          "La cancha no tiene una seña válida configurada.",
-      });
-    }
-
-    /*
-     * =====================================
-     * 5. BUSCAR CUENTA MP DEL CLUB
-     * =====================================
-     */
-
-    const {
-      data: marketplaceAccount,
-      error: marketplaceError,
-    } = await supabaseAdmin
-      .from(
-        "club_marketplace_accounts",
-      )
-      .select(`
-        id,
-        club_id,
-        provider,
-        mp_user_id,
-        access_token,
-        expires_at
-      `)
-      .eq(
-        "club_id",
-        club_id,
-      )
-      .eq(
-        "provider",
-        "mercadopago",
-      )
-      .single();
-
-    if (
-      marketplaceError ||
-      !marketplaceAccount
-    ) {
-      console.error(
-        "Marketplace account error:",
-        marketplaceError,
-      );
-
-      return res.status(400).json({
-        error:
-          "El club no tiene Mercado Pago conectado.",
-      });
-    }
-
-    /*
-     * =====================================
-     * 6. VALIDAR ACCESS TOKEN
-     * =====================================
-     */
-
-    if (
-      !marketplaceAccount.access_token
-    ) {
-      return res.status(400).json({
-        error:
-          "La cuenta de Mercado Pago no tiene Access Token.",
-      });
-    }
-
-    /*
-     * =====================================
-     * 7. CREAR PREFERENCE
-     * =====================================
-     */
-
-    const preference = {
+    const preferenceBody = {
       items: [
         {
-          id: resource.id,
-          title: `Seña - ${resource.name}`,
-          description: `Seña para reservar ${resource.name}`,
+          id: reservation.id,
+          title: `Seña - Reserva`,
+          description: `Seña para reservar la cancha`,
           quantity: 1,
           currency_id: "ARS",
-          unit_price: Number(resource.deposit_amount),
+          unit_price: amount,
         },
       ],
 
+      /*
+       * Por ahora dejamos la comisión en 0.
+       *
+       * Primero queremos conseguir que el pago de prueba
+       * funcione correctamente.
+       *
+       * Después configuramos la comisión real de
+       * Maneja Tu Cancha.
+       */
+      marketplace_fee: 0,
+
       external_reference: reservation.id,
+
+      back_urls: {
+        success:
+          `${process.env.PUBLIC_APP_URL}/pago/exito`,
+        failure:
+          `${process.env.PUBLIC_APP_URL}/pago/error`,
+        pending:
+          `${process.env.PUBLIC_APP_URL}/pago/pendiente`,
+      },
+
+      auto_return: "approved",
+
+      notification_url:
+        `${process.env.PUBLIC_API_URL}/api/mercadopago/webhook`,
     };
 
     console.log(
-      "Preference:",
-      {
-        title:
-          `Seña - ${resource.name}`,
-        amount:
-          depositAmount,
-        mpUserId:
-          marketplaceAccount.mp_user_id,
-      },
+      "Preference body:",
+      JSON.stringify(preferenceBody, null, 2),
     );
 
     /*
-     * =====================================
-     * 8. LLAMAR A MERCADO PAGO
-     * =====================================
+     * IMPORTANTE:
+     *
+     * NO usamos MERCADOPAGO_ACCESS_TOKEN.
+     *
+     * Usamos el Access Token OAuth guardado para ESTE vendedor.
      */
 
-    const response =
-      await fetch(
-        "https://api.mercadopago.com/checkout/preferences",
-        {
-          method: "POST",
+    const mpResponse = await fetch(
+      "https://api.mercadopago.com/checkout/preferences",
+      {
+        method: "POST",
 
-          headers: {
-            Authorization:
-              `Bearer ${marketplaceAccount.access_token}`,
-
-            Accept:
-              "application/json",
-
-            "Content-Type":
-              "application/json",
-          },
-
-          body: JSON.stringify(
-            preference,
-          ),
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${account.access_token}`,
         },
-      );
 
-    const data =
-      await response.json();
+        body: JSON.stringify(preferenceBody),
+      },
+    );
 
-    /*
-     * =====================================
-     * 9. ERROR MP
-     * =====================================
-     */
+    const mpData = await mpResponse.json();
 
-    if (!response.ok) {
+    console.log("Mercado Pago response:", {
+      status: mpResponse.status,
+      ok: mpResponse.ok,
+      id: mpData.id,
+      collector_id: mpData.collector_id,
+      marketplace_fee: mpData.marketplace_fee,
+    });
+
+    if (!mpResponse.ok) {
       console.error(
-        "Mercado Pago Preference error:",
-        {
-          status:
-            response.status,
-          data,
-        },
+        "Mercado Pago preference error:",
+        mpData,
       );
 
-      return res.status(500).json({
+      return res.status(mpResponse.status).json({
         error:
-          "Mercado Pago rechazó la creación de la preferencia.",
-        details: data,
+          "Mercado Pago rechazó la creación de la Preference",
+        details: mpData,
       });
     }
 
     /*
-     * =====================================
-     * 10. ÉXITO
-     * =====================================
+     * ---------------------------------------------------------
+     * 5. Respuesta
+     * ---------------------------------------------------------
      */
-
-    console.log(
-      "Preference creada:",
-      data.id,
-    );
-
-    console.log(
-      "Init point:",
-      data.init_point,
-    );
 
     return res.status(200).json({
       success: true,
 
-      preference_id:
-        data.id,
+      preference_id: mpData.id,
+
+      collector_id:
+        mpData.collector_id ?? account.mp_user_id,
+
+      seller_mp_user_id:
+        account.mp_user_id,
+
+      marketplace_fee:
+        mpData.marketplace_fee ?? 0,
 
       init_point:
-        data.init_point,
+        mpData.init_point,
 
       sandbox_init_point:
-        data.sandbox_init_point,
+        mpData.sandbox_init_point,
     });
   } catch (error) {
     console.error(
@@ -394,13 +273,7 @@ export default async function handler(
     );
 
     return res.status(500).json({
-      error:
-        "Error interno creando la preferencia.",
-
-      details:
-        error instanceof Error
-          ? error.message
-          : String(error),
+      error: "Error interno creando el pago",
     });
   }
 }
