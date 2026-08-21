@@ -29,8 +29,8 @@ export default async function handler(
     }
 
     /*
-     * Buscar la reserva
-     */
+    * Buscar la reserva
+    */
     const { data: reservation, error: reservationError } =
       await supabaseAdmin
         .from("reservations")
