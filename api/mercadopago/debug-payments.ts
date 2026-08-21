@@ -28,28 +28,38 @@ export default async function handler(
       });
     }
 
-    /*
-    * Buscar la reserva
-    */
-    const { data: reservation, error: reservationError } =
-      await supabaseAdmin
-        .from("reservations")
-        .select("id, club_id, deposit_amount, payment_status, status")
-        .eq("id", externalReference)
-        .maybeSingle();
+      /*
+      * Buscar la reserva solamente si external_reference
+      * tiene formato UUID.
+      */
+      const isUuid =
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+          externalReference,
+        );
 
-    if (reservationError) {
-      return res.status(500).json({
-        error: "Error buscando reserva",
-        details: reservationError,
-      });
-    }
+      let reservation = null;
 
-    if (!reservation) {
-      return res.status(404).json({
-        error: "Reserva no encontrada",
-      });
-    }
+      if (isUuid) {
+        const {
+          data,
+          error: reservationError,
+        } = await supabaseAdmin
+          .from("reservations")
+          .select(
+            "id, club_id, deposit_amount, payment_status, status",
+          )
+          .eq("id", externalReference)
+          .maybeSingle();
+
+        if (reservationError) {
+          return res.status(500).json({
+            error: "Error buscando reserva",
+            details: reservationError,
+          });
+        }
+
+        reservation = data;
+      }
 
     /*
      * Buscar el vendedor conectado
