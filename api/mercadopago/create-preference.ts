@@ -150,35 +150,37 @@ export default async function handler(
     const apiUrl =
       process.env.PUBLIC_API_URL?.replace(/\/+$/, "");
 
-    const preferenceBody = {
-      items: [
-        {
-          id: reservation.id,
-          title: `Seña - Cancha`,
-          description: `Seña para reservar la cancha`,
-          quantity: 1,
-          currency_id: "ARS",
-          unit_price: amount,
-        },
-      ],
-
-      marketplace_fee: 0,
-
-      external_reference: reservation.id,
-
-      back_urls: {
-      success: `${appUrl}/pago/exito`,
-      failure: `${appUrl}/pago/error`,
-      pending: `${appUrl}/pago/pendiente`,
+const preferenceBody = {
+  items: [
+    {
+      id: reservation.id,
+      title: "Seña - Cancha",
+      description: "Seña para reservar la cancha",
+      quantity: 1,
+      currency_id: "ARS",
+      unit_price: amount,
     },
+  ],
 
+  marketplace_fee: 0,
 
+  external_reference: reservation.id,
 
-          auto_return: "approved",
+  payer: {
+    email: reservation.customer_email,
+  },
 
-          notification_url:
-      `${apiUrl}/api/mercadopago/webhook`,
-  };
+  back_urls: {
+    success: `${appUrl}/pago/exito`,
+    failure: `${appUrl}/pago/error`,
+    pending: `${appUrl}/pago/pendiente`,
+  },
+
+  auto_return: "approved",
+
+  notification_url:
+    `${apiUrl}/api/mercadopago/webhook`,
+};
 
     /*
      * IMPORTANTE:
