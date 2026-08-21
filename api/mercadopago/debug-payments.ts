@@ -77,7 +77,7 @@ export default async function handler(
           expires_at
         `,
         )
-        .eq("club_id", reservation.club_id)
+        .eq("club_id", clubId)
         .eq("provider", "mercadopago")
         .maybeSingle();
 
@@ -117,12 +117,12 @@ export default async function handler(
     });
 
     return res.status(mpResponse.ok ? 200 : 500).json({
-      reservation: {
+      reservation: reservation ? {
         id: reservation.id,
         deposit_amount: reservation.deposit_amount,
         payment_status: reservation.payment_status,
         status: reservation.status,
-      },
+      }: null,
 
       seller: {
         mp_user_id: account.mp_user_id,
