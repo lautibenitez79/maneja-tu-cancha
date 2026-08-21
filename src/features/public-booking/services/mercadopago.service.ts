@@ -1,35 +1,31 @@
 interface CreatePreferenceResponse {
-  id: string;
+  success: boolean;
+  preference_id: string;
+  collector_id: number;
+  seller_mp_user_id: string;
+  marketplace_fee: number;
   init_point: string;
   sandbox_init_point: string;
 }
 
 class MercadoPagoService {
   async createPreference({
+    clubId,
     reservationId,
-    title,
-    amount,
-    customerEmail,
   }: {
+    clubId: string;
     reservationId: string;
-    title: string;
-    amount: number;
-    customerEmail: string;
   }): Promise<CreatePreferenceResponse> {
     const response = await fetch(
       "/api/mercadopago/create-preference",
       {
         method: "POST",
-
         headers: {
           "Content-Type": "application/json",
         },
-
         body: JSON.stringify({
-          reservationId,
-          title,
-          amount,
-          customerEmail,
+          club_id: clubId,
+          reservation_id: reservationId,
         }),
       },
     );
@@ -37,8 +33,13 @@ class MercadoPagoService {
     const data = await response.json();
 
     if (!response.ok) {
+      console.error(
+        "Error creando Preference:",
+        data,
+      );
+
       throw new Error(
-        data.error ||
+        data?.error ||
           "No se pudo iniciar el pago.",
       );
     }

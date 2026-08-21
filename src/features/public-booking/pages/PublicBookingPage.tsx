@@ -10,6 +10,7 @@ import Loading from "@/components/ui/Loading";
 import EmptyState from "@/components/ui/EmptyState";
 
 import { publicBookingService } from "../services/public-booking.service";
+import { mercadoPagoService } from "../services/mercadopago.service";
 
 import type { Club } from "@/features/clubs/types/club.types";
 import type { Resource } from "@/features/resources/types/resource.types";
@@ -128,19 +129,23 @@ export default function PublicBookingPage() {
     loadSlots();
   }, [selectedResource, selectedDate]);
 
-  async function handleCreateReservation(values: {
-    customer_name: string;
-    customer_phone: string;
-    customer_email: string;
-  }) {
-    if (!club || !selectedResource || !selectedSlot) {
-      return;
-    }
+async function handleCreateReservation(values: {
+  customer_name: string;
+  customer_phone: string;
+  customer_email: string;
+}) {
+  if (!club || !selectedResource || !selectedSlot) {
+    return;
+  }
 
-    try {
-      setCreatingReservation(true);
-      setReservationError("");
+  try {
+    setCreatingReservation(true);
+    setReservationError("");
 
+    /*
+     * 1. Crear la reserva
+     */
+    const reservation =
       await publicBookingService.createReservation({
         resourceId: selectedResource.id,
         customerName: values.customer_name,
@@ -150,17 +155,51 @@ export default function PublicBookingPage() {
         endsAt: selectedSlot.ends_at,
       });
 
-      setReservationCreated(true);
-    } catch (error) {
-      console.error(error);
+    console.log(
+      "Reserva creada:",
+      reservation,
+    );
 
-      setReservationError(
-        "No se pudo realizar la reserva. El horario puede haber sido ocupado. Actualizá los horarios e intentá nuevamente.",
+    /*
+     * 2. Crear Preference de Mercado Pago
+     */
+    const preference =
+      await mercadoPagoService.createPreference({
+        clubId: club.id,
+        reservationId: reservation.id,
+      });
+
+    console.log(
+      "Preference Mercado Pago creada:",
+      preference,
+    );
+
+    /*
+     * 3. Redirigir al Checkout Pro
+     */
+    if (!preference.init_point) {
+      throw new Error(
+        "Mercado Pago no devolvió init_point.",
       );
-    } finally {
-      setCreatingReservation(false);
     }
+
+    window.location.href =
+      preference.init_point;
+  } catch (error) {
+    console.error(
+      "Error creando reserva/pago:",
+      error,
+    );
+
+    setReservationError(
+      error instanceof Error
+        ? error.message
+        : "No se pudo realizar la reserva. Intentá nuevamente.",
+    );
+  } finally {
+    setCreatingReservation(false);
   }
+}
 
   if (loading) {
     return <Loading />;
