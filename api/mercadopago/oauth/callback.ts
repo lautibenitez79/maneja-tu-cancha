@@ -165,7 +165,6 @@ export default async function handler(
       clientId,
       redirectUri,
       grantType: "authorization_code",
-      testToken: true,
     });
 
     const body = new URLSearchParams();
@@ -200,10 +199,10 @@ export default async function handler(
      * Estamos trabajando con credenciales
      * de prueba.
      */
-    body.set(
-      "test_token",
-      "true",
-    );
+    // body.set(
+    //   "test_token",
+    //   "true",
+    // );
 
     const tokenResponse = await fetch(
       "https://api.mercadopago.com/oauth/token",
