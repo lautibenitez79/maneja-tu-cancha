@@ -38,7 +38,7 @@ export default function MercadoPagoConnectionCard({
       setConnecting(true);
 
       const url =
-        await mercadoPagoService.getAuthorizationUrl();
+        mercadoPagoService.getAuthorizationUrl(clubId);
 
       window.location.href = url;
     } catch (error) {
