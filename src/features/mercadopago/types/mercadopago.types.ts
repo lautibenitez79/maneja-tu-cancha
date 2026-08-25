@@ -4,7 +4,7 @@ export interface MercadoPagoConnection {
   token_type: string;
   scope: string | null;
   expires_at: string | null;
+  active: boolean;
   created_at: string;
   updated_at: string;
-  active: boolean;
 }

@@ -3,9 +3,7 @@ import { supabase } from "@/lib/supabase";
 import type { MercadoPagoConnection } from "../types/mercadopago.types";
 
 class MercadoPagoService {
-  async getConnection(
-    clubId: string,
-  ): Promise<MercadoPagoConnection | null> {
+  async getConnection(clubId: string): Promise<MercadoPagoConnection | null> {
     const { data, error } = await supabase
       .from("club_marketplace_accounts")
       .select(
@@ -15,6 +13,7 @@ class MercadoPagoService {
         token_type,
         scope,
         expires_at,
+        active,
         created_at,
         updated_at
         `,
@@ -42,7 +41,24 @@ class MercadoPagoService {
       clubId,
     )}`;
   }
+
+  async disconnect(clubId: string): Promise<void> {
+    const response = await fetch("/api/mercadopago/disconnect", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        club_id: clubId,
+      }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || "No se pudo desconectar Mercado Pago.");
+    }
+  }
 }
 
-export const mercadoPagoService =
-  new MercadoPagoService();
+export const mercadoPagoService = new MercadoPagoService();

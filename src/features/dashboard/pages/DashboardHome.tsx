@@ -7,6 +7,9 @@ import TodayReservations from "../widgets/TodayReservations";
 
 import { useDashboard } from "../hooks/useDashboard";
 
+import MercadoPagoConnectionCard from "@/features/mercadopago/components/MercadoPagoConnectionCard";
+import { useAuth } from "@/hooks/useAuth";
+
 import Loading from "@/components/ui/Loading";
 import Page from "@/components/ui/Page/index";
 
@@ -15,11 +18,25 @@ export default function DashboardHome() {
     stats,
     todayReservations,
     loading,
-    timezone
+    timezone,
   } = useDashboard();
+
+  const { profile } = useAuth();
 
   if (loading) {
     return <Loading />;
+  }
+
+  if (!profile?.club_id) {
+    return (
+      <Page title="Dashboard">
+        <DashboardHeader />
+
+        <div className="rounded-xl border p-6">
+          No se encontró el complejo asociado a tu cuenta.
+        </div>
+      </Page>
+    );
   }
 
   return (
@@ -33,13 +50,17 @@ export default function DashboardHome() {
         timezone={timezone}
       />
 
-      <WelcomeCard />
+      <div className="grid gap-6 lg:grid-cols-2">
+        <WelcomeCard />
+
+        <MercadoPagoConnectionCard
+          clubId={profile.club_id}
+        />
+      </div>
 
       <SetupChecklist
         hasResources={stats.resources > 0}
-        hasWorkingHours={
-          stats.hasWorkingHours
-        }
+        hasWorkingHours={stats.hasWorkingHours}
       />
     </Page>
   );

@@ -7,11 +7,10 @@ interface Props {
   clubId: string;
 }
 
-export default function MercadoPagoConnectionCard({
-  clubId,
-}: Props) {
-  const [connection, setConnection] =
-    useState<MercadoPagoConnection | null>(null);
+export default function MercadoPagoConnectionCard({ clubId }: Props) {
+  const [connection, setConnection] = useState<MercadoPagoConnection | null>(
+    null,
+  );
 
   const [loading, setLoading] = useState(true);
   const [connecting, setConnecting] = useState(false);
@@ -19,8 +18,7 @@ export default function MercadoPagoConnectionCard({
   useEffect(() => {
     async function load() {
       try {
-        const data =
-          await mercadoPagoService.getConnection(clubId);
+        const data = await mercadoPagoService.getConnection(clubId);
 
         setConnection(data);
       } catch (error) {
@@ -37,15 +35,40 @@ export default function MercadoPagoConnectionCard({
     try {
       setConnecting(true);
 
-      const url =
-        mercadoPagoService.getAuthorizationUrl(clubId);
+      const url = mercadoPagoService.getAuthorizationUrl(clubId);
 
       window.location.href = url;
     } catch (error) {
       console.error(error);
 
+      alert("No se pudo iniciar la conexión con Mercado Pago.");
+    } finally {
+      setConnecting(false);
+    }
+  }
+
+  async function handleDisconnect() {
+    const confirmed = window.confirm(
+      "¿Querés desconectar tu cuenta de Mercado Pago?",
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      setConnecting(true);
+
+      await mercadoPagoService.disconnect(clubId);
+
+      setConnection(null);
+    } catch (error) {
+      console.error(error);
+
       alert(
-        "No se pudo iniciar la conexión con Mercado Pago.",
+        error instanceof Error
+          ? error.message
+          : "No se pudo desconectar Mercado Pago.",
       );
     } finally {
       setConnecting(false);
@@ -54,22 +77,18 @@ export default function MercadoPagoConnectionCard({
 
   if (loading) {
     return (
-      <div className="rounded-xl border p-6">
-        Cargando Mercado Pago...
-      </div>
+      <div className="rounded-xl border p-6">Cargando Mercado Pago...</div>
     );
   }
 
   return (
     <div className="rounded-xl border bg-[var(--color-card)] p-6">
       <div className="mb-4">
-        <h2 className="text-lg font-semibold">
-          Mercado Pago
-        </h2>
+        <h2 className="text-lg font-semibold">Mercado Pago</h2>
 
         <p className="mt-1 text-sm opacity-70">
-          Conectá la cuenta de Mercado Pago donde
-          recibirás las señas de tus reservas.
+          Conectá la cuenta de Mercado Pago donde recibirás las señas de tus
+          reservas.
         </p>
       </div>
 
@@ -80,7 +99,7 @@ export default function MercadoPagoConnectionCard({
           </div>
 
           <div className="text-sm">
-            <strong>ID de cuenta:</strong>{" "}
+            <strong>Cuenta conectada:</strong>{" "}
             {connection.mp_user_id}
           </div>
 
@@ -92,6 +111,17 @@ export default function MercadoPagoConnectionCard({
               ).toLocaleDateString("es-AR")}
             </div>
           )}
+
+          <button
+            type="button"
+            onClick={handleDisconnect}
+            disabled={connecting}
+            className="rounded-lg border px-5 py-3 font-medium transition disabled:opacity-50"
+          >
+            {connecting
+              ? "Desconectando..."
+              : "Desconectar Mercado Pago"}
+          </button>
         </div>
       ) : (
         <button
@@ -103,9 +133,7 @@ export default function MercadoPagoConnectionCard({
             backgroundColor: "#009EE3",
           }}
         >
-          {connecting
-            ? "Conectando..."
-            : "Conectar Mercado Pago"}
+          {connecting ? "Conectando..." : "Conectar Mercado Pago"}
         </button>
       )}
     </div>

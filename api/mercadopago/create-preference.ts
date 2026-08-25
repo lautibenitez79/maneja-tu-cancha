@@ -50,6 +50,7 @@ export default async function handler(
         )
         .eq("club_id", club_id)
         .eq("provider", "mercadopago")
+        .eq("active", true)
         .maybeSingle();
 
     if (accountError) {
