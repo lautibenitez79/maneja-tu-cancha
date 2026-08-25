@@ -20,6 +20,7 @@ class MercadoPagoService {
       )
       .eq("club_id", clubId)
       .eq("provider", "mercadopago")
+      .eq("active", true)
       .maybeSingle();
 
     if (error) {

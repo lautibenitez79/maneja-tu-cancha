@@ -18,11 +18,19 @@ export default function MercadoPagoConnectionCard({ clubId }: Props) {
   useEffect(() => {
     async function load() {
       try {
-        const data = await mercadoPagoService.getConnection(clubId);
+        const data =
+          await mercadoPagoService.getConnection(clubId);
+
+        console.log("=== MERCADO PAGO CONNECTION ===");
+        console.log("clubId:", clubId);
+        console.log("connection:", data);
 
         setConnection(data);
       } catch (error) {
-        console.error(error);
+        console.error(
+          "Error cargando conexión Mercado Pago:",
+          error,
+        );
       } finally {
         setLoading(false);
       }
