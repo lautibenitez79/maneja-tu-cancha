@@ -134,13 +134,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       console.log("=== MP TOKEN VALIDATION ===");
 
-console.log({
-  club_id,
-  mp_user_id: marketplaceAccount.mp_user_id,
-  token_type: marketplaceAccount.token_type,
-  expires_at: marketplaceAccount.expires_at,
-  has_access_token: Boolean(accessToken),
-});
+      console.log({
+        club_id,
+        mp_user_id: marketplaceAccount.mp_user_id,
+        token_type: marketplaceAccount.token_type,
+        expires_at: marketplaceAccount.expires_at,
+        has_access_token: Boolean(accessToken),
+      });
 
     const appUrl = process.env.PUBLIC_APP_URL?.replace(/\/+$/, "");
 
@@ -198,6 +198,18 @@ console.log({
         ),
       },
     );
+
+    console.log("=== ENVIANDO PREFERENCE ===");
+
+    console.log({
+      club_id,
+      reservation_id: reservation.id,
+      seller_mp_user_id: marketplaceAccount.mp_user_id,
+      amount,
+      appUrl,
+      apiUrl,
+      has_access_token: Boolean(accessToken),
+    });
 
     const mpData = await mpResponse.json();
 
