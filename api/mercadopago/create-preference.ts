@@ -132,6 +132,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const { accessToken, account: marketplaceAccount } =
       await getValidMercadoPagoToken(club_id);
 
+      console.log("=== MP TOKEN VALIDATION ===");
+
+console.log({
+  club_id,
+  mp_user_id: marketplaceAccount.mp_user_id,
+  token_type: marketplaceAccount.token_type,
+  expires_at: marketplaceAccount.expires_at,
+  has_access_token: Boolean(accessToken),
+});
+
     const appUrl = process.env.PUBLIC_APP_URL?.replace(/\/+$/, "");
 
     const apiUrl = process.env.PUBLIC_API_URL?.replace(/\/+$/, "");
@@ -147,8 +157,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           unit_price: amount,
         },
       ],
-
-      marketplace_fee: 0,
 
       external_reference: reservation.id,
 
