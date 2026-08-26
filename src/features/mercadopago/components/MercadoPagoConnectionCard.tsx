@@ -21,6 +21,8 @@ export default function MercadoPagoConnectionCard({ clubId }: Props) {
         const data =
           await mercadoPagoService.getConnection(clubId);
 
+          console.log("redeploy")
+
         setConnection(data);
       } catch (error) {
         console.error(
