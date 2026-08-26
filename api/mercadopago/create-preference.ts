@@ -1,13 +1,16 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
+
 import { createClient } from "@supabase/supabase-js";
-import { getValidMercadoPagoToken } from "./mercadopago-token";
 
 const supabaseAdmin = createClient(
   process.env.SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!,
 );
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export default async function handler(
+  req: VercelRequest,
+  res: VercelResponse,
+) {
   if (req.method !== "POST") {
     return res.status(405).json({
       error: "Method not allowed",
@@ -15,71 +18,81 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const { club_id, reservation_id } = req.body ?? {};
+    const {
+      club_id,
+      reservation_id,
+    } = req.body ?? {};
 
     if (!club_id || !reservation_id) {
       return res.status(400).json({
-        error: "club_id y reservation_id son obligatorios",
+        error:
+          "club_id y reservation_id son obligatorios",
       });
     }
 
     /*
      * ---------------------------------------------------------
-     * 1. Buscar la conexión de Mercado Pago del club
+     * 1. BUSCAR CUENTA DE MERCADO PAGO DEL CLUB
      * ---------------------------------------------------------
      */
 
-    // const { data: account, error: accountError } = await supabaseAdmin
-    //   .from("club_marketplace_accounts")
-    //   .select(
-    //     `
-    //       club_id,
-    //       provider,
-    //       mp_user_id,
-    //       access_token,
-    //       token_type,
-    //       expires_at
-    //     `,
-    //   )
-    //   .eq("club_id", club_id)
-    //   .eq("provider", "mercadopago")
-    //   .eq("active", true)
-    //   .maybeSingle();
+    const {
+      data: account,
+      error: accountError,
+    } = await supabaseAdmin
+      .from("club_marketplace_accounts")
+      .select(
+        `
+        club_id,
+        provider,
+        mp_user_id,
+        access_token,
+        token_type,
+        expires_at,
+        active
+        `,
+      )
+      .eq("club_id", club_id)
+      .eq("provider", "mercadopago")
+      .eq("active", true)
+      .maybeSingle();
 
-    // if (accountError) {
-    //   console.error("Error buscando cuenta Mercado Pago:", accountError);
+    if (accountError) {
+      console.error(
+        "Error buscando cuenta Mercado Pago:",
+        accountError,
+      );
 
-    //   return res.status(500).json({
-    //     error: "No se pudo obtener la cuenta de Mercado Pago",
-    //   });
-    // }
+      return res.status(500).json({
+        error:
+          "No se pudo obtener la cuenta de Mercado Pago",
+      });
+    }
 
-    // if (!account) {
-    //   return res.status(400).json({
-    //     error: "El club no tiene una cuenta de Mercado Pago conectada",
-    //   });
-    // }
+    if (!account) {
+      return res.status(400).json({
+        error:
+          "El club no tiene una cuenta de Mercado Pago conectada",
+      });
+    }
 
-    // if (!account.access_token) {
-    //   return res.status(400).json({
-    //     error: "La cuenta de Mercado Pago no tiene Access Token",
-    //   });
-    // }
-
-    // console.log("Mercado Pago seller:", {
-    //   mp_user_id: account.mp_user_id,
-    //   token_type: account.token_type,
-    //   expires_at: account.expires_at,
-    //   has_access_token: Boolean(account.access_token),
-    // });
+    if (!account.access_token) {
+      return res.status(400).json({
+        error:
+          "La cuenta de Mercado Pago no tiene Access Token",
+      });
+    }
 
     /*
      * ---------------------------------------------------------
-     * 2. Buscar la reserva
+     * 2. BUSCAR RESERVA
      * ---------------------------------------------------------
      */
 
-    const { data: reservation, error: reservationError } = await supabaseAdmin
+    const {
+      data: reservation,
+      error: reservationError,
+    } = await supabaseAdmin
       .from("reservations")
       .select("*")
       .eq("id", reservation_id)
@@ -87,101 +100,138 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .maybeSingle();
 
     if (reservationError) {
-      console.error("Error buscando reserva:", reservationError);
+      console.error(
+        "Error buscando reserva:",
+        reservationError,
+      );
 
       return res.status(500).json({
-        error: "No se pudo obtener la reserva",
+        error:
+          "No se pudo obtener la reserva",
       });
     }
 
     if (!reservation) {
       return res.status(404).json({
-        error: "Reserva no encontrada",
+        error:
+          "Reserva no encontrada",
       });
     }
 
-    console.log("Reserva encontrada:", {
-      id: reservation.id,
-      club_id: reservation.club_id,
-    });
-
     /*
      * ---------------------------------------------------------
-     * 3. Determinar el importe de la seña
+     * 3. VERIFICAR ESTADO DE LA RESERVA
      * ---------------------------------------------------------
-     *
-     * Mantenemos la lógica que ya te estaba funcionando.
-     * Si tu columna tiene otro nombre, dejamos la que ya
-     * utilizabas en tu endpoint anterior.
      */
 
-    const amount = Number(reservation.deposit_amount);
-
-    if (!Number.isFinite(amount) || amount <= 0) {
+    if (
+      reservation.status !==
+      "pending_payment"
+    ) {
       return res.status(400).json({
-        error: "La reserva no tiene un importe válido para cobrar",
+        error:
+          "La reserva ya no está disponible para pago.",
+      });
+    }
+
+    if (
+      reservation.payment_status !==
+      "pending"
+    ) {
+      return res.status(400).json({
+        error:
+          "La reserva no está pendiente de pago.",
       });
     }
 
     /*
      * ---------------------------------------------------------
-     * 4. Crear Preference usando EL TOKEN DEL VENDEDOR
+     * 4. IMPORTE
      * ---------------------------------------------------------
      */
 
-    const { accessToken, account: marketplaceAccount } =
-      await getValidMercadoPagoToken(club_id);
+    const amount = Number(
+      reservation.deposit_amount,
+    );
 
-      console.log("=== MP TOKEN VALIDATION ===");
-
-      console.log({
-        club_id,
-        mp_user_id: marketplaceAccount.mp_user_id,
-        token_type: marketplaceAccount.token_type,
-        expires_at: marketplaceAccount.expires_at,
-        has_access_token: Boolean(accessToken),
+    if (
+      !Number.isFinite(amount) ||
+      amount <= 0
+    ) {
+      return res.status(400).json({
+        error:
+          "La reserva no tiene un importe válido para cobrar",
       });
+    }
 
-    const appUrl = process.env.PUBLIC_APP_URL?.replace(/\/+$/, "");
+    /*
+     * ---------------------------------------------------------
+     * 5. URLS
+     * ---------------------------------------------------------
+     */
 
-    const apiUrl = process.env.PUBLIC_API_URL?.replace(/\/+$/, "");
+    const appUrl =
+      process.env.PUBLIC_APP_URL?.replace(
+        /\/+$/,
+        "",
+      );
+
+    const apiUrl =
+      process.env.PUBLIC_API_URL?.replace(
+        /\/+$/,
+        "",
+      );
+
+    if (!appUrl || !apiUrl) {
+      return res.status(500).json({
+        error:
+          "Faltan configurar PUBLIC_APP_URL o PUBLIC_API_URL",
+      });
+    }
+
+    /*
+     * ---------------------------------------------------------
+     * 6. CREAR PREFERENCE
+     * ---------------------------------------------------------
+     */
 
     const preferenceBody = {
       items: [
         {
           id: reservation.id,
           title: "Seña - Cancha",
-          description: "Seña para reservar la cancha",
+          description:
+            "Seña para reservar la cancha",
           quantity: 1,
           currency_id: "ARS",
           unit_price: amount,
         },
       ],
 
-      external_reference: reservation.id,
+      external_reference:
+        reservation.id,
 
       payer: {
-        email: reservation.customer_email,
+        email:
+          reservation.customer_email,
       },
 
       back_urls: {
-        success: `${appUrl}/pago/exito`,
-        failure: `${appUrl}/pago/error`,
-        pending: `${appUrl}/pago/pendiente`,
+        success:
+          `${appUrl}/pago/exito`,
+
+        failure:
+          `${appUrl}/pago/error`,
+
+        pending:
+          `${appUrl}/pago/pendiente`,
       },
 
       auto_return: "approved",
 
-      notification_url: `${apiUrl}/api/mercadopago/webhook`,
+      notification_url:
+        `${apiUrl}/api/mercadopago/webhook`,
     };
-
-    /*
-     * IMPORTANTE:
-     *
-     * NO usamos MERCADOPAGO_ACCESS_TOKEN.
-     *
-     * Usamos el Access Token OAuth guardado para ESTE vendedor.
-     */
 
     const mpResponse = await fetch(
       "https://api.mercadopago.com/checkout/preferences",
@@ -189,8 +239,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         method: "POST",
 
         headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${accessToken}`,
+          "Content-Type":
+            "application/json",
+
+          Authorization:
+            `Bearer ${account.access_token}`,
         },
 
         body: JSON.stringify(
@@ -199,63 +252,86 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       },
     );
 
-    console.log("=== ENVIANDO PREFERENCE ===");
+    const mpData =
+      await mpResponse.json();
 
-    console.log({
-      club_id,
-      reservation_id: reservation.id,
-      seller_mp_user_id: marketplaceAccount.mp_user_id,
-      amount,
-      appUrl,
-      apiUrl,
-      has_access_token: Boolean(accessToken),
-    });
+    console.log(
+      "Mercado Pago response:",
+      {
+        status:
+          mpResponse.status,
 
-    const mpData = await mpResponse.json();
+        ok:
+          mpResponse.ok,
 
-    console.log("Mercado Pago response:", {
-      status: mpResponse.status,
-      ok: mpResponse.ok,
-      id: mpData.id,
-      collector_id: mpData.collector_id,
-      marketplace_fee: mpData.marketplace_fee,
-    });
+        id:
+          mpData?.id,
+
+        collector_id:
+          mpData?.collector_id,
+
+        marketplace_fee:
+          mpData?.marketplace_fee,
+      },
+    );
 
     if (!mpResponse.ok) {
-      console.error("Mercado Pago preference error:", mpData);
+      console.error(
+        "Mercado Pago preference error:",
+        mpData,
+      );
 
-      return res.status(mpResponse.status).json({
-        error: "Mercado Pago rechazó la creación de la Preference",
-        details: mpData,
+      return res.status(
+        mpResponse.status,
+      ).json({
+        error:
+          "Mercado Pago rechazó la creación de la Preference",
+
+        details:
+          mpData,
       });
     }
 
     /*
      * ---------------------------------------------------------
-     * 5. Respuesta
+     * 7. RESPUESTA
      * ---------------------------------------------------------
      */
 
     return res.status(200).json({
       success: true,
 
-      preference_id: mpData.id,
+      preference_id:
+        mpData.id,
 
-      collector_id: mpData.collector_id ?? marketplaceAccount.mp_user_id,
+      collector_id:
+        mpData.collector_id ??
+        account.mp_user_id,
 
-      seller_mp_user_id: marketplaceAccount.mp_user_id,
+      seller_mp_user_id:
+        account.mp_user_id,
 
-      marketplace_fee: mpData.marketplace_fee ?? 0,
+      marketplace_fee:
+        mpData.marketplace_fee ?? 0,
 
-      init_point: mpData.init_point,
+      init_point:
+        mpData.init_point,
 
-      sandbox_init_point: mpData.sandbox_init_point,
+      sandbox_init_point:
+        mpData.sandbox_init_point,
     });
+
   } catch (error) {
-    console.error("Create preference error:", error);
+    console.error(
+      "Create preference error:",
+      error,
+    );
 
     return res.status(500).json({
-      error: "Error interno creando el pago",
+      error:
+        error instanceof Error
+          ? error.message
+          : "Error interno creando el pago",
     });
   }
 }

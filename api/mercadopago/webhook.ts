@@ -5,8 +5,6 @@ import type {
 
 import { createClient } from "@supabase/supabase-js";
 
-import { getValidMercadoPagoToken } from "./mercadopago-token";
-
 const supabaseAdmin = createClient(
   process.env.SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!,
