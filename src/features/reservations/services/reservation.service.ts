@@ -8,7 +8,6 @@ import type {
   UpdateReservationForm,
 } from "../types/reservation.types";
 import { validateReservation } from "../utils/reservationValidator";
-import { canCreateReservation } from "../utils/canCreateReservation";
 
 class ReservationService {
   async listByDay(
@@ -54,43 +53,38 @@ class ReservationService {
     return data;
   }
 
-  async create(clubId: string, form: CreateReservationForm) {
-    const date = form.starts_at.substring(0, 10);
+  async create(
+  clubId: string,
+  form: CreateReservationForm,
+) {
+  validateReservation(form);
 
-    const reservations = await this.listByDay(form.resource_id, date);
-
-    canCreateReservation(
-      reservations,
-
-      form.starts_at,
-
-      form.ends_at,
+  if (form.source !== "admin") {
+    throw new Error(
+      "Una reserva administrativa debe tener origen admin.",
     );
-
-    validateReservation(form);
-
-    const { data, error } = await supabase
-
-      .from("reservations")
-
-      .insert({
-        club_id: clubId,
-
-        ...form,
-
-        status: form.source === "admin" ? "confirmed" : "pending_payment",
-
-        payment_status: form.source === "admin" ? "not_required" : "pending",
-      })
-
-      .select()
-
-      .single();
-
-    if (error) throw error;
-
-    return data;
   }
+
+  const { data, error } = await supabase.rpc(
+    "create_admin_reservation",
+    {
+      p_club_id: clubId,
+      p_resource_id: form.resource_id,
+      p_customer_name: form.customer_name.trim(),
+      p_customer_phone: form.customer_phone.trim(),
+      p_customer_email: form.customer_email.trim(),
+      p_starts_at: form.starts_at,
+      p_ends_at: form.ends_at,
+      p_notes: form.notes?.trim() || null,
+    },
+  );
+
+  if (error) {
+    throw error;
+  }
+
+  return data as Reservation;
+}
 
   async createPublic(form: CreateReservationForm) {
     validateReservation(form);
@@ -232,62 +226,51 @@ class ReservationService {
 
     return data;
   }
-  async update(id: string, values: UpdateReservationForm) {
+  async update(
+    id: string,
+    values: UpdateReservationForm,
+  ) {
     const current = await this.getById(id);
 
-    const resourceId = current.resource_id;
+    const startsAt =
+      values.starts_at ?? current.starts_at;
 
-    const startsAt = values.starts_at ?? current.starts_at;
+    const endsAt =
+      values.ends_at ?? current.ends_at;
 
-    const endsAt = values.ends_at ?? current.ends_at;
+    const customerName =
+      values.customer_name ?? current.customer_name;
 
-    const date = startsAt.substring(0, 10);
+    const customerPhone =
+      values.customer_phone ?? current.customer_phone;
 
-    const reservations = await this.listByDay(resourceId, date);
+    const customerEmail =
+      values.customer_email ?? current.customer_email;
 
-    const collision = reservations.find((reservation) => {
-      // Ignoramos la propia reserva
-      if (reservation.id === id) {
-        return false;
-      }
+    const notes = current.notes ?? null;
 
-      // Una reserva cancelada
-      // no bloquea el horario
-      if (reservation.status === "cancelled") {
-        return false;
-      }
-
-      const reservationStart = reservation.starts_at.substring(11, 16);
-
-      const reservationEnd = reservation.ends_at.substring(11, 16);
-
-      const newStart = startsAt.substring(11, 16);
-
-      const newEnd = endsAt.substring(11, 16);
-
-      return newStart < reservationEnd && newEnd > reservationStart;
-    });
-
-    if (collision) {
-      throw new Error("Ese horario ya se encuentra reservado.");
-    }
-
-    const { data, error } = await supabase
-      .from("reservations")
-      .update({
-        ...values,
-
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", id)
-      .select()
-      .single();
+    const { data, error } = await supabase.rpc(
+      "update_reservation",
+      {
+        p_reservation_id: id,
+        p_resource_id: current.resource_id,
+        p_starts_at: startsAt,
+        p_ends_at: endsAt,
+        p_customer_name: customerName,
+        p_customer_phone: customerPhone,
+        p_customer_email: customerEmail,
+        p_notes: notes,
+      },
+    );
 
     if (error) {
-      throw error;
+      throw new Error(
+        error.message ||
+          "No se pudo actualizar la reserva.",
+      );
     }
 
-    return data;
+    return data as Reservation;
   }
 }
 

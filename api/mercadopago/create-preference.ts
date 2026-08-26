@@ -23,59 +23,55 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
     }
 
-    console.log("=== CREATE PREFERENCE ===");
-    console.log("club_id:", club_id);
-    console.log("reservation_id:", reservation_id);
-
     /*
      * ---------------------------------------------------------
      * 1. Buscar la conexión de Mercado Pago del club
      * ---------------------------------------------------------
      */
 
-    const { data: account, error: accountError } = await supabaseAdmin
-      .from("club_marketplace_accounts")
-      .select(
-        `
-          club_id,
-          provider,
-          mp_user_id,
-          access_token,
-          token_type,
-          expires_at
-        `,
-      )
-      .eq("club_id", club_id)
-      .eq("provider", "mercadopago")
-      .eq("active", true)
-      .maybeSingle();
+    // const { data: account, error: accountError } = await supabaseAdmin
+    //   .from("club_marketplace_accounts")
+    //   .select(
+    //     `
+    //       club_id,
+    //       provider,
+    //       mp_user_id,
+    //       access_token,
+    //       token_type,
+    //       expires_at
+    //     `,
+    //   )
+    //   .eq("club_id", club_id)
+    //   .eq("provider", "mercadopago")
+    //   .eq("active", true)
+    //   .maybeSingle();
 
-    if (accountError) {
-      console.error("Error buscando cuenta Mercado Pago:", accountError);
+    // if (accountError) {
+    //   console.error("Error buscando cuenta Mercado Pago:", accountError);
 
-      return res.status(500).json({
-        error: "No se pudo obtener la cuenta de Mercado Pago",
-      });
-    }
+    //   return res.status(500).json({
+    //     error: "No se pudo obtener la cuenta de Mercado Pago",
+    //   });
+    // }
 
-    if (!account) {
-      return res.status(400).json({
-        error: "El club no tiene una cuenta de Mercado Pago conectada",
-      });
-    }
+    // if (!account) {
+    //   return res.status(400).json({
+    //     error: "El club no tiene una cuenta de Mercado Pago conectada",
+    //   });
+    // }
 
-    if (!account.access_token) {
-      return res.status(400).json({
-        error: "La cuenta de Mercado Pago no tiene Access Token",
-      });
-    }
+    // if (!account.access_token) {
+    //   return res.status(400).json({
+    //     error: "La cuenta de Mercado Pago no tiene Access Token",
+    //   });
+    // }
 
-    console.log("Mercado Pago seller:", {
-      mp_user_id: account.mp_user_id,
-      token_type: account.token_type,
-      expires_at: account.expires_at,
-      has_access_token: Boolean(account.access_token),
-    });
+    // console.log("Mercado Pago seller:", {
+    //   mp_user_id: account.mp_user_id,
+    //   token_type: account.token_type,
+    //   expires_at: account.expires_at,
+    //   has_access_token: Boolean(account.access_token),
+    // });
 
     /*
      * ---------------------------------------------------------
@@ -225,7 +221,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       preference_id: mpData.id,
 
-      collector_id: mpData.collector_id ?? account.mp_user_id,
+      collector_id: mpData.collector_id ?? marketplaceAccount.mp_user_id,
 
       seller_mp_user_id: marketplaceAccount.mp_user_id,
 
