@@ -86,6 +86,22 @@ class PublicBookingService {
 
   return data as Reservation;
 }
+async cancelReservation(
+  reservationId: string,
+): Promise<Reservation> {
+  const { data, error } = await supabase.rpc(
+    "cancel_public_reservation",
+    {
+      p_reservation_id: reservationId,
+    },
+  );
+
+  if (error) {
+    throw error;
+  }
+
+  return data as Reservation;
+}
 }
 
 export const publicBookingService = new PublicBookingService();

@@ -217,14 +217,15 @@ export default async function handler(
       },
 
       back_urls: {
-        success:
-          `${appUrl}/pago/exito`,
-
-        failure:
-          `${appUrl}/pago/error`,
-
-        pending:
-          `${appUrl}/pago/pendiente`,
+        success: `${appUrl}/pago/exito?reservation_id=${encodeURIComponent(
+          reservation.id,
+        )}`,
+        failure: `${appUrl}/pago/error?reservation_id=${encodeURIComponent(
+          reservation.id,
+        )}`,
+        pending: `${appUrl}/pago/pendiente?reservation_id=${encodeURIComponent(
+          reservation.id,
+        )}`,
       },
 
       auto_return: "approved",

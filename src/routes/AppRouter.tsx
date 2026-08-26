@@ -14,6 +14,9 @@ import EditResourcePage from "@/features/resources/pages/EditResourcePage";
 // import CustomersPage from "@/features/customers/pages/CustomersPage";
 import CalendarPage from "@/features/calendar/pages/CalendarPage";
 import PublicBookingPage from "@/features/public-booking/pages/PublicBookingPage";
+import PaymentSuccessPage from "@/features/public-booking/pages/PaymentSuccessPage";
+import PaymentErrorPage from "@/features/public-booking/pages/PaymentErrorPage";
+import PaymentPendingPage from "@/features/public-booking/pages/PaymentPendingPage";
 
 export function AppRouter() {
   return (
@@ -37,6 +40,21 @@ export function AppRouter() {
       <Route
         path="/reservar/:slug"
         element={<PublicBookingPage />}
+      />
+
+      <Route
+        path="/pago/exito"
+        element={<PaymentSuccessPage />}
+      />
+
+      <Route
+        path="/pago/error"
+        element={<PaymentErrorPage />}
+      />
+
+      <Route
+        path="/pago/pendiente"
+        element={<PaymentPendingPage />}
       />
 
       <Route
