@@ -289,6 +289,15 @@ function SigninView({ onBack }: { onBack: () => void }) {
           required
         />
 
+        <div className="flex justify-end">
+          <Link
+            to="/forgot-password"
+            className="text-sm text-primary hover:underline"
+          >
+            ¿Olvidaste tu contraseña?
+          </Link>
+        </div>
+
         <Button
           disabled={loading}
           className="mt-2 flex h-11 w-full items-center justify-center gap-2 rounded-full bg-primary text-sm font-medium text-primary-foreground disabled:opacity-60"

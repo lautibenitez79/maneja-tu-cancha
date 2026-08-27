@@ -1,9 +1,4 @@
-import {
-  createContext,
-  useEffect,
-  useState,
-  type ReactNode,
-} from "react";
+import { createContext, useEffect, useState, type ReactNode } from "react";
 
 import type { User, Session } from "@supabase/supabase-js";
 
@@ -19,7 +14,6 @@ import type {
 } from "../features/auth/types/auth.types";
 
 interface AuthContextType {
-
   user: User | null;
 
   session: Session | null;
@@ -35,10 +29,13 @@ interface AuthContextType {
   logout(): Promise<void>;
 
   refreshProfile(): Promise<void>;
+
+  resetPasswordForEmail(email: string): Promise<void>;
+
+  updatePassword(password: string): Promise<void>;
 }
 
-export const AuthContext =
-  createContext<AuthContextType | null>(null);
+export const AuthContext = createContext<AuthContextType | null>(null);
 
 interface Props {
   children: ReactNode;
@@ -47,110 +44,96 @@ interface Props {
 export function AuthProvider({ children }: Props) {
   const [user, setUser] = useState<User | null>(null);
 
-  const [session, setSession] =
-    useState<Session | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
 
   const [loading, setLoading] = useState(true);
 
-  const [profile, setProfile] =
-  useState<Profile | null>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
 
   useEffect(() => {
+    async function initialize() {
+      const currentUser = await authService.getUser();
 
-  async function initialize() {
+      setUser(currentUser);
 
-    const currentUser =
-      await authService.getUser();
+      if (currentUser) {
+        try {
+          const profile = await profileService.getProfile(currentUser.id);
 
-    setUser(currentUser);
-
-    if (currentUser) {
-      try {
-        const profile =
-          await profileService.getProfile(currentUser.id);
-
-        setProfile(profile);
-      } catch (error) {
-        console.error("No se encontró el perfil", error);
-        setProfile(null);
+          setProfile(profile);
+        } catch (error) {
+          console.error("No se encontró el perfil", error);
+          setProfile(null);
+        }
       }
 
+      setLoading(false);
     }
 
-    setLoading(false);
+    initialize();
 
+    const {
+      data: { subscription },
+    } = authService.onAuthStateChange(async (_event, session) => {
+      try {
+        setSession(session);
+
+        const currentUser = session?.user ?? null;
+
+        setUser(currentUser);
+
+        if (currentUser) {
+          const profile = await profileService.getProfile(currentUser.id);
+          setProfile(profile);
+        } else {
+          setProfile(null);
+        }
+      } catch (error) {
+        console.error(error);
+        setProfile(null);
+      } finally {
+        setLoading(false);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  async function login(data: LoginData) {
+    await authService.signIn(data);
   }
 
-  initialize();
-
-  const {
-    data: { subscription },
-  } = authService.onAuthStateChange(async (_event, session) => {
-  try {
-    setSession(session);
-
-    const currentUser = session?.user ?? null;
-
-    setUser(currentUser);
-
-    if (currentUser) {
-      const profile = await profileService.getProfile(currentUser.id);
-      setProfile(profile);
-    } else {
-      setProfile(null);
-    }
-  } catch (error) {
-    console.error(error);
-    setProfile(null);
-  } finally {
-    setLoading(false);
+  async function register(data: RegisterData) {
+    await authService.signUp(data);
   }
-});
-
-  return () => subscription.unsubscribe();
-
-}, []);
-
-async function login(
-  data: LoginData
-) {
-  await authService.signIn(data);
-}
-
-async function register(
-  data: RegisterData
-) {
-  await authService.signUp(data);
-}
 
   async function logout() {
     await authService.signOut();
   }
 
+  async function resetPasswordForEmail(email: string) {
+    await authService.resetPasswordForEmail(email);
+  }
+
+  async function updatePassword(password: string) {
+    await authService.updatePassword(password);
+  }
+
   async function refreshProfile() {
+    if (!user) {
+      setProfile(null);
 
-  if (!user) {
+      return;
+    }
 
-    setProfile(null);
+    try {
+      const profile = await profileService.getProfile(user.id);
 
-    return;
-
+      setProfile(profile);
+    } catch (error) {
+      console.error(error);
+    }
   }
-
-  try {
-
-    const profile =
-      await profileService.getProfile(user.id);
-
-    setProfile(profile);
-
-  } catch (error) {
-
-    console.error(error);
-
-  }
-
-}
 
   return (
     <AuthContext.Provider
@@ -163,6 +146,8 @@ async function register(
         register,
         logout,
         refreshProfile,
+        resetPasswordForEmail,
+        updatePassword,
       }}
     >
       {children}
