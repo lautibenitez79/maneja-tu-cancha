@@ -18,6 +18,7 @@ import PaymentSuccessPage from "@/features/public-booking/pages/PaymentSuccessPa
 import PaymentErrorPage from "@/features/public-booking/pages/PaymentErrorPage";
 import PaymentPendingPage from "@/features/public-booking/pages/PaymentPendingPage";
 import ForgotPassword from "./ForgotPassword";
+import ResetPassword from "./ResetPassword";
 
 export function AppRouter() {
   return (
@@ -66,6 +67,11 @@ export function AppRouter() {
       <Route
         path="/forgot-password"
         element={<ForgotPassword />}
+      />
+
+      <Route
+        path="/reset-password"
+        element={<ResetPassword />}
       />
 
       <Route
