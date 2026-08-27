@@ -24,6 +24,8 @@ interface AuthContextType {
 
   login(data: LoginData): Promise<void>;
 
+  loginWithGoogle(): Promise<void>;
+
   register(data: RegisterData): Promise<void>;
 
   logout(): Promise<void>;
@@ -135,6 +137,10 @@ export function AuthProvider({ children }: Props) {
     }
   }
 
+  async function loginWithGoogle() {
+    await authService.signInWithGoogle();
+  }
+
   return (
     <AuthContext.Provider
       value={{
@@ -143,6 +149,7 @@ export function AuthProvider({ children }: Props) {
         profile,
         loading,
         login,
+        loginWithGoogle,
         register,
         logout,
         refreshProfile,

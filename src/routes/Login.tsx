@@ -29,7 +29,7 @@ type Mode = "choose" | "signin" | "signup";
 
 function LoginPage() {
   const navigate = useNavigate();
-  const {user} = useAuth();
+  const { user } = useAuth();
   const [mode, setMode] = useState<Mode>("choose");
 
   useEffect(() => {
@@ -43,13 +43,6 @@ function LoginPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-5 py-10">
       <div className="w-full max-w-md">
-        <Link
-          to="/"
-          className="mb-6 inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeft className="h-4 w-4" /> Volver
-        </Link>
-
         <motion.div
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
@@ -93,31 +86,24 @@ function ChooseView({
   onSignup: () => void;
   onSignin: () => void;
 }) {
-  // const {
-  //   loginWithGoogle,
-  //   } = useAuth();
+  const { loginWithGoogle } = useAuth();
 
-    // async function google() {
+  const [loading, setLoading] = useState(false);
 
-    //   setLoading(true);
+  async function google() {
+    try {
+      setLoading(true);
 
-    //   try {
+      await loginWithGoogle();
+    } catch (error) {
+      console.error(error);
 
-    //     await loginWithGoogle();
+      toast.error("No pudimos iniciar sesión con Google.");
 
-    //   } catch {
+      setLoading(false);
+    }
+  }
 
-    //     toast.error(
-    //       "No pudimos iniciar sesión con Google."
-    //     );
-
-    //   } finally {
-
-    //     setLoading(false);
-
-    //   }
-
-    // }
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -125,17 +111,19 @@ function ChooseView({
       exit={{ opacity: 0 }}
     >
       <h1 className="text-2xl font-semibold tracking-tight">Bienvenido</h1>
+
       <p className="mt-1 text-sm text-muted-foreground">
         Ingresá o creá tu cuenta para empezar.
       </p>
 
       <Button
-        // // onClick={google}
-        // disabled={loading}
+        onClick={google}
+        disabled={loading}
         className="mt-6 flex h-11 w-full items-center justify-center gap-3 rounded-full border border-border bg-background text-sm font-medium transition-colors hover:bg-secondary disabled:opacity-60"
       >
         <GoogleIcon />
-        Ingresar con Google
+
+        {loading ? "Conectando..." : "Ingresar con Google"}
       </Button>
 
       <div className="my-5 flex items-center gap-3 text-xs text-muted-foreground">
@@ -178,7 +166,6 @@ function SignupView({ onBack }: { onBack: () => void }) {
     const email = String(fd.get("email") ?? "");
     const password = String(fd.get("password") ?? "");
 
-
     try {
       setLoading(true);
 
@@ -197,25 +184,21 @@ function SignupView({ onBack }: { onBack: () => void }) {
   }
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+    >
       <BackBtn onBack={onBack} />
 
-      <h1 className="text-2xl font-semibold tracking-tight">
-        Crear cuenta
-      </h1>
+      <h1 className="text-2xl font-semibold tracking-tight">Crear cuenta</h1>
 
       <form onSubmit={submit} className="mt-5 space-y-3">
-
         <TInput name="full_name" label="Nombre" required />
 
         <TInput name="email" label="Mail" type="email" required />
 
-        <TInput
-          name="password"
-          label="Contraseña"
-          type="password"
-          required
-        />
+        <TInput name="password" label="Contraseña" type="password" required />
 
         <TInput
           name="confirm"
@@ -228,13 +211,9 @@ function SignupView({ onBack }: { onBack: () => void }) {
           disabled={loading}
           className="mt-2 flex h-11 w-full items-center justify-center gap-2 rounded-full bg-primary text-sm font-medium text-primary-foreground disabled:opacity-60"
         >
-          {loading && (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          )}
-
+          {loading && <Loader2 className="h-4 w-4 animate-spin" />}
           Crear cuenta
         </Button>
-
       </form>
     </motion.div>
   );
@@ -257,7 +236,6 @@ function SigninView({ onBack }: { onBack: () => void }) {
         email: String(fd.get("email") ?? ""),
         password: String(fd.get("password") ?? ""),
       });
-
     } catch (err: any) {
       toast.error(err.message);
     } finally {
@@ -266,28 +244,19 @@ function SigninView({ onBack }: { onBack: () => void }) {
   }
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+    >
       <BackBtn onBack={onBack} />
 
-      <h1 className="text-2xl font-semibold tracking-tight">
-        Ingresar
-      </h1>
+      <h1 className="text-2xl font-semibold tracking-tight">Ingresar</h1>
 
       <form onSubmit={submit} className="mt-5 space-y-3">
+        <TInput name="email" label="Mail" type="email" required />
 
-        <TInput
-          name="email"
-          label="Mail"
-          type="email"
-          required
-        />
-
-        <TInput
-          name="password"
-          label="Contraseña"
-          type="password"
-          required
-        />
+        <TInput name="password" label="Contraseña" type="password" required />
 
         <div className="flex justify-end">
           <Link
@@ -302,14 +271,9 @@ function SigninView({ onBack }: { onBack: () => void }) {
           disabled={loading}
           className="mt-2 flex h-11 w-full items-center justify-center gap-2 rounded-full bg-primary text-sm font-medium text-primary-foreground disabled:opacity-60"
         >
-          {loading && (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          )}
-
+          {loading && <Loader2 className="h-4 w-4 animate-spin" />}
           Ingresar
-
         </Button>
-
       </form>
     </motion.div>
   );
