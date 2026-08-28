@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 
 import { format, addDays, startOfToday } from "date-fns";
 
@@ -30,6 +30,8 @@ export default function PublicBookingPage() {
   const { slug } = useParams<{
     slug: string;
   }>();
+
+  const navigate = useNavigate();
 
   const [club, setClub] = useState<Club | null>(null);
 
@@ -129,24 +131,35 @@ export default function PublicBookingPage() {
     loadSlots();
   }, [selectedResource, selectedDate]);
 
-async function handleCreateReservation(values: {
-  customer_name: string;
-  customer_phone: string;
-  customer_email: string;
-}) {
-  if (!club || !selectedResource || !selectedSlot) {
-    return;
-  }
+  async function handleCreateReservation(values: {
+    customer_name: string;
+    customer_phone: string;
+    customer_email: string;
+  }) {
+    if (!club || !selectedResource || !selectedSlot) {
+      return;
+    }
 
-  try {
-    setCreatingReservation(true);
-    setReservationError("");
+    // Abrimos la pestaña inmediatamente como consecuencia
+    // directa del click del usuario.
+    const paymentWindow = window.open("", "_blank");
 
-    /*
-     * 1. Crear la reserva
-     */
-    const reservation =
-      await publicBookingService.createReservation({
+    if (!paymentWindow) {
+      setReservationError(
+        "No pudimos abrir la ventana de pago. Permití las ventanas emergentes de este sitio e intentá nuevamente.",
+      );
+
+      return;
+    }
+
+    try {
+      setCreatingReservation(true);
+      setReservationError("");
+
+      /*
+       * 1. Crear la reserva
+       */
+      const reservation = await publicBookingService.createReservation({
         resourceId: selectedResource.id,
         customerName: values.customer_name,
         customerPhone: values.customer_phone,
@@ -155,51 +168,52 @@ async function handleCreateReservation(values: {
         endsAt: selectedSlot.ends_at,
       });
 
-    console.log(
-      "Reserva creada:",
-      reservation,
-    );
+      console.log("Reserva creada:", reservation);
 
-    /*
-     * 2. Crear Preference de Mercado Pago
-     */
-    const preference =
-      await mercadoPagoService.createPreference({
+      /*
+       * 2. Crear Preference de Mercado Pago
+       */
+      const preference = await mercadoPagoService.createPreference({
         clubId: club.id,
         reservationId: reservation.id,
       });
 
-    console.log(
-      "Preference Mercado Pago creada:",
-      preference,
-    );
+      console.log("Preference Mercado Pago creada:", preference);
 
-    /*
-     * 3. Redirigir al Checkout Pro
-     */
-    if (!preference.init_point) {
-      throw new Error(
-        "Mercado Pago no devolvió init_point.",
+      /*
+       * 3. Validar init_point
+       */
+      if (!preference.init_point) {
+        throw new Error("Mercado Pago no devolvió init_point.");
+      }
+
+      /*
+       * 4. Mandar Mercado Pago a la nueva pestaña
+       */
+      paymentWindow.location.href = preference.init_point;
+
+      /*
+       * 5. Mantener esta pestaña en Maneja Tu Cancha
+       */
+      navigate(
+        `/pago/pendiente?reservation_id=${encodeURIComponent(reservation.id)}`,
       );
+    } catch (error) {
+      console.error("Error creando reserva/pago:", error);
+
+      // Si algo falla antes de abrir Mercado Pago,
+      // cerramos la pestaña que habíamos reservado.
+      paymentWindow.close();
+
+      setReservationError(
+        error instanceof Error
+          ? error.message
+          : "No se pudo realizar la reserva. Intentá nuevamente.",
+      );
+    } finally {
+      setCreatingReservation(false);
     }
-
-    window.location.href =
-      preference.init_point;
-  } catch (error) {
-    console.error(
-      "Error creando reserva/pago:",
-      error,
-    );
-
-    setReservationError(
-      error instanceof Error
-        ? error.message
-        : "No se pudo realizar la reserva. Intentá nuevamente.",
-    );
-  } finally {
-    setCreatingReservation(false);
   }
-}
 
   if (loading) {
     return <Loading />;
