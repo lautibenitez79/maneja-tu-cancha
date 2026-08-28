@@ -54,7 +54,7 @@ export default function Button({
 
         {
 
-          "bg-[var(--color-primary)] text-white hover:bg-[var(--color-primary-hover)]":
+          "bg-[var(--color-primary)] text-primary-foreground hover:bg-[var(--color-primary-hover)]":
             variant === "primary",
 
           "border bg-[var(--color-card)]":

@@ -7,30 +7,13 @@ import { Link, useNavigate } from "react-router-dom";
 import Input from "../components/ui/Input/index";
 import Button from "../components/ui/Button/index";
 
-// export const Route = createFileRoute("/login")({
-//   head: () => ({
-//     meta: [
-//       { title: "Ingresar — Maneja Tu Cancha" },
-//       {
-//         name: "description",
-//         content: "Ingresá o registrate para comenzar a administrar tu cancha.",
-//       },
-//       { property: "og:title", content: "Ingresar — Maneja Tu Cancha" },
-//       { property: "og:description", content: "Accedé a tu panel." },
-//       { property: "og:url", content: "/login" },
-//       { name: "robots", content: "noindex" },
-//     ],
-//     links: [{ rel: "canonical", href: "/login" }],
-//   }),
-//   component: LoginPage,
-// });
-
-type Mode = "choose" | "signin" | "signup";
+type Mode = "signin" | "signup";
 
 function LoginPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [mode, setMode] = useState<Mode>("choose");
+
+  const [mode, setMode] = useState<Mode>("signin");
 
   useEffect(() => {
     if (user) {
@@ -43,34 +26,54 @@ function LoginPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-5 py-10">
       <div className="w-full max-w-md">
+        {/* Atrás fuera del formulario */}
+        {mode === "signup" && (
+          <motion.div
+            initial={{ opacity: 0, x: -6 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="mb-3"
+          >
+            <Button
+              type="button"
+              onClick={() => setMode("signin")}
+              className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Atrás
+            </Button>
+          </motion.div>
+        )}
+
         <motion.div
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.35 }}
           className="rounded-[var(--radius-card)] border border-border/70 bg-card p-7 shadow-[var(--shadow-soft)]"
         >
+          {/* Branding */}
           <div className="mb-6 flex items-center gap-2">
             <span className="grid h-9 w-9 place-items-center rounded-lg bg-primary text-primary-foreground">
               <span className="text-sm font-bold">M</span>
             </span>
+
             <span className="text-base font-semibold tracking-tight">
               Maneja Tu Cancha
             </span>
           </div>
 
           <AnimatePresence mode="wait">
-            {mode === "choose" && (
-              <ChooseView
-                key="choose"
+            {mode === "signin" && (
+              <SigninView
+                key="signin"
                 onSignup={() => setMode("signup")}
-                onSignin={() => setMode("signin")}
               />
             )}
+
             {mode === "signup" && (
-              <SignupView key="signup" onBack={() => setMode("choose")} />
-            )}
-            {mode === "signin" && (
-              <SigninView key="signin" onBack={() => setMode("choose")} />
+              <SignupView
+                key="signup"
+                onBack={() => setMode("signin")}
+              />
             )}
           </AnimatePresence>
         </motion.div>
@@ -79,150 +82,15 @@ function LoginPage() {
   );
 }
 
-function ChooseView({
-  onSignup,
-  onSignin,
-}: {
-  onSignup: () => void;
-  onSignin: () => void;
-}) {
-  const { loginWithGoogle } = useAuth();
+/* =========================================================
+   LOGIN
+========================================================= */
 
+function SigninView({ onSignup }: { onSignup: () => void }) {
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
 
-  async function google() {
-    try {
-      setLoading(true);
-
-      await loginWithGoogle();
-    } catch (error) {
-      console.error(error);
-
-      toast.error("No pudimos iniciar sesión con Google.");
-
-      setLoading(false);
-    }
-  }
-
-  return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-    >
-      <h1 className="text-2xl font-semibold tracking-tight">Bienvenido</h1>
-
-      <p className="mt-1 text-sm text-muted-foreground">
-        Ingresá o creá tu cuenta para empezar.
-      </p>
-
-      <Button
-        onClick={google}
-        disabled={loading}
-        className="mt-6 flex h-11 w-full items-center justify-center gap-3 rounded-full border border-border bg-background text-sm font-medium transition-colors hover:bg-secondary disabled:opacity-60"
-      >
-        <GoogleIcon />
-
-        {loading ? "Conectando..." : "Ingresar con Google"}
-      </Button>
-
-      <div className="my-5 flex items-center gap-3 text-xs text-muted-foreground">
-        <div className="h-px flex-1 bg-border" />
-        o
-        <div className="h-px flex-1 bg-border" />
-      </div>
-
-      <Button
-        onClick={onSignup}
-        className="flex h-11 w-full items-center justify-center rounded-full bg-primary text-sm font-medium text-primary-foreground shadow-[var(--shadow-glow)] transition-transform hover:scale-[1.01]"
-      >
-        Registrarse con Email
-      </Button>
-
-      <p className="mt-5 text-center text-sm text-muted-foreground">
-        ¿Ya tenés cuenta?{" "}
-        <Button
-          onClick={onSignin}
-          className="font-medium text-primary hover:underline"
-        >
-          Ingresar
-        </Button>
-      </p>
-    </motion.div>
-  );
-}
-
-function SignupView({ onBack }: { onBack: () => void }) {
-  const [loading, setLoading] = useState(false);
-
-  const { register } = useAuth();
-
-  async function submit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-
-    const fd = new FormData(e.currentTarget);
-
-    const fullName = String(fd.get("full_name") ?? "");
-    const email = String(fd.get("email") ?? "");
-    const password = String(fd.get("password") ?? "");
-
-    try {
-      setLoading(true);
-
-      await register({
-        email,
-        password,
-        fullName,
-      });
-
-      toast.success("Cuenta creada");
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-    >
-      <BackBtn onBack={onBack} />
-
-      <h1 className="text-2xl font-semibold tracking-tight">Crear cuenta</h1>
-
-      <form onSubmit={submit} className="mt-5 space-y-3">
-        <TInput name="full_name" label="Nombre" required />
-
-        <TInput name="email" label="Mail" type="email" required />
-
-        <TInput name="password" label="Contraseña" type="password" required />
-
-        <TInput
-          name="confirm"
-          label="Confirmar contraseña"
-          type="password"
-          required
-        />
-
-        <Button
-          disabled={loading}
-          className="mt-2 flex h-11 w-full items-center justify-center gap-2 rounded-full bg-primary text-sm font-medium text-primary-foreground disabled:opacity-60"
-        >
-          {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-          Crear cuenta
-        </Button>
-      </form>
-    </motion.div>
-  );
-}
-
-function SigninView({ onBack }: { onBack: () => void }) {
-  const [loading, setLoading] = useState(false);
-
-  const { login } = useAuth();
+  const { login, loginWithGoogle } = useAuth();
 
   async function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -237,9 +105,27 @@ function SigninView({ onBack }: { onBack: () => void }) {
         password: String(fd.get("password") ?? ""),
       });
     } catch (err: any) {
-      toast.error(err.message);
+      console.error(err);
+
+      toast.error(
+        err?.message || "No pudimos iniciar sesión."
+      );
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function google() {
+    try {
+      setGoogleLoading(true);
+
+      await loginWithGoogle();
+    } catch (error) {
+      console.error(error);
+
+      toast.error("No pudimos iniciar sesión con Google.");
+
+      setGoogleLoading(false);
     }
   }
 
@@ -249,14 +135,24 @@ function SigninView({ onBack }: { onBack: () => void }) {
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
     >
-      <BackBtn onBack={onBack} />
-
-      <h1 className="text-2xl font-semibold tracking-tight">Ingresar</h1>
+      <h1 className="text-2xl font-semibold tracking-tight">
+        Ingresar
+      </h1>
 
       <form onSubmit={submit} className="mt-5 space-y-3">
-        <TInput name="email" label="Mail" type="email" required />
+        <TInput
+          name="email"
+          label="Mail"
+          type="email"
+          required
+        />
 
-        <TInput name="password" label="Contraseña" type="password" required />
+        <TInput
+          name="password"
+          label="Contraseña"
+          type="password"
+          required
+        />
 
         <div className="flex justify-end">
           <Link
@@ -268,27 +164,244 @@ function SigninView({ onBack }: { onBack: () => void }) {
         </div>
 
         <Button
+          type="submit"
           disabled={loading}
           className="mt-2 flex h-11 w-full items-center justify-center gap-2 rounded-full bg-primary text-sm font-medium text-primary-foreground disabled:opacity-60"
         >
-          {loading && <Loader2 className="h-4 w-4 animate-spin" />}
+          {loading && (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          )}
+
           Ingresar
         </Button>
       </form>
+
+      {/* Google - LOGIN */}
+      <Button
+        type="button"
+        onClick={google}
+        disabled={googleLoading}
+        className="mt-3 flex h-11 w-full items-center justify-center gap-3 rounded-full border border-border bg-background text-sm font-medium transition-colors hover:bg-secondary disabled:opacity-60"
+      >
+        <GoogleIcon />
+
+        {googleLoading
+          ? "Conectando..."
+          : "Ingresar con Google"}
+      </Button>
+
+      <Divider />
+
+      {/* REGISTRO */}
+      <div className="text-center">
+        <p className="mb-3 text-sm text-muted-foreground">
+          ¿No tenés cuenta?
+        </p>
+
+        <div className="flex flex-row gap-4">
+          <Button
+            type="button"
+            onClick={onSignup}
+            className="flex h-11 w-full items-center justify-center rounded-full bg-primary text-sm font-medium text-primary-foreground shadow-[var(--shadow-glow)] transition-transform hover:scale-[1.01]"
+          >
+            Registrarse con Email
+          </Button>
+
+          <GoogleSignupButton />
+        </div>
+      </div>
     </motion.div>
   );
 }
 
-function BackBtn({ onBack }: { onBack: () => void }) {
+/* =========================================================
+   REGISTRO
+========================================================= */
+
+function SignupView({ onBack }: { onBack: () => void }) {
+  const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+
+  const { register, loginWithGoogle } = useAuth();
+
+  async function submit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+
+    const fd = new FormData(e.currentTarget);
+
+    const fullName = String(fd.get("full_name") ?? "").trim();
+    const email = String(fd.get("email") ?? "").trim();
+    const password = String(fd.get("password") ?? "");
+    const confirmPassword = String(
+      fd.get("confirm") ?? ""
+    );
+
+    /* Validación de contraseñas */
+    if (password !== confirmPassword) {
+      toast.error("Las contraseñas no coinciden.");
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      await register({
+        email,
+        password,
+        fullName,
+      });
+
+      toast.success("Cuenta creada");
+    } catch (err: any) {
+      console.error(err);
+
+      toast.error(
+        err?.message || "No pudimos crear la cuenta."
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function google() {
+    try {
+      setGoogleLoading(true);
+
+      await loginWithGoogle();
+    } catch (error) {
+      console.error(error);
+
+      toast.error("No pudimos registrarte con Google.");
+
+      setGoogleLoading(false);
+    }
+  }
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+    >
+      <h1 className="text-2xl font-semibold tracking-tight">
+        Crear cuenta
+      </h1>
+
+      <form onSubmit={submit} className="mt-5 space-y-3">
+        <TInput
+          name="full_name"
+          label="Nombre"
+          required
+        />
+
+        <TInput
+          name="email"
+          label="Mail"
+          type="email"
+          required
+        />
+
+        <TInput
+          name="password"
+          label="Contraseña"
+          type="password"
+          required
+        />
+
+        <TInput
+          name="confirm"
+          label="Confirmar contraseña"
+          type="password"
+          required
+        />
+
+        <Button
+          type="submit"
+          disabled={loading}
+          className="mt-2 flex h-11 w-full items-center justify-center gap-2 rounded-full bg-primary text-sm font-medium text-primary-foreground disabled:opacity-60"
+        >
+          {loading && (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          )}
+
+          Crear cuenta
+        </Button>
+      </form>
+
+      <Divider />
+
+      <Button
+        type="button"
+        onClick={google}
+        disabled={googleLoading}
+        className="flex h-11 w-full items-center justify-center gap-3 rounded-full border border-border bg-background text-sm font-medium transition-colors hover:bg-secondary disabled:opacity-60"
+      >
+        <GoogleIcon />
+
+        {googleLoading
+          ? "Conectando..."
+          : "Registrarse con Google"}
+      </Button>
+    </motion.div>
+  );
+}
+
+/* =========================================================
+   GOOGLE SIGNUP
+========================================================= */
+
+function GoogleSignupButton() {
+  const [loading, setLoading] = useState(false);
+
+  const { loginWithGoogle } = useAuth();
+
+  async function google() {
+    try {
+      setLoading(true);
+
+      await loginWithGoogle();
+    } catch (error) {
+      console.error(error);
+
+      toast.error("No pudimos registrarte con Google.");
+
+      setLoading(false);
+    }
+  }
+
   return (
     <Button
-      onClick={onBack}
-      className="mb-3 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+      type="button"
+      onClick={google}
+      disabled={loading}
+      className="flex h-11 w-full items-center justify-center gap-3 rounded-full border border-border bg-background text-sm font-medium transition-colors hover:bg-secondary disabled:opacity-60"
     >
-      <ArrowLeft className="h-3.5 w-3.5" /> Atrás
+      <GoogleIcon />
+
+      {loading
+        ? "Conectando..."
+        : "Registrarse con Google"}
     </Button>
   );
 }
+
+/* =========================================================
+   DIVIDER
+========================================================= */
+
+function Divider() {
+  return (
+    <div className="my-5 flex items-center gap-3 text-xs text-muted-foreground">
+      <div className="h-px flex-1 bg-border" />
+      o
+      <div className="h-px flex-1 bg-border" />
+    </div>
+  );
+}
+
+/* =========================================================
+   INPUT
+========================================================= */
 
 function TInput({
   name,
@@ -303,7 +416,10 @@ function TInput({
 }) {
   return (
     <div>
-      <label className="mb-1 block text-sm font-medium">{label}</label>
+      <label className="mb-1 block text-sm font-medium">
+        {label}
+      </label>
+
       <Input
         name={name}
         type={type}
@@ -314,12 +430,34 @@ function TInput({
   );
 }
 
+/* =========================================================
+   GOOGLE ICON
+========================================================= */
+
 function GoogleIcon() {
   return (
-    <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden>
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="24px"
+      height="24px"
+      viewBox="-3 0 262 262"
+      preserveAspectRatio="xMidYMid"
+    >
       <path
-        fill="#EA4335"
-        d="M12 10.2v3.9h5.5c-.2 1.4-1.6 4-5.5 4-3.3 0-6-2.7-6-6.1s2.7-6.1 6-6.1c1.9 0 3.1.8 3.8 1.5l2.6-2.5C16.9 3.4 14.7 2.4 12 2.4 6.7 2.4 2.4 6.7 2.4 12S6.7 21.6 12 21.6c6.9 0 9.5-4.8 9.5-7.3 0-.5 0-.9-.1-1.3H12Z"
+        d="M255.878 133.451c0-10.734-.871-18.567-2.756-26.69H130.55v48.448h71.947c-1.45 12.04-9.283 30.172-26.69 42.356l-.244 1.622 38.755 30.023 2.685.268c24.659-22.774 38.875-56.282 38.875-96.027"
+        fill="#4285F4"
+      />
+      <path
+        d="M130.55 261.1c35.248 0 64.839-11.605 86.453-31.622l-41.196-31.913c-11.024 7.688-25.82 13.055-45.257 13.055-34.523 0-63.824-22.773-74.269-54.25l-1.531.13-40.298 31.187-.527 1.465C35.393 231.798 79.49 261.1 130.55 261.1"
+        fill="#34A853"
+      />
+      <path
+        d="M56.281 156.37c-2.756-8.123-4.351-16.827-4.351-25.82 0-8.994 1.595-17.697 4.206-25.82l-.073-1.73L15.26 71.312l-1.335.635C5.077 89.644 0 109.517 0 130.55s5.077 40.905 13.925 58.602l42.356-32.782"
+        fill="#FBBC05"
+      />
+      <path
+        d="M130.55 50.479c24.514 0 41.05 10.589 50.479 19.438l36.844-35.974C195.245 12.91 165.798 0 130.55 0 79.49 0 35.393 29.301 13.925 71.947l42.211 32.783c10.59-31.477 39.891-54.251 74.414-54.251"
+        fill="#EB4335"
       />
     </svg>
   );
