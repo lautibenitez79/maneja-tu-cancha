@@ -70,10 +70,7 @@ function LoginPage() {
             )}
 
             {mode === "signup" && (
-              <SignupView
-                key="signup"
-                onBack={() => setMode("signin")}
-              />
+              <SignupView key="signup" />
             )}
           </AnimatePresence>
         </motion.div>
@@ -218,7 +215,7 @@ function SigninView({ onSignup }: { onSignup: () => void }) {
    REGISTRO
 ========================================================= */
 
-function SignupView({ onBack }: { onBack: () => void }) {
+function SignupView() {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
 
