@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import type { Reservation } from "@/features/reservations/types/reservation.types";
+import { publicBookingService } from "../services/public-booking.service";
 
 const PAYMENT_TIMEOUT_MS = 30 * 60 * 1000;
 const POLLING_INTERVAL_MS = 3000;
@@ -12,9 +13,10 @@ function formatRemainingTime(milliseconds: number) {
   const minutes = Math.floor(totalSeconds / 60);
   const seconds = totalSeconds % 60;
 
-  return `${String(minutes).padStart(2, "0")}:${String(
-    seconds,
-  ).padStart(2, "0")}`;
+  return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(
+    2,
+    "0",
+  )}`;
 }
 
 export default function PaymentPendingPage() {
@@ -23,8 +25,7 @@ export default function PaymentPendingPage() {
 
   const reservationId = searchParams.get("reservation_id");
 
-  const [reservation, setReservation] =
-    useState<Reservation | null>(null);
+  const [reservation, setReservation] = useState<Reservation | null>(null);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -32,6 +33,8 @@ export default function PaymentPendingPage() {
   const [now, setNow] = useState(Date.now());
 
   const [paymentUrl, setPaymentUrl] = useState<string | null>(null);
+
+  const [cancelling, setCancelling] = useState(false);
 
   /*
    * ---------------------------------------------------------
@@ -58,14 +61,9 @@ export default function PaymentPendingPage() {
       if (!active) return;
 
       if (error) {
-        console.error(
-          "Error consultando reserva:",
-          error,
-        );
+        console.error("Error consultando reserva:", error);
 
-        setError(
-          "No pudimos consultar el estado de tu reserva.",
-        );
+        setError("No pudimos consultar el estado de tu reserva.");
 
         setLoading(false);
         return;
@@ -89,14 +87,11 @@ export default function PaymentPendingPage() {
        */
 
       if (reservationData.status === "confirmed") {
-        sessionStorage.removeItem(
-          `payment_url_${reservationData.id}`,
-        );
+        sessionStorage.removeItem(`payment_url_${reservationData.id}`);
 
-        navigate(
-          `/pago/exito?reservation_id=${reservationData.id}`,
-          { replace: true },
-        );
+        navigate(`/pago/exito?reservation_id=${reservationData.id}`, {
+          replace: true,
+        });
 
         return;
       }
@@ -104,16 +99,12 @@ export default function PaymentPendingPage() {
 
     loadReservation();
 
-    const interval = window.setInterval(
-      loadReservation,
-      POLLING_INTERVAL_MS,
-    );
+    const interval = window.setInterval(loadReservation, POLLING_INTERVAL_MS);
 
     return () => {
       active = false;
       window.clearInterval(interval);
     };
-
   }, [reservationId, navigate]);
 
   useEffect(() => {
@@ -142,6 +133,44 @@ export default function PaymentPendingPage() {
     };
   }, []);
 
+  /* Cancelamos la reserva */
+
+  async function handleCancelReservation() {
+    if (!reservationId || !reservation) {
+      return;
+    }
+
+    const confirmed = window.confirm(
+      "¿Querés cancelar esta reserva? El horario quedará disponible para otra persona.",
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      setCancelling(true);
+      setError("");
+
+      const cancelled =
+        await publicBookingService.cancelReservation(reservationId);
+
+      setReservation(cancelled);
+
+      sessionStorage.removeItem(`payment_url_${reservationId}`);
+    } catch (error) {
+      console.error("Error cancelando reserva pública:", error);
+
+      setError(
+        error instanceof Error
+          ? error.message
+          : "No se pudo cancelar la reserva.",
+      );
+    } finally {
+      setCancelling(false);
+    }
+  }
+
   /*
    * ---------------------------------------------------------
    * TIEMPO RESTANTE
@@ -153,12 +182,9 @@ export default function PaymentPendingPage() {
       return PAYMENT_TIMEOUT_MS;
     }
 
-    const createdAt = new Date(
-      reservation.created_at,
-    ).getTime();
+    const createdAt = new Date(reservation.created_at).getTime();
 
-    const expiresAt =
-      createdAt + PAYMENT_TIMEOUT_MS;
+    const expiresAt = createdAt + PAYMENT_TIMEOUT_MS;
 
     return Math.max(0, expiresAt - now);
   }, [reservation, now]);
@@ -197,8 +223,7 @@ export default function PaymentPendingPage() {
             </h1>
 
             <p className="mt-3 text-sm leading-6 text-slate-500">
-              {error ||
-                "La reserva no se encuentra disponible."}
+              {error || "La reserva no se encuentra disponible."}
             </p>
 
             <Link
@@ -218,9 +243,7 @@ export default function PaymentPendingPage() {
    */
 
   if (reservation.status === "cancelled") {
-    sessionStorage.removeItem(
-      `payment_url_${reservation.id}`,
-    );
+    sessionStorage.removeItem(`payment_url_${reservation.id}`);
 
     return (
       <main className="min-h-screen bg-[var(--color-background)] px-4 py-10 sm:px-6 sm:py-16">
@@ -235,8 +258,8 @@ export default function PaymentPendingPage() {
             </h1>
 
             <p className="mt-3 text-sm leading-6 text-slate-500">
-              El tiempo disponible para completar el
-              pago se agotó y la reserva fue liberada.
+              El tiempo disponible para completar el pago se agotó y la reserva
+              fue liberada.
             </p>
 
             <div className="mt-6 rounded-xl border border-red-100 bg-red-50 p-4 text-left">
@@ -245,8 +268,8 @@ export default function PaymentPendingPage() {
               </p>
 
               <p className="mt-1 text-sm text-red-600">
-                Podés volver a la página del complejo y
-                seleccionar otro horario.
+                Podés volver a la página del complejo y seleccionar otro
+                horario.
               </p>
             </div>
 
@@ -281,8 +304,7 @@ export default function PaymentPendingPage() {
           </h1>
 
           <p className="mt-3 text-sm leading-6 text-slate-500">
-            Estamos esperando la confirmación de
-            Mercado Pago.
+            Estamos esperando la confirmación de Mercado Pago.
           </p>
 
           <div className="mt-6 rounded-xl border border-yellow-100 bg-yellow-50 p-4">
@@ -291,8 +313,8 @@ export default function PaymentPendingPage() {
             </p>
 
             <p className="mt-1 text-sm text-yellow-600">
-              Cuando Mercado Pago confirme la operación,
-              tu reserva se actualizará automáticamente.
+              Cuando Mercado Pago confirme la operación, tu reserva se
+              actualizará automáticamente.
             </p>
           </div>
 
@@ -324,14 +346,13 @@ export default function PaymentPendingPage() {
             )}
 
             <p className="mt-2 text-xs text-slate-500">
-              Si el tiempo se agota, la reserva será
-              cancelada y el horario quedará disponible.
+              Si el tiempo se agota, la reserva será cancelada y el horario
+              quedará disponible.
             </p>
           </div>
 
           <div className="mt-5 flex items-center justify-center gap-2 text-sm text-slate-500">
             <span className="h-2 w-2 animate-pulse rounded-full bg-yellow-500" />
-
             Esperando confirmación...
           </div>
 
@@ -341,6 +362,17 @@ export default function PaymentPendingPage() {
           >
             Volver al inicio
           </Link>
+
+          <button
+            type="button"
+            onClick={handleCancelReservation}
+            disabled={cancelling}
+            className="mt-3 inline-flex w-full items-center justify-center rounded-lg border border-red-200 px-4 py-3 font-medium text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {cancelling
+              ? "Cancelando..."
+              : "Cancelar reserva"}
+          </button>
         </div>
       </div>
     </main>
