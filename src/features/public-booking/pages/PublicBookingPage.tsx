@@ -184,6 +184,13 @@ export default function PublicBookingPage() {
         throw new Error("Mercado Pago no devolvió init_point.");
       }
 
+      /* guardamos el link de la reserva */
+
+      sessionStorage.setItem(
+        `payment_url_${reservation.id}`,
+        preference.init_point,
+      );
+
       /*
        * 4. Mandar Mercado Pago a la nueva pestaña
        */

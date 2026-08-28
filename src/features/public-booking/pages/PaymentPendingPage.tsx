@@ -31,6 +31,8 @@ export default function PaymentPendingPage() {
 
   const [now, setNow] = useState(Date.now());
 
+  const [paymentUrl, setPaymentUrl] = useState<string | null>(null);
+
   /*
    * ---------------------------------------------------------
    * CONSULTAR RESERVA
@@ -87,6 +89,10 @@ export default function PaymentPendingPage() {
        */
 
       if (reservationData.status === "confirmed") {
+        sessionStorage.removeItem(
+          `payment_url_${reservationData.id}`,
+        );
+
         navigate(
           `/pago/exito?reservation_id=${reservationData.id}`,
           { replace: true },
@@ -107,7 +113,18 @@ export default function PaymentPendingPage() {
       active = false;
       window.clearInterval(interval);
     };
+
   }, [reservationId, navigate]);
+
+  useEffect(() => {
+    if (!reservationId) return;
+
+    const storedPaymentUrl = sessionStorage.getItem(
+      `payment_url_${reservationId}`,
+    );
+
+    setPaymentUrl(storedPaymentUrl);
+  }, [reservationId]);
 
   /*
    * ---------------------------------------------------------
@@ -201,6 +218,10 @@ export default function PaymentPendingPage() {
    */
 
   if (reservation.status === "cancelled") {
+    sessionStorage.removeItem(
+      `payment_url_${reservation.id}`,
+    );
+
     return (
       <main className="min-h-screen bg-[var(--color-background)] px-4 py-10 sm:px-6 sm:py-16">
         <div className="mx-auto max-w-md">
@@ -283,6 +304,24 @@ export default function PaymentPendingPage() {
             <p className="mt-2 text-3xl font-bold tabular-nums text-[var(--color-title)]">
               {formatRemainingTime(remainingTime)}
             </p>
+
+            {paymentUrl && (
+              <div className="mt-6">
+                <p className="text-sm text-slate-500">
+                  ¿Cerraste la ventana de Mercado Pago?
+                </p>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    window.open(paymentUrl, "_blank", "noopener,noreferrer");
+                  }}
+                  className="mt-3 inline-flex w-full items-center justify-center rounded-lg bg-[var(--color-primary)] px-4 py-3 font-medium text-white transition hover:opacity-90"
+                >
+                  Continuar con el pago
+                </button>
+              </div>
+            )}
 
             <p className="mt-2 text-xs text-slate-500">
               Si el tiempo se agota, la reserva será
