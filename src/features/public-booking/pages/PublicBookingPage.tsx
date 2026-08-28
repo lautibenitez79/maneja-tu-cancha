@@ -142,9 +142,6 @@ export default function PublicBookingPage() {
 
     // Abrimos la pestaña inmediatamente como consecuencia
     // directa del click del usuario.
-    console.time("RESERVA_TOTAL");
-
-    console.time("1-window-open");
 
     const paymentWindow = window.open("", "_blank");
 
@@ -155,10 +152,6 @@ export default function PublicBookingPage() {
 
       return;
     }
-
-    console.timeEnd("1-window-open");
-
-    console.time("2-create-reservation");
 
     try {
       setCreatingReservation(true);
@@ -176,10 +169,6 @@ export default function PublicBookingPage() {
         endsAt: selectedSlot.ends_at,
       });
 
-      console.timeEnd("2-create-reservation");
-
-      console.time("3-create-preference");
-
       /*
        * 2. Crear Preference de Mercado Pago
        */
@@ -187,11 +176,6 @@ export default function PublicBookingPage() {
         clubId: club.id,
         reservationId: reservation.id,
       });
-
-
-      console.timeEnd("3-create-preference");
-
-      console.time("4-open-payment");
 
       /*
        * 3. Validar init_point
@@ -204,10 +188,6 @@ export default function PublicBookingPage() {
        * 4. Mandar Mercado Pago a la nueva pestaña
        */
       paymentWindow.location.href = preference.init_point;
-
-      console.timeEnd("4-open-payment");
-
-      console.timeEnd("RESERVA_TOTAL");
 
       /*
        * 5. Mantener esta pestaña en Maneja Tu Cancha
