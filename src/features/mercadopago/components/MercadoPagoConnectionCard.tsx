@@ -18,17 +18,11 @@ export default function MercadoPagoConnectionCard({ clubId }: Props) {
   useEffect(() => {
     async function load() {
       try {
-        const data =
-          await mercadoPagoService.getConnection(clubId);
-
-          console.log("redeploy")
+        const data = await mercadoPagoService.getConnection(clubId);
 
         setConnection(data);
       } catch (error) {
-        console.error(
-          "Error cargando conexión Mercado Pago:",
-          error,
-        );
+        console.error("Error cargando conexión Mercado Pago:", error);
       } finally {
         setLoading(false);
       }
@@ -105,16 +99,13 @@ export default function MercadoPagoConnectionCard({ clubId }: Props) {
           </div>
 
           <div className="text-sm">
-            <strong>Cuenta conectada:</strong>{" "}
-            {connection.mp_user_id}
+            <strong>Cuenta conectada:</strong> {connection.mp_user_id}
           </div>
 
           {connection.expires_at && (
             <div className="text-sm opacity-70">
               Conexión válida hasta:{" "}
-              {new Date(
-                connection.expires_at,
-              ).toLocaleDateString("es-AR")}
+              {new Date(connection.expires_at).toLocaleDateString("es-AR")}
             </div>
           )}
 
@@ -124,9 +115,7 @@ export default function MercadoPagoConnectionCard({ clubId }: Props) {
             disabled={connecting}
             className="rounded-lg border px-5 py-3 font-medium transition disabled:opacity-50"
           >
-            {connecting
-              ? "Desconectando..."
-              : "Desconectar Mercado Pago"}
+            {connecting ? "Desconectando..." : "Desconectar Mercado Pago"}
           </button>
         </div>
       ) : (

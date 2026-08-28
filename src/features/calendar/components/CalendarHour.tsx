@@ -17,7 +17,7 @@ function CalendarHour({
     <div
       className="
         flex
-        h-14
+        h-16
         items-center
         justify-end
         border-b

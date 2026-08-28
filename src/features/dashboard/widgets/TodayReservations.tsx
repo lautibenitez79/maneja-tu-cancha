@@ -77,7 +77,7 @@ export default function TodayReservations({
       </div>
 
       {reservations.length === 0 ? (
-        <div className="px-6 py-10 text-center">
+        <div className="px-4 py-8 text-center sm:px-6 sm:py-10">
           <p className="font-medium text-[var(--color-title)]">
             No hay reservas para hoy.
           </p>
@@ -91,7 +91,7 @@ export default function TodayReservations({
           {reservations.map((reservation) => (
             <div
               key={reservation.id}
-              className="flex flex-col gap-3 px-6 py-4 sm:flex-row sm:items-center sm:justify-between"
+              className="flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6"
             >
               <div className="min-w-0">
                 <p className="font-semibold text-[var(--color-title)]">

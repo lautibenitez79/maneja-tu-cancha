@@ -177,7 +177,7 @@ export default function ResourceWizard({ mode = "create", resourceId }: Props) {
   }
 
   return (
-    <div className="mx-auto max-w-6xl rounded-[var(--radius-card)] border-[var(--color-border)] bg-[var(--color-card)] p-8 shadow-[var(--shadow-card)]">
+    <div className="mx-auto w-full max-w-6xl rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-card)] p-4 shadow-[var(--shadow-card)] sm:p-6 lg:p-8">
       <ProgressBar step={step} total={TOTAL_RESOURCE_STEPS} />
 
       {step === RESOURCE_STEPS.INFO && (

@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { localDateTimeToUtc, normalizeEndDateTime } from "@/utils/timezone";
-import { startOfWeek, addWeeks } from "date-fns";
+import { startOfWeek, addWeeks, addDays, format } from "date-fns";
+import { es } from "date-fns/locale";
 import { toast } from "sonner";
 
 import Page from "@/components/ui/Page";
@@ -10,6 +11,7 @@ import Modal from "@/components/ui/Modal";
 
 import { useCalendar } from "../hooks/useCalendar";
 import WeeklyCalendar from "../components/WeeklyCalendar";
+import DailyCalendar from "../components/DailyCalendar";
 
 import { useResources } from "@/features/resources/hooks/useResources";
 
@@ -37,16 +39,22 @@ export default function CalendarPage() {
     }),
   );
 
+  const [selectedDate, setSelectedDate] = useState(new Date());
+
   const [selectedBlockCell, setSelectedBlockCell] =
     useState<CalendarCell | null>(null);
 
-  const [actionCell, setActionCell] = useState<CalendarCell | null>(null);
+  const [actionCell, setActionCell] =
+    useState<CalendarCell | null>(null);
 
-  const [selectedCell, setSelectedCell] = useState<CalendarCell | null>(null);
+  const [selectedCell, setSelectedCell] =
+    useState<CalendarCell | null>(null);
 
-  const [selectedResourceId, setSelectedResourceId] = useState<string>();
+  const [selectedResourceId, setSelectedResourceId] =
+    useState<string>();
 
-  const { week, loading, refresh } = useCalendar(selectedResourceId, weekStart);
+  const { week, loading, refresh } =
+    useCalendar(selectedResourceId, weekStart);
 
   useEffect(() => {
     if (resources.length > 0 && !selectedResourceId) {
@@ -54,10 +62,36 @@ export default function CalendarPage() {
     }
   }, [resources, selectedResourceId]);
 
-  async function handleCreateReservation(values: CreateReservationForm) {
+  /*
+   * Mantiene la semana cargada en sincronía con
+   * la fecha seleccionada.
+   *
+   * En mobile podemos movernos día por día,
+   * pero useCalendar continúa trabajando con semanas.
+   */
+  useEffect(() => {
+    const nextWeekStart = startOfWeek(selectedDate, {
+      weekStartsOn: 1,
+    });
+
+    if (nextWeekStart.getTime() !== weekStart.getTime()) {
+      setWeekStart(nextWeekStart);
+    }
+  }, [selectedDate, weekStart]);
+
+  const selectedDay = useMemo(() => {
+    if (!week) return undefined;
+
+    const date = format(selectedDate, "yyyy-MM-dd");
+
+    return week.days.find((day) => day.date === date);
+  }, [week, selectedDate]);
+
+  async function handleCreateReservation(
+    values: CreateReservationForm,
+  ) {
     if (!profile?.club_id) {
       toast.error("No se encontró el club del usuario.");
-
       return;
     }
 
@@ -66,17 +100,9 @@ export default function CalendarPage() {
 
       if (!club) {
         toast.error("No se encontró el club.");
-
         return;
       }
 
-      /*
-       * IMPORTANTE:
-       *
-       * 23:00 → 00:00 significa
-       * 23:00 del día actual →
-       * 00:00 del día siguiente.
-       */
       const normalizedEndsAt = normalizeEndDateTime(
         values.starts_at,
         values.ends_at,
@@ -85,9 +111,15 @@ export default function CalendarPage() {
       await reservationService.create(profile.club_id, {
         ...values,
 
-        starts_at: localDateTimeToUtc(values.starts_at, club.timezone),
+        starts_at: localDateTimeToUtc(
+          values.starts_at,
+          club.timezone,
+        ),
 
-        ends_at: localDateTimeToUtc(normalizedEndsAt, club.timezone),
+        ends_at: localDateTimeToUtc(
+          normalizedEndsAt,
+          club.timezone,
+        ),
       });
 
       toast.success("Reserva creada correctamente.");
@@ -127,10 +159,42 @@ export default function CalendarPage() {
   }
 
   function currentWeek() {
+    const today = new Date();
+
     setWeekStart(
-      startOfWeek(new Date(), {
+      startOfWeek(today, {
         weekStartsOn: 1,
       }),
+    );
+
+    setSelectedDate(today);
+  }
+
+  function previousDay() {
+    setSelectedDate((current) => addDays(current, -1));
+  }
+
+  function nextDay() {
+    setSelectedDate((current) => addDays(current, 1));
+  }
+
+  function currentDay() {
+    setSelectedDate(new Date());
+  }
+
+  function handleDateChange(
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) {
+    const value = event.target.value;
+
+    if (!value) return;
+
+    const [year, month, day] = value
+      .split("-")
+      .map(Number);
+
+    setSelectedDate(
+      new Date(year, month - 1, day),
     );
   }
 
@@ -169,11 +233,17 @@ export default function CalendarPage() {
   }
 
   return (
-    <Page title="Calendario" subtitle="Reservas semanales">
+    <Page
+      title="Calendario"
+      subtitle="Reservas semanales"
+    >
       {/* CANCHA */}
 
-      <div className="mb-6 flex items-center gap-3">
-        <label htmlFor="resource" className="text-sm font-medium">
+      <div className="mb-6 flex flex-col gap-2 sm:flex-row sm:items-center">
+        <label
+          htmlFor="resource"
+          className="text-sm font-medium"
+        >
           Cancha
         </label>
 
@@ -187,64 +257,167 @@ export default function CalendarPage() {
 
             setSelectedResourceId(event.target.value);
           }}
-          className="rounded-lg border bg-[var(--color-card)] px-3 py-2"
+          className="w-full rounded-lg border bg-[var(--color-card)] px-3 py-2 sm:w-auto"
         >
           {resources.map((resource) => (
-            <option key={resource.id} value={resource.id}>
+            <option
+              key={resource.id}
+              value={resource.id}
+            >
               {resource.name}
             </option>
           ))}
         </select>
       </div>
 
-      {/* SEMANAS */}
+      {/* DESKTOP */}
 
-      <div className="mb-6 flex items-center justify-between gap-4">
-        <button
-          type="button"
-          onClick={previousWeek}
-          className="rounded-lg border px-4 py-2 text-sm font-medium hover:bg-slate-50"
-        >
-          ← Semana anterior
-        </button>
+      <div className="hidden lg:block">
+        <div className="mb-6 flex items-center justify-between gap-4">
+          <button
+            type="button"
+            onClick={previousWeek}
+            className="rounded-lg border px-4 py-2 text-sm font-medium hover:bg-slate-50"
+          >
+            ← Semana anterior
+          </button>
 
-        <button
-          type="button"
-          onClick={currentWeek}
-          className="rounded-lg border px-4 py-2 text-sm font-medium hover:bg-slate-50"
-        >
-          Esta semana
-        </button>
+          <button
+            type="button"
+            onClick={currentWeek}
+            className="rounded-lg border px-4 py-2 text-sm font-medium hover:bg-slate-50"
+          >
+            Esta semana
+          </button>
 
-        <button
-          type="button"
-          onClick={nextWeek}
-          className="rounded-lg border px-4 py-2 text-sm font-medium hover:bg-slate-50"
-        >
-          Semana siguiente →
-        </button>
+          <button
+            type="button"
+            onClick={nextWeek}
+            className="rounded-lg border px-4 py-2 text-sm font-medium hover:bg-slate-50"
+          >
+            Semana siguiente →
+          </button>
+        </div>
+
+        <WeeklyCalendar
+          week={week}
+          onCellClick={(cell) => {
+            if (cell.status === "available") {
+              setActionCell(cell);
+              return;
+            }
+
+            if (cell.status === "blocked") {
+              setSelectedBlockCell(cell);
+              return;
+            }
+
+            if (
+              cell.status === "reserved" ||
+              cell.status === "pending_payment"
+            ) {
+              setSelectedCell(cell);
+            }
+          }}
+        />
       </div>
 
-      {/* CALENDARIO */}
+      {/* MOBILE / TABLET */}
 
-      <WeeklyCalendar
-        week={week}
-        onCellClick={(cell) => {
-          if (cell.status === "available") {
-            setActionCell(cell);
-            return;
-          }
+      <div className="lg:hidden">
+        <div className="mb-5 flex items-center gap-2">
+          <button
+            type="button"
+            onClick={previousDay}
+            aria-label="Día anterior"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border"
+          >
+            ←
+          </button>
 
-          if (cell.status === "blocked") {
-            setSelectedBlockCell(cell);
-            return;
-          }
+          <button
+            type="button"
+            onClick={currentDay}
+            className="h-11 flex-1 rounded-lg border px-3 text-sm font-medium"
+          >
+            Hoy
+          </button>
 
-          if (cell.status === "reserved" || cell.status === "pending_payment") {
-            setSelectedCell(cell);
-          }
-        }}
-      />
+          <button
+            type="button"
+            onClick={nextDay}
+            aria-label="Día siguiente"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border"
+          >
+            →
+          </button>
+        </div>
+
+        <div className="mb-5 flex items-center gap-3">
+          <div className="min-w-0 flex-1">
+            <p className="text-lg font-semibold capitalize">
+              {format(
+                selectedDate,
+                "EEEE d 'de' MMMM",
+                {
+                  locale: es,
+                },
+              )}
+            </p>
+
+            <p className="text-sm text-slate-500">
+              Horarios disponibles y reservas
+            </p>
+          </div>
+
+          <label className="relative flex h-11 shrink-0 cursor-pointer items-center rounded-lg border px-3 text-sm font-medium">
+            📅
+            <span className="ml-2 hidden sm:inline">
+              Elegir fecha
+            </span>
+
+            <input
+              type="date"
+              value={format(
+                selectedDate,
+                "yyyy-MM-dd",
+              )}
+              onChange={handleDateChange}
+              className="absolute inset-0 cursor-pointer opacity-0"
+              aria-label="Elegir fecha"
+            />
+          </label>
+        </div>
+
+        {selectedDay ? (
+          <DailyCalendar
+            day={selectedDay}
+            onCellClick={(cell: CalendarCell) => {
+              if (cell.status === "available") {
+                setActionCell(cell);
+                return;
+              }
+
+              if (cell.status === "blocked") {
+                setSelectedBlockCell(cell);
+                return;
+              }
+
+              if (
+                cell.status === "reserved" ||
+                cell.status === "pending_payment"
+              ) {
+                setSelectedCell(cell);
+              }
+            }}
+          />
+        ) : (
+          <EmptyState
+            title="No hay datos para este día"
+            description="No fue posible cargar los horarios."
+          />
+        )}
+      </div>
 
       {/* ACCIONES */}
 
@@ -259,7 +432,6 @@ export default function CalendarPage() {
               type="button"
               onClick={() => {
                 setSelectedCell(actionCell);
-
                 setActionCell(null);
               }}
               className="w-full rounded-lg border px-4 py-3 text-left font-medium hover:bg-slate-50"
@@ -271,7 +443,6 @@ export default function CalendarPage() {
               type="button"
               onClick={() => {
                 setSelectedBlockCell(actionCell);
-
                 setActionCell(null);
               }}
               className="w-full rounded-lg border px-4 py-3 text-left font-medium hover:bg-slate-50"

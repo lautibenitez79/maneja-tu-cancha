@@ -32,7 +32,7 @@ export default function SetupChecklist({
 
   return (
 
-    <Card className="rounded-[var(--radius-card)] border bg-[var(--color-card)] p-8 shadow-[var(--shadow-card)]">
+    <Card className="rounded-[var(--radius-card)] border bg-[var(--color-card)] shadow-[var(--shadow-card)] p-5 sm:p-8">
 
       <h3 className="text-xl font-semibold">
 

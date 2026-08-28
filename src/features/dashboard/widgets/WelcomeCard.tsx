@@ -33,7 +33,7 @@ export default function WelcomeCard() {
 
   return (
 
-    <Card className="relative rounded-[var(--radius-card)] border bg-[var(--color-card)] p-8 shadow-[var(--shadow-card)]">
+    <Card className="relative rounded-[var(--radius-card)] border bg-[var(--color-card)] shadow-[var(--shadow-card)] p-5 sm:p-8">
 
       <button
         onClick={close}
@@ -44,7 +44,7 @@ export default function WelcomeCard() {
 
       </button>
 
-      <h2 className="text-2xl font-semibold text-[var(--color-title)]">
+      <h2 className="font-semibold text-[var(--color-title)] text-xl sm:text-2xl">
 
         Tu complejo fue creado correctamente 🎉
 

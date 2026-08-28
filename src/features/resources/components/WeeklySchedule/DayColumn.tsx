@@ -98,8 +98,8 @@ export default function DayColumn({ day, value, onChange }: Props) {
     schedule.primary.start === 0 && schedule.primary.end === END_TIME;
 
   return (
-    <div className="rounded-[var(--radius-card)] border bg-[var(--color-card)] p-5">
-      <h3 className="mb-5 text-center font-semibold">{day}</h3>
+    <div className="rounded-[var(--radius-card)] border bg-[var(--color-card)] p-4 sm:p-5">
+      <h3 className="mb-4 text-center font-semibold">{day}</h3>
 
       <p className="mb-5 mt-2 text-center text-xs text-slate-500">
         {isFullDay ? "Disponible las 24 horas" : status}

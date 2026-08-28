@@ -13,17 +13,17 @@ const items = [
     label: "Recursos",
     href: "/dashboard/resources",
   },
-  // {
-  //   label: "Clientes",
-  //   href: "/dashboard/customers",
-  // },
   {
     label: "Calendario",
     href: "/dashboard/calendar",
   },
 ];
 
-export default function Sidebar() {
+interface Props {
+  onNavigate?: () => void;
+}
+
+export default function Sidebar({ onNavigate }: Props) {
   const navigate = useNavigate();
   const { logout } = useAuth();
 
@@ -48,22 +48,23 @@ export default function Sidebar() {
   }
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-full min-h-screen flex-col">
       {/* Logo */}
-      <div className="border-b border-[var(--color-border)] p-6">
-        <h1 className="text-2xl font-bold text-[var(--color-primary)]">
+      <div className="border-b border-[var(--color-border)] p-5 sm:p-6">
+        <h1 className="text-xl font-bold text-[var(--color-primary)] sm:text-2xl">
           Maneja Tu Cancha
         </h1>
       </div>
 
       {/* Navegación */}
-      <nav className="flex-1 p-4">
+      <nav className="flex-1 p-3 sm:p-4">
         {items.map((item) => (
           <NavLink
             key={item.href}
             to={item.href}
+            onClick={onNavigate}
             className={({ isActive }) =>
-              `mb-2 flex rounded-xl px-4 py-3 transition ${
+              `mb-2 flex w-full rounded-xl px-4 py-3 text-sm transition ${
                 isActive
                   ? "bg-[var(--color-primary)] text-white"
                   : "hover:bg-[var(--color-hover)]"
@@ -76,13 +77,13 @@ export default function Sidebar() {
       </nav>
 
       {/* Cerrar sesión */}
-      <div className="border-t border-[var(--color-border)] p-4">
+      <div className="border-t border-[var(--color-border)] p-3 sm:p-4">
         <button
           type="button"
           onClick={handleLogout}
-          className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left transition hover:bg-[var(--color-hover)]"
+          className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-sm transition hover:bg-[var(--color-hover)]"
         >
-          <LogOut className="h-5 w-5" />
+          <LogOut className="h-5 w-5 shrink-0" />
 
           <span>Cerrar sesión</span>
         </button>
