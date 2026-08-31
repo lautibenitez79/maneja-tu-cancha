@@ -3,6 +3,10 @@ import type {
   VercelResponse,
 } from "@vercel/node";
 
+import {
+  reservationCreatedTemplate,
+} from "./templates/reservationCreated";
+
 const FROM_EMAIL =
   "Maneja Tu Cancha <notificaciones@manejatucancha.com.ar>";
 
@@ -21,12 +25,47 @@ export default async function handler(
       to,
       subject,
       html,
+      template,
+      data,
     } = req.body ?? {};
 
-    if (!to || !subject || !html) {
+    let finalSubject = subject;
+    let finalHtml = html;
+
+    /*
+     * ---------------------------------------------------------
+     * TEMPLATES
+     * ---------------------------------------------------------
+     */
+
+    if (template === "reservationCreated") {
+      if (!data) {
+        return res.status(400).json({
+          error:
+            "Faltan los datos del template reservationCreated.",
+        });
+      }
+
+      const rendered =
+        reservationCreatedTemplate(data);
+
+      finalSubject =
+        rendered.subject;
+
+      finalHtml =
+        rendered.html;
+    }
+
+    /*
+     * ---------------------------------------------------------
+     * VALIDACIÓN
+     * ---------------------------------------------------------
+     */
+
+    if (!to || !finalSubject || !finalHtml) {
       return res.status(400).json({
         error:
-          "to, subject y html son obligatorios.",
+          "to, subject/html o template son obligatorios.",
       });
     }
 
@@ -44,35 +83,42 @@ export default async function handler(
       });
     }
 
-    const resendResponse = await fetch(
-      "https://api.resend.com/emails",
-      {
-        method: "POST",
+    /*
+     * ---------------------------------------------------------
+     * RESEND
+     * ---------------------------------------------------------
+     */
 
-        headers: {
-          "Content-Type":
-            "application/json",
+    const resendResponse =
+      await fetch(
+        "https://api.resend.com/emails",
+        {
+          method: "POST",
 
-          Authorization:
-            `Bearer ${apiKey}`,
+          headers: {
+            "Content-Type":
+              "application/json",
+
+            Authorization:
+              `Bearer ${apiKey}`,
+          },
+
+          body: JSON.stringify({
+            from: FROM_EMAIL,
+            to: [to],
+            subject: finalSubject,
+            html: finalHtml,
+          }),
         },
+      );
 
-        body: JSON.stringify({
-          from: FROM_EMAIL,
-          to: [to],
-          subject,
-          html,
-        }),
-      },
-    );
-
-    const data =
+    const responseData =
       await resendResponse.json();
 
     if (!resendResponse.ok) {
       console.error(
         "Resend rechazó el email:",
-        data,
+        responseData,
       );
 
       return res.status(
@@ -80,22 +126,24 @@ export default async function handler(
       ).json({
         error:
           "No se pudo enviar el email.",
-        details: data,
+        details: responseData,
       });
     }
 
     console.log(
       "Email enviado correctamente:",
       {
-        id: data.id,
+        id: responseData.id,
         to,
-        subject,
+        subject: finalSubject,
+        template:
+          template ?? null,
       },
     );
 
     return res.status(200).json({
       success: true,
-      id: data.id,
+      id: responseData.id,
     });
   } catch (error) {
     console.error(
@@ -107,7 +155,7 @@ export default async function handler(
       error:
         error instanceof Error
           ? error.message
-          : "Error interno enviando el email.",
+          : "Error interno enviando email.",
     });
   }
 }

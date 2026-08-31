@@ -158,8 +158,11 @@ export default function PublicBookingPage() {
       setReservationError("");
 
       /*
+       * ---------------------------------------------------------
        * 1. Crear la reserva
+       * ---------------------------------------------------------
        */
+
       const reservation = await publicBookingService.createReservation({
         resourceId: selectedResource.id,
         customerName: values.customer_name,
@@ -170,16 +173,85 @@ export default function PublicBookingPage() {
       });
 
       /*
+       * ---------------------------------------------------------
        * 2. Crear Preference de Mercado Pago
+       * ---------------------------------------------------------
        */
+
       const preference = await mercadoPagoService.createPreference({
         clubId: club.id,
         reservationId: reservation.id,
       });
 
       /*
-       * 3. Validar init_point
+       * ---------------------------------------------------------
+       * 3. Enviar email de reserva
+       * ---------------------------------------------------------
+       *
+       * El email se intenta enviar después de crear
+       * el pago porque necesitamos el init_point
+       * para incluir el botón "Pagar seña".
+       *
+       * Si el email falla, NO rompemos la reserva.
        */
+
+      if (preference.init_point) {
+        try {
+          const emailResponse = await fetch("/api/notifications/send-email", {
+            method: "POST",
+
+            headers: {
+              "Content-Type": "application/json",
+            },
+
+            body: JSON.stringify({
+              to: values.customer_email,
+
+              template: "reservationCreated",
+
+              data: {
+                customerName: values.customer_name,
+
+                clubName: club.name,
+
+                resourceName: selectedResource.name,
+
+                date: format(selectedDate, "EEEE dd 'de' MMMM", {
+                  locale: es,
+                }),
+
+                startTime: formatClubTime(
+                  selectedSlot.starts_at,
+                  club.timezone,
+                ),
+
+                endTime: formatClubTime(selectedSlot.ends_at, club.timezone),
+
+                amount: selectedResource.price,
+
+                depositAmount: selectedResource.deposit_amount,
+
+                paymentUrl: preference.init_point,
+              },
+            }),
+          });
+
+          if (!emailResponse.ok) {
+            const emailError = await emailResponse.text();
+
+            console.error("No se pudo enviar el email de reserva:", emailError);
+          }
+        } catch (emailError) {
+          console.error("Error enviando email de reserva:", emailError);
+        }
+      }
+
+      /*
+       * ---------------------------------------------------------
+       * 4. Validar init_point
+       * ---------------------------------------------------------
+       */
+
       if (!preference.init_point) {
         throw new Error("Mercado Pago no devolvió init_point.");
       }
