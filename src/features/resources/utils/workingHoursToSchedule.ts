@@ -18,49 +18,77 @@ export function workingHoursToSchedule(
   const week = createEmptyWeek();
 
   hours.forEach((hour) => {
+    const opensAt = normalizeTime(hour.opens_at);
+    const closesAt = normalizeTime(hour.closes_at);
+    const reopensAt = normalizeTime(hour.reopens_at);
+    const finalClosesAt = normalizeTime(hour.final_closes_at);
+
     const isFullDay =
-      hour.opens_at === "00:00" &&
-      hour.closes_at === "00:00";
+      opensAt === "00:00" &&
+      closesAt === "00:00";
 
     const isUntilMidnight =
-      hour.closes_at === "00:00" &&
-      hour.opens_at !== "00:00";
+      closesAt === "00:00" &&
+      opensAt !== "00:00";
+
+    const openIndex =
+      opensAt !== null
+        ? TIME_SLOTS.indexOf(opensAt)
+        : -1;
+
+    const closeIndex =
+      closesAt !== null
+        ? TIME_SLOTS.indexOf(closesAt)
+        : -1;
+
+    const reopenIndex =
+      reopensAt !== null
+        ? TIME_SLOTS.indexOf(reopensAt)
+        : -1;
+
+    const finalCloseIndex =
+      finalClosesAt !== null
+        ? TIME_SLOTS.indexOf(finalClosesAt)
+        : -1;
 
     week[hour.day_of_week] = {
       primary: {
         start:
-          TIME_SLOTS.indexOf(
-            hour.opens_at,
-          ),
+          openIndex >= 0
+            ? openIndex
+            : null,
 
         end:
           isFullDay || isUntilMidnight
             ? END_TIME
-            : TIME_SLOTS.indexOf(
-                hour.closes_at,
-              ),
+            : closeIndex >= 0
+              ? closeIndex
+              : null,
       },
 
       secondary: {
         start:
-          hour.reopens_at
-            ? TIME_SLOTS.indexOf(
-                hour.reopens_at,
-              )
+          reopenIndex >= 0
+            ? reopenIndex
             : null,
 
         end:
-          hour.final_closes_at
-            ? hour.final_closes_at ===
-              "00:00"
-              ? END_TIME
-              : TIME_SLOTS.indexOf(
-                  hour.final_closes_at,
-                )
-            : null,
+          finalClosesAt === "00:00"
+            ? END_TIME
+            : finalCloseIndex >= 0
+              ? finalCloseIndex
+              : null,
       },
     };
   });
 
   return week;
+}
+
+function normalizeTime(value: string | null): string | null {
+  if (!value) {
+    return null;
+  }
+
+  return value.substring(0, 5);
 }

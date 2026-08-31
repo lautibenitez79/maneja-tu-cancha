@@ -62,6 +62,7 @@ export default function Sidebar({ onNavigate }: Props) {
           <NavLink
             key={item.href}
             to={item.href}
+            end={item.href === "/dashboard"}
             onClick={onNavigate}
             className={({ isActive }) =>
               `mb-2 flex w-full rounded-xl px-4 py-3 text-sm transition ${

@@ -7,7 +7,17 @@ import { workingHoursService } from "@/features/resources/services/working-hours
 import { reservationService } from "@/features/reservations/services/reservation.service";
 import { clubService } from "@/features/clubs/services/club.service";
 
-import type { DashboardReservation, DashboardStats } from "../types/dashboard.types";
+import type {
+  DashboardReservation,
+  DashboardStats,
+} from "../types/dashboard.types";
+
+import { dashboardService } from "../services/dashboard.service";
+
+import type {
+  DashboardAnalytics,
+  DashboardPeriod,
+} from "../types/dashboard.types";
 
 import type { Resource } from "@/features/resources/types/resource.types";
 
@@ -33,12 +43,19 @@ export function useDashboard() {
     pendingPayments: 0,
     employees: 0,
   });
-  const [timezone, setTimezone] = useState(
-  "America/Argentina/Buenos_Aires",
-);
 
-  const [todayReservations, setTodayReservations] =
-    useState<DashboardReservation[]>([]);
+  const [analytics, setAnalytics] = useState<DashboardAnalytics | null>(null);
+
+  const [analyticsPeriod, setAnalyticsPeriod] =
+    useState<DashboardPeriod>("week");
+
+  const [analyticsLoading, setAnalyticsLoading] = useState(false);
+
+  const [timezone, setTimezone] = useState("America/Argentina/Buenos_Aires");
+
+  const [todayReservations, setTodayReservations] = useState<
+    DashboardReservation[]
+  >([]);
 
   const [loading, setLoading] = useState(true);
 
@@ -56,9 +73,7 @@ export function useDashboard() {
         // CLUB
         // -----------------------------------------
 
-        const club = await clubService.getClub(
-          profile.club_id,
-        );
+        const club = await clubService.getClub(profile.club_id);
 
         if (!club) {
           throw new Error("No se encontró el complejo.");
@@ -70,139 +85,92 @@ export function useDashboard() {
         // RECURSOS
         // -----------------------------------------
 
-        const resources =
-          await resourceService.list(
-            profile.club_id,
-          );
+        const resources = await resourceService.list(profile.club_id);
 
         // -----------------------------------------
         // HORARIOS
         // -----------------------------------------
 
-        const workingHours =
-          await Promise.all(
-            resources.map((resource) =>
-              workingHoursService.list(
-                resource.id,
-              ),
-            ),
-          );
+        const workingHours = await Promise.all(
+          resources.map((resource) => workingHoursService.list(resource.id)),
+        );
 
-        const hasWorkingHours =
-          workingHours.some((days) =>
-            days.some(
-              (day) => day.enabled,
-            ),
-          );
+        const hasWorkingHours = workingHours.some((days) =>
+          days.some((day) => day.enabled),
+        );
 
         // -----------------------------------------
         // FECHA DE HOY
         // -----------------------------------------
 
-        const today = getTodayInTimezone(
-          club.timezone,
-        );
+        const today = getTodayInTimezone(club.timezone);
 
         // -----------------------------------------
         // RESERVAS DE TODAS LAS CANCHAS
         // -----------------------------------------
 
-        const reservationsByResource =
-        await Promise.all(
+        const reservationsByResource = await Promise.all(
           resources.map((resource) =>
-            reservationService.listByDay(
-              resource.id,
-              today,
-              club.timezone,
-            ),
+            reservationService.listByDay(resource.id, today, club.timezone),
           ),
         );
 
-        const reservations =
-          reservationsByResource.flat();
+        const reservations = reservationsByResource.flat();
 
         // -----------------------------------------
         // RESERVAS ACTIVAS
         // -----------------------------------------
 
-        const activeReservations =
-          reservations.filter(
-            (reservation) =>
-              reservation.status !==
-              "cancelled",
-          );
+        const activeReservations = reservations.filter(
+          (reservation) => reservation.status !== "cancelled",
+        );
 
         // -----------------------------------------
         // PENDIENTES DE PAGO
         // -----------------------------------------
 
-        const pendingPayments =
-          activeReservations.filter(
-            (reservation) =>
-              reservation.status ===
-              "pending_payment",
-          );
+        const pendingPayments = activeReservations.filter(
+          (reservation) => reservation.status === "pending_payment",
+        );
 
         // -----------------------------------------
         // INGRESOS
         // -----------------------------------------
 
-        const income =
-          activeReservations.reduce(
-            (total, reservation) =>
-              total +
-              Number(
-                reservation.amount_paid ?? 0,
-              ),
-            0,
-          );
+        const income = activeReservations.reduce(
+          (total, reservation) => total + Number(reservation.amount_paid ?? 0),
+          0,
+        );
 
         // -----------------------------------------
         // MAPA DE RECURSOS
         // -----------------------------------------
 
-        const resourceMap =
-          new Map<string, Resource>();
+        const resourceMap = new Map<string, Resource>();
 
         resources.forEach((resource) => {
-          resourceMap.set(
-            resource.id,
-            resource,
-          );
+          resourceMap.set(resource.id, resource);
         });
 
         // -----------------------------------------
         // RESERVAS PARA EL DASHBOARD
         // -----------------------------------------
 
-        const dashboardReservations =
-          [...activeReservations]
-            .sort(
-              (a, b) =>
-                new Date(
-                  a.starts_at,
-                ).getTime() -
-                new Date(
-                  b.starts_at,
-                ).getTime(),
-            )
-            .map(
-              (
-                reservation,
-              ): DashboardReservation => ({
-                ...reservation,
+        const dashboardReservations = [...activeReservations]
+          .sort(
+            (a, b) =>
+              new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime(),
+          )
+          .map(
+            (reservation): DashboardReservation => ({
+              ...reservation,
 
-                resourceName:
-                  resourceMap.get(
-                    reservation.resource_id,
-                  )?.name ??
-                  "Cancha",
-              }),
-            );
+              resourceName:
+                resourceMap.get(reservation.resource_id)?.name ?? "Cancha",
+            }),
+          );
 
-        setTodayReservations(
-          dashboardReservations,
-        );
+        setTodayReservations(dashboardReservations);
 
         // -----------------------------------------
         // ESTADÍSTICAS
@@ -213,21 +181,16 @@ export function useDashboard() {
 
           hasWorkingHours,
 
-          reservations:
-            activeReservations.length,
+          reservations: activeReservations.length,
 
           income,
 
-          pendingPayments:
-            pendingPayments.length,
+          pendingPayments: pendingPayments.length,
 
           employees: 0,
         });
       } catch (error) {
-        console.error(
-          "Error cargando dashboard:",
-          error,
-        );
+        console.error("Error cargando dashboard:", error);
       } finally {
         setLoading(false);
       }
@@ -236,10 +199,40 @@ export function useDashboard() {
     load();
   }, [profile]);
 
+  useEffect(() => {
+    async function loadAnalytics() {
+      if (!profile?.club_id) {
+        setAnalytics(null);
+        return;
+      }
+
+      try {
+        setAnalyticsLoading(true);
+
+        const data = await dashboardService.getAnalytics(
+          profile.club_id,
+          analyticsPeriod,
+        );
+
+        setAnalytics(data);
+      } catch (error) {
+        console.error("Error cargando métricas:", error);
+      } finally {
+        setAnalyticsLoading(false);
+      }
+    }
+
+    loadAnalytics();
+  }, [profile, analyticsPeriod]);
+
   return {
     stats,
     todayReservations,
     loading,
     timezone,
+    analytics,
+    analyticsPeriod,
+    setAnalyticsPeriod,
+    analyticsLoading,
   };
 }
