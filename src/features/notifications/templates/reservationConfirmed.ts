@@ -133,7 +133,7 @@ export function reservationConfirmedTemplate(
                 </p>
 
                 <p style="margin: 0 0 12px;">
-                  <strong>Precio total:</strong>
+                  <strong>Falta abonar:</strong>
                   ${formatCurrency(data.amount)}
                 </p>
 

@@ -1,5 +1,8 @@
 import { supabase } from "@/lib/supabase";
-import { fromZonedTime } from "date-fns-tz";
+import {
+  fromZonedTime,
+  formatInTimeZone,
+} from "date-fns-tz";
 import type {
   Reservation,
   CreateReservationForm,
@@ -8,6 +11,9 @@ import type {
   UpdateReservationForm,
 } from "../types/reservation.types";
 import { validateReservation } from "../utils/reservationValidator";
+import {
+  reservationCancelledTemplate,
+} from "../../notifications/templates/reservationCancelled";
 
 class ReservationService {
   async listByDay(
@@ -110,25 +116,180 @@ class ReservationService {
     return data;
   }
 
-  async updateStatus(
-    id: string,
+async updateStatus(
+  id: string,
+  status: ReservationStatus,
+) {
+  const current = await this.getById(id);
 
-    status: ReservationStatus,
+  // Evitar reprocesar una reserva
+  // que ya estaba cancelada
+  if (
+    current.status === "cancelled" &&
+    status === "cancelled"
   ) {
-    const { error } = await supabase
-
-      .from("reservations")
-
-      .update({
-        status,
-
-        updated_at: new Date().toISOString(),
-      })
-
-      .eq("id", id);
-
-    if (error) throw error;
+    return current;
   }
+
+  const { data, error } = await supabase
+    .from("reservations")
+    .update({
+      status,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", id)
+    .select()
+    .single();
+
+  if (error) {
+    throw error;
+  }
+
+  const updatedReservation =
+    data as Reservation;
+
+  // ---------------------------------------------------------
+  // NOTIFICACIÓN DE CANCELACIÓN
+  // ---------------------------------------------------------
+
+  if (
+    status === "cancelled" &&
+    current.status !== "cancelled"
+  ) {
+    try {
+      const [
+        clubResponse,
+        resourceResponse,
+      ] = await Promise.all([
+        supabase
+          .from("clubs")
+          .select("name, timezone")
+          .eq("id", current.club_id)
+          .single(),
+
+        supabase
+          .from("resources")
+          .select("name")
+          .eq("id", current.resource_id)
+          .single(),
+      ]);
+
+      if (
+        clubResponse.error ||
+        resourceResponse.error
+      ) {
+        console.error(
+          "No se pudo obtener información para el email de cancelación.",
+          {
+            clubError:
+              clubResponse.error,
+            resourceError:
+              resourceResponse.error,
+          },
+        );
+
+        return updatedReservation;
+      }
+
+      const club =
+        clubResponse.data;
+
+      const resource =
+        resourceResponse.data;
+
+      const timezone =
+        club.timezone ||
+        "America/Argentina/Buenos_Aires";
+
+      const date =
+        formatInTimeZone(
+          current.starts_at,
+          timezone,
+          "dd/MM/yyyy",
+        );
+
+      const startTime =
+        formatInTimeZone(
+          current.starts_at,
+          timezone,
+          "HH:mm",
+        );
+
+      const endTime =
+        formatInTimeZone(
+          current.ends_at,
+          timezone,
+          "HH:mm",
+        );
+
+      const email =
+        reservationCancelledTemplate({
+          customerName:
+            current.customer_name,
+
+          clubName:
+            club.name,
+
+          resourceName:
+            resource.name,
+
+          date,
+
+          startTime,
+
+          endTime,
+        });
+
+      const response =
+        await fetch(
+          "/api/notifications/send-email",
+          {
+            method: "POST",
+
+            headers: {
+              "Content-Type":
+                "application/json",
+            },
+
+            body: JSON.stringify({
+              to:
+                current.customer_email,
+
+              subject:
+                email.subject,
+
+              html:
+                email.html,
+            }),
+          },
+        );
+
+      if (!response.ok) {
+        const errorData =
+          await response.json().catch(
+            () => null,
+          );
+
+        console.error(
+          "No se pudo enviar el email de cancelación.",
+          errorData,
+        );
+      }
+    } catch (
+      notificationError
+    ) {
+      // La cancelación ya fue realizada.
+      // Un error de email no debe revertirla.
+
+      console.error(
+        "Error enviando email de cancelación:",
+        notificationError,
+      );
+    }
+  }
+
+  return updatedReservation;
+}
 
   async updatePaymentStatus(
     id: string,
