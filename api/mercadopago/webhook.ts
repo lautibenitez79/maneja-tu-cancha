@@ -1,8 +1,6 @@
-import type {
-  VercelRequest,
-  VercelResponse,
-} from "@vercel/node";
-
+import type { VercelRequest, VercelResponse } from "@vercel/node";
+import { formatInTimeZone } from "date-fns-tz";
+import { reservationConfirmedTemplate } from "../../src/features/notifications/templates/reservationConfirmed.js";
 import { createClient } from "@supabase/supabase-js";
 
 const supabaseAdmin = createClient(
@@ -10,10 +8,7 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!,
 );
 
-export default async function handler(
-  req: VercelRequest,
-  res: VercelResponse,
-) {
+export default async function handler(req: VercelRequest, res: VercelResponse) {
   /*
    * Mercado Pago espera una respuesta rápida.
    *
@@ -28,19 +23,11 @@ export default async function handler(
   }
 
   try {
-    console.log(
-      "=== MERCADO PAGO WEBHOOK ===",
-    );
+    console.log("=== MERCADO PAGO WEBHOOK ===");
 
-    console.log(
-      "Body:",
-      JSON.stringify(req.body),
-    );
+    console.log("Body:", JSON.stringify(req.body));
 
-    console.log(
-      "Query:",
-      JSON.stringify(req.query),
-    );
+    console.log("Query:", JSON.stringify(req.query));
 
     /*
      * ---------------------------------------------------------
@@ -61,13 +48,8 @@ export default async function handler(
      * }
      */
 
-    if (
-      req.body?.type === "payment" &&
-      req.body?.data?.id
-    ) {
-      paymentId = String(
-        req.body.data.id,
-      );
+    if (req.body?.type === "payment" && req.body?.data?.id) {
+      paymentId = String(req.body.data.id);
     }
 
     /*
@@ -76,14 +58,8 @@ export default async function handler(
      * ?topic=payment&id=123456
      */
 
-    if (
-      !paymentId &&
-      req.query.topic === "payment" &&
-      req.query.id
-    ) {
-      paymentId = String(
-        req.query.id,
-      );
+    if (!paymentId && req.query.topic === "payment" && req.query.id) {
+      paymentId = String(req.query.id);
     }
 
     /*
@@ -92,14 +68,8 @@ export default async function handler(
      * ?type=payment&id=123456
      */
 
-    if (
-      !paymentId &&
-      req.query.type === "payment" &&
-      req.query.id
-    ) {
-      paymentId = String(
-        req.query.id,
-      );
+    if (!paymentId && req.query.type === "payment" && req.query.id) {
+      paymentId = String(req.query.id);
     }
 
     /*
@@ -108,9 +78,7 @@ export default async function handler(
      */
 
     if (!paymentId) {
-      console.log(
-        "Webhook sin payment_id.",
-      );
+      console.log("Webhook sin payment_id.");
 
       return res.status(200).json({
         ok: true,
@@ -118,10 +86,7 @@ export default async function handler(
       });
     }
 
-    console.log(
-      "Payment ID recibido:",
-      paymentId,
-    );
+    console.log("Payment ID recibido:", paymentId);
 
     /*
      * ---------------------------------------------------------
@@ -153,13 +118,8 @@ export default async function handler(
      * hacemos la búsqueda de cuentas activas.
      */
 
-    const {
-      data: accounts,
-      error: accountsError,
-    } = await supabaseAdmin
-      .from(
-        "club_marketplace_accounts",
-      )
+    const { data: accounts, error: accountsError } = await supabaseAdmin
+      .from("club_marketplace_accounts")
       .select(
         `
         club_id,
@@ -172,39 +132,26 @@ export default async function handler(
         active
         `,
       )
-      .eq(
-        "provider",
-        "mercadopago",
-      )
-      .eq(
-        "active",
-        true,
-      );
+      .eq("provider", "mercadopago")
+      .eq("active", true);
 
     if (accountsError) {
-      console.error(
-        "Error buscando cuentas Mercado Pago:",
-        accountsError,
-      );
+      console.error("Error buscando cuentas Mercado Pago:", accountsError);
 
       return res.status(200).json({
         ok: false,
         payment_found: false,
-        error:
-          "Error buscando cuentas Mercado Pago",
+        error: "Error buscando cuentas Mercado Pago",
       });
     }
 
     if (!accounts?.length) {
-      console.error(
-        "No hay cuentas Mercado Pago conectadas.",
-      );
+      console.error("No hay cuentas Mercado Pago conectadas.");
 
       return res.status(200).json({
         ok: false,
         payment_found: false,
-        error:
-          "No hay cuentas Mercado Pago conectadas",
+        error: "No hay cuentas Mercado Pago conectadas",
       });
     }
 
@@ -224,9 +171,7 @@ export default async function handler(
     let payment: any = null;
     let sellerAccount: any = null;
 
-    for (
-      const account of accounts
-    ) {
+    for (const account of accounts) {
       if (!account.access_token) {
         continue;
       }
@@ -236,8 +181,7 @@ export default async function handler(
          * Primero intentamos usar el token existente.
          */
 
-        let accessToken =
-          account.access_token;
+        let accessToken = account.access_token;
 
         /*
          * Si el token necesita renovación,
@@ -247,27 +191,24 @@ export default async function handler(
          * porque primero necesitamos saber el club.
          */
 
-        const mpResponse =
-          await fetch(
-            `https://api.mercadopago.com/v1/payments/${encodeURIComponent(
-              paymentId,
-            )}`,
-            {
-              method: "GET",
+        const mpResponse = await fetch(
+          `https://api.mercadopago.com/v1/payments/${encodeURIComponent(
+            paymentId,
+          )}`,
+          {
+            method: "GET",
 
-              headers: {
-                Authorization:
-                  `Bearer ${accessToken}`,
-              },
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
             },
-          );
+          },
+        );
 
         if (!mpResponse.ok) {
           continue;
         }
 
-        const mpData =
-          await mpResponse.json();
+        const mpData = await mpResponse.json();
 
         if (!mpData?.id) {
           continue;
@@ -279,23 +220,17 @@ export default async function handler(
 
         payment = mpData;
 
-        sellerAccount =
-          account;
+        sellerAccount = account;
 
         break;
       } catch (error) {
-        console.error(
-          "Error consultando pago:",
-          {
-            club_id:
-              account.club_id,
+        console.error("Error consultando pago:", {
+          club_id: account.club_id,
 
-            mp_user_id:
-              account.mp_user_id,
+          mp_user_id: account.mp_user_id,
 
-            error,
-          },
-        );
+          error,
+        });
       }
     }
 
@@ -306,41 +241,28 @@ export default async function handler(
      */
 
     if (!payment) {
-      console.error(
-        "No se pudo encontrar el pago:",
-        paymentId,
-      );
+      console.error("No se pudo encontrar el pago:", paymentId);
 
       return res.status(200).json({
         ok: true,
         payment_found: false,
-        payment_id:
-          paymentId,
+        payment_id: paymentId,
       });
     }
 
-    console.log(
-      "Pago encontrado:",
-      {
-        id:
-          payment.id,
+    console.log("Pago encontrado:", {
+      id: payment.id,
 
-        status:
-          payment.status,
+      status: payment.status,
 
-        status_detail:
-          payment.status_detail,
+      status_detail: payment.status_detail,
 
-        transaction_amount:
-          payment.transaction_amount,
+      transaction_amount: payment.transaction_amount,
 
-        external_reference:
-          payment.external_reference,
+      external_reference: payment.external_reference,
 
-        collector_id:
-          payment.collector_id,
-      },
-    );
+      collector_id: payment.collector_id,
+    });
 
     /*
      * ---------------------------------------------------------
@@ -349,15 +271,12 @@ export default async function handler(
      */
 
     if (!sellerAccount) {
-      console.error(
-        "No se pudo determinar el vendedor.",
-      );
+      console.error("No se pudo determinar el vendedor.");
 
       return res.status(200).json({
         ok: false,
         payment_found: true,
-        error:
-          "No se pudo determinar el vendedor",
+        error: "No se pudo determinar el vendedor",
       });
     }
 
@@ -368,32 +287,20 @@ export default async function handler(
 
     if (
       payment.collector_id &&
-      String(
-        payment.collector_id,
-      ) !==
-        String(
-          sellerAccount.mp_user_id,
-        )
+      String(payment.collector_id) !== String(sellerAccount.mp_user_id)
     ) {
-      console.error(
-        "INCONSISTENCIA DE VENDEDOR:",
-        {
-          payment_collector_id:
-            payment.collector_id,
+      console.error("INCONSISTENCIA DE VENDEDOR:", {
+        payment_collector_id: payment.collector_id,
 
-          account_mp_user_id:
-            sellerAccount.mp_user_id,
+        account_mp_user_id: sellerAccount.mp_user_id,
 
-          club_id:
-            sellerAccount.club_id,
-        },
-      );
+        club_id: sellerAccount.club_id,
+      });
 
       return res.status(200).json({
         ok: false,
         payment_found: true,
-        error:
-          "El vendedor del pago no coincide con la cuenta conectada",
+        error: "El vendedor del pago no coincide con la cuenta conectada",
       });
     }
 
@@ -403,20 +310,16 @@ export default async function handler(
      * ---------------------------------------------------------
      */
 
-    const externalReference =
-      payment.external_reference;
+    const externalReference = payment.external_reference;
 
     if (!externalReference) {
-      console.error(
-        "El pago no tiene external_reference.",
-      );
+      console.error("El pago no tiene external_reference.");
 
       return res.status(200).json({
         ok: true,
         payment_found: true,
         reservation_found: false,
-        reason:
-          "Pago sin external_reference",
+        reason: "Pago sin external_reference",
       });
     }
 
@@ -426,55 +329,46 @@ export default async function handler(
      * ---------------------------------------------------------
      */
 
-    const {
-      data: reservation,
-      error: reservationError,
-    } = await supabaseAdmin
+    const { data: reservation, error: reservationError } = await supabaseAdmin
       .from("reservations")
       .select(
         `
-        id,
-        club_id,
-        deposit_amount,
-        amount_paid,
-        payment_status,
-        payment_id,
-        status
-        `,
+    id,
+    club_id,
+    resource_id,
+    customer_name,
+    customer_email,
+    starts_at,
+    ends_at,
+    deposit_amount,
+    amount_paid,
+    payment_status,
+    payment_id,
+    status
+    `,
       )
-      .eq(
-        "id",
-        externalReference,
-      )
+      .eq("id", externalReference)
       .maybeSingle();
 
     if (reservationError) {
-      console.error(
-        "Error buscando reserva:",
-        reservationError,
-      );
+      console.error("Error buscando reserva:", reservationError);
 
       return res.status(200).json({
         ok: false,
         payment_found: true,
         reservation_found: false,
-        error:
-          "Error buscando reserva",
+        error: "Error buscando reserva",
       });
     }
 
     if (!reservation) {
-      console.error(
-        "Reserva no encontrada:",
-        externalReference,
-      );
+      console.error("Reserva no encontrada:", externalReference);
 
       return res.status(200).json({
         ok: true,
         payment_found: true,
         reservation_found: false,
-        external_reference:
-          externalReference,
+        external_reference: externalReference,
       });
     }
 
@@ -487,33 +381,22 @@ export default async function handler(
      * el club propietario de la cuenta Mercado Pago.
      */
 
-    if (
-      reservation.club_id !==
-      sellerAccount.club_id
-    ) {
-      console.error(
-        "INCONSISTENCIA DE CLUB:",
-        {
-          reservation_club_id:
-            reservation.club_id,
+    if (reservation.club_id !== sellerAccount.club_id) {
+      console.error("INCONSISTENCIA DE CLUB:", {
+        reservation_club_id: reservation.club_id,
 
-          seller_club_id:
-            sellerAccount.club_id,
+        seller_club_id: sellerAccount.club_id,
 
-          payment_id:
-            payment.id,
+        payment_id: payment.id,
 
-          reservation_id:
-            reservation.id,
-        },
-      );
+        reservation_id: reservation.id,
+      });
 
       return res.status(200).json({
         ok: false,
         payment_found: true,
         reservation_found: true,
-        error:
-          "La reserva no pertenece al club de la cuenta Mercado Pago",
+        error: "La reserva no pertenece al club de la cuenta Mercado Pago",
       });
     }
 
@@ -526,68 +409,40 @@ export default async function handler(
      * informa un importe diferente al de la seña.
      */
 
-    const expectedAmount =
-      Number(
-        reservation.deposit_amount,
-      );
+    const expectedAmount = Number(reservation.deposit_amount);
 
-    const paidAmount =
-      Number(
-        payment.transaction_amount,
-      );
+    const paidAmount = Number(payment.transaction_amount);
 
-    if (
-      !Number.isFinite(
+    if (!Number.isFinite(expectedAmount) || !Number.isFinite(paidAmount)) {
+      console.error("Importe inválido:", {
         expectedAmount,
-      ) ||
-      !Number.isFinite(
         paidAmount,
-      )
-    ) {
-      console.error(
-        "Importe inválido:",
-        {
-          expectedAmount,
-          paidAmount,
-        },
-      );
+      });
 
       return res.status(200).json({
         ok: false,
         payment_found: true,
         reservation_found: true,
-        error:
-          "Importe inválido",
+        error: "Importe inválido",
       });
     }
 
-    if (
-      expectedAmount !==
-      paidAmount
-    ) {
-      console.error(
-        "INCONSISTENCIA DE IMPORTE:",
-        {
-          expected_amount:
-            expectedAmount,
+    if (expectedAmount !== paidAmount) {
+      console.error("INCONSISTENCIA DE IMPORTE:", {
+        expected_amount: expectedAmount,
 
-          paid_amount:
-            paidAmount,
+        paid_amount: paidAmount,
 
-          reservation_id:
-            reservation.id,
+        reservation_id: reservation.id,
 
-          payment_id:
-            payment.id,
-        },
-      );
+        payment_id: payment.id,
+      });
 
       return res.status(200).json({
         ok: false,
         payment_found: true,
         reservation_found: true,
-        error:
-          "El importe del pago no coincide con la seña",
+        error: "El importe del pago no coincide con la seña",
       });
     }
 
@@ -603,17 +458,9 @@ export default async function handler(
 
     if (
       reservation.payment_id &&
-      String(
-        reservation.payment_id,
-      ) ===
-        String(
-          payment.id,
-        )
+      String(reservation.payment_id) === String(payment.id)
     ) {
-      console.log(
-        "Pago ya procesado:",
-        payment.id,
-      );
+      console.log("Pago ya procesado:", payment.id);
 
       return res.status(200).json({
         ok: true,
@@ -621,34 +468,25 @@ export default async function handler(
         reservation_found: true,
         already_processed: true,
         payment: {
-          id:
-            payment.id,
+          id: payment.id,
 
-          status:
-            payment.status,
+          status: payment.status,
 
-          transaction_amount:
-            payment.transaction_amount,
+          transaction_amount: payment.transaction_amount,
 
-          external_reference:
-            payment.external_reference,
+          external_reference: payment.external_reference,
         },
 
         reservation: {
-          id:
-            reservation.id,
+          id: reservation.id,
 
-          club_id:
-            reservation.club_id,
+          club_id: reservation.club_id,
 
-          payment_id:
-            reservation.payment_id,
+          payment_id: reservation.payment_id,
 
-          payment_status:
-            reservation.payment_status,
+          payment_status: reservation.payment_status,
 
-          status:
-            reservation.status,
+          status: reservation.status,
         },
       });
     }
@@ -659,48 +497,27 @@ export default async function handler(
      * ---------------------------------------------------------
      */
 
-    const updateData: Record<
-      string,
-      unknown
-    > = {
-      payment_id:
-        String(
-          payment.id,
-        ),
+    const updateData: Record<string, unknown> = {
+      payment_id: String(payment.id),
 
-      updated_at:
-        new Date().toISOString(),
+      updated_at: new Date().toISOString(),
     };
 
-    if (
-      payment.status ===
-      "approved"
-    ) {
-      updateData.amount_paid =
-        paidAmount;
+    if (payment.status === "approved") {
+      updateData.amount_paid = paidAmount;
 
-      updateData.payment_status =
-        "approved";
+      updateData.payment_status = "approved";
 
-      updateData.status =
-        "confirmed";
+      updateData.status = "confirmed";
+    } else if (payment.status === "rejected") {
+      updateData.payment_status = "rejected";
+
+      updateData.status = "pending_payment";
     } else if (
-      payment.status ===
-      "rejected"
+      payment.status === "pending" ||
+      payment.status === "in_process"
     ) {
-      updateData.payment_status =
-        "rejected";
-
-      updateData.status =
-        "pending_payment";
-    } else if (
-      payment.status ===
-        "pending" ||
-      payment.status ===
-        "in_process"
-    ) {
-      updateData.payment_status =
-        "pending";
+      updateData.payment_status = "pending";
     } else {
       /*
        * No modificamos el estado de la reserva
@@ -708,17 +525,13 @@ export default async function handler(
        * no contempla.
        */
 
-      console.log(
-        "Estado de Mercado Pago no procesado:",
-        payment.status,
-      );
+      console.log("Estado de Mercado Pago no procesado:", payment.status);
 
       return res.status(200).json({
         ok: true,
         payment_found: true,
         reservation_found: true,
-        ignored_status:
-          payment.status,
+        ignored_status: payment.status,
       });
     }
 
@@ -728,16 +541,10 @@ export default async function handler(
      * ---------------------------------------------------------
      */
 
-    const {
-      data: updatedReservation,
-      error: updateError,
-    } = await supabaseAdmin
+    const { data: updatedReservation, error: updateError } = await supabaseAdmin
       .from("reservations")
       .update(updateData)
-      .eq(
-        "id",
-        reservation.id,
-      )
+      .eq("id", reservation.id)
       .select(
         `
         id,
@@ -751,30 +558,139 @@ export default async function handler(
       .single();
 
     if (updateError) {
-      console.error(
-        "Error actualizando reserva:",
-        updateError,
-      );
+      console.error("Error actualizando reserva:", updateError);
 
       return res.status(200).json({
         ok: false,
         payment_found: true,
         reservation_found: true,
-        error:
-          "Error actualizando reserva",
-        details:
-          updateError,
+        error: "Error actualizando reserva",
+        details: updateError,
       });
     }
 
-    console.log(
-      "Reserva actualizada correctamente:",
-      updatedReservation,
-    );
+    console.log("Reserva actualizada correctamente:", updatedReservation);
+
+    // ---------------------------------------------------------
+    // 14. ENVIAR EMAIL DE RESERVA CONFIRMADA
+    // ---------------------------------------------------------
+
+    if (payment.status === "approved" && reservation.customer_email) {
+      try {
+        const [{ data: club }, { data: resource }] = await Promise.all([
+          supabaseAdmin
+            .from("clubs")
+            .select("name, timezone")
+            .eq("id", reservation.club_id)
+            .maybeSingle(),
+
+          supabaseAdmin
+            .from("resources")
+            .select("name")
+            .eq("id", reservation.resource_id)
+            .maybeSingle(),
+        ]);
+
+        if (!club) {
+          console.error(
+            "No se pudo obtener el club para el email.",
+            reservation.club_id,
+          );
+        } else if (!resource) {
+          console.error(
+            "No se pudo obtener el recurso para el email.",
+            reservation.resource_id,
+          );
+        } else {
+          const date = formatInTimeZone(
+            reservation.starts_at,
+            club.timezone,
+            "dd/MM/yyyy",
+          );
+
+          const startTime = formatInTimeZone(
+            reservation.starts_at,
+            club.timezone,
+            "HH:mm",
+          );
+
+          const endTime = formatInTimeZone(
+            reservation.ends_at,
+            club.timezone,
+            "HH:mm",
+          );
+
+          const email = reservationConfirmedTemplate({
+            customerName: reservation.customer_name,
+
+            clubName: club.name,
+
+            resourceName: resource.name,
+
+            date,
+
+            startTime,
+
+            endTime,
+
+            amount: Number(reservation.amount_paid ?? 0),
+
+            depositAmount: Number(reservation.deposit_amount ?? 0),
+          });
+
+          const appUrl = process.env.PUBLIC_APP_URL?.replace(/\/+$/, "");
+
+          if (!appUrl) {
+            console.error("Falta PUBLIC_APP_URL. No se puede enviar el email.");
+          } else {
+            const emailResponse = await fetch(
+              `${appUrl}/api/notifications/send-email`,
+              {
+                method: "POST",
+
+                headers: {
+                  "Content-Type": "application/json",
+                },
+
+                body: JSON.stringify({
+                  to: reservation.customer_email,
+
+                  subject: email.subject,
+
+                  html: email.html,
+                }),
+              },
+            );
+
+            const emailData = await emailResponse.json();
+
+            if (!emailResponse.ok) {
+              console.error(
+                "No se pudo enviar el email de reserva confirmada:",
+                emailData,
+              );
+            } else {
+              console.log("Email de reserva confirmada enviado:", {
+                reservation_id: reservation.id,
+
+                email: reservation.customer_email,
+
+                email_id: emailData?.id,
+              });
+            }
+          }
+        }
+      } catch (emailError) {
+        console.error(
+          "Error enviando email de reserva confirmada:",
+          emailError,
+        );
+      }
+    }
 
     /*
      * ---------------------------------------------------------
-     * 14. Respuesta final
+     * 15. Respuesta final
      * ---------------------------------------------------------
      */
 
@@ -786,41 +702,29 @@ export default async function handler(
       reservation_found: true,
 
       payment: {
-        id:
-          payment.id,
+        id: payment.id,
 
-        status:
-          payment.status,
+        status: payment.status,
 
-        status_detail:
-          payment.status_detail,
+        status_detail: payment.status_detail,
 
-        transaction_amount:
-          payment.transaction_amount,
+        transaction_amount: payment.transaction_amount,
 
-        external_reference:
-          payment.external_reference,
+        external_reference: payment.external_reference,
 
-        collector_id:
-          payment.collector_id,
+        collector_id: payment.collector_id,
       },
 
       seller: {
-        club_id:
-          sellerAccount.club_id,
+        club_id: sellerAccount.club_id,
 
-        mp_user_id:
-          sellerAccount.mp_user_id,
+        mp_user_id: sellerAccount.mp_user_id,
       },
 
-      reservation:
-        updatedReservation,
+      reservation: updatedReservation,
     });
   } catch (error) {
-    console.error(
-      "Mercado Pago webhook error:",
-      error,
-    );
+    console.error("Mercado Pago webhook error:", error);
 
     /*
      * Durante desarrollo devolvemos 200.
@@ -828,8 +732,7 @@ export default async function handler(
 
     return res.status(200).json({
       ok: false,
-      error:
-        "Error procesando webhook",
+      error: "Error procesando webhook",
     });
   }
 }
