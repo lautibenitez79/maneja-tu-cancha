@@ -178,13 +178,13 @@ export default async function handler(
 
       back_urls: {
         success:
-          "https://maneja-tu-cancha.vercel.app/pago/exito",
+          "https://www.manejatucancha.com.ar/pago/exito",
 
         failure:
-          "https://maneja-tu-cancha.vercel.app/pago/error",
+          "https://www.manejatucancha.com.ar/pago/error",
 
         pending:
-          "https://maneja-tu-cancha.vercel.app/pago/pendiente",
+          "https://www.manejatucancha.com.ar/pago/pendiente",
       },
 
       auto_return: "approved",

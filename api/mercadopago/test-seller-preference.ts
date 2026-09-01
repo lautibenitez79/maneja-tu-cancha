@@ -42,13 +42,13 @@ export default async function handler(
 
       back_urls: {
         success:
-          "https://maneja-tu-cancha.vercel.app/configuracion?mp_test=success",
+          "https://www.manejatucancha.com.ar/configuracion?mp_test=success",
 
         failure:
-          "https://maneja-tu-cancha.vercel.app/configuracion?mp_test=failure",
+          "https://www.manejatucancha.com.ar/configuracion?mp_test=failure",
 
         pending:
-          "https://maneja-tu-cancha.vercel.app/configuracion?mp_test=pending",
+          "https://www.manejatucancha.com.ar/configuracion?mp_test=pending",
       },
 
       auto_return: "approved",

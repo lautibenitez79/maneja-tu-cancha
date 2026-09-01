@@ -52,13 +52,13 @@ export default function PaymentPendingPage() {
     let active = true;
 
     async function loadReservation() {
-      const { data, error } = await supabase
-        .from("reservations")
-        .select("*")
-        .eq("id", reservationId)
-        .maybeSingle();
+      const { data, error } = await supabase.rpc("get_public_reservation", {
+        p_reservation_id: reservationId,
+      });
 
-      if (!active) return;
+      if (!active) {
+        return;
+      }
 
       if (error) {
         console.error("Error consultando reserva:", error);
@@ -66,24 +66,29 @@ export default function PaymentPendingPage() {
         setError("No pudimos consultar el estado de tu reserva.");
 
         setLoading(false);
+
         return;
       }
 
       if (!data) {
         setError("No encontramos la reserva.");
+
         setLoading(false);
+
         return;
       }
 
       const reservationData = data as Reservation;
 
       setReservation(reservationData);
+
       setLoading(false);
 
       /*
-       * Si el webhook ya confirmó el pago mientras
-       * el usuario estaba llegando a esta página,
-       * lo mandamos directamente al éxito.
+       * Si el webhook ya confirmó
+       * el pago mientras el usuario
+       * estaba llegando a esta página,
+       * vamos directamente al éxito.
        */
 
       if (reservationData.status === "confirmed") {
@@ -369,9 +374,7 @@ export default function PaymentPendingPage() {
             disabled={cancelling}
             className="mt-3 inline-flex w-full items-center justify-center rounded-lg border border-red-200 px-4 py-3 font-medium text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {cancelling
-              ? "Cancelando..."
-              : "Cancelar reserva"}
+            {cancelling ? "Cancelando..." : "Cancelar reserva"}
           </button>
         </div>
       </div>
