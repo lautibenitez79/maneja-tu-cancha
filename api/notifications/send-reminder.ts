@@ -209,15 +209,36 @@ export default async function handler(
 
   try {
     const { reservation_id } = req.body ?? {};
+    
 
-    // ------------------------------------------
-    // MODO MANUAL
-    // ------------------------------------------
-    if (reservation_id) {
-      const result = await sendReminder(reservation_id);
+// ------------------------------------------
+// MODO MANUAL
+// ------------------------------------------
+if (reservation_id) {
+  const result = await sendReminder(reservation_id);
 
-      return res.status(200).json(result);
-    }
+  return res.status(200).json(result);
+}
+
+// ------------------------------------------
+// MODO AUTOMÁTICO
+// ------------------------------------------
+
+const cronSecret = process.env.CRON_SECRET;
+
+if (!cronSecret) {
+  return res.status(500).json({
+    error: "CRON_SECRET no está configurado.",
+  });
+}
+
+const authorization = req.headers.authorization;
+
+if (authorization !== `Bearer ${cronSecret}`) {
+  return res.status(401).json({
+    error: "No autorizado.",
+  });
+}
 
     // ------------------------------------------
     // MODO AUTOMÁTICO
