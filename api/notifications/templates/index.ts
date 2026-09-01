@@ -1,19 +1,5 @@
-export {
-  reservationCreatedTemplate,
-} from "./reservationCreated";
-
-export {
-  reservationConfirmedTemplate,
-} from "./reservationConfirmed";
-
-export {
-  reservationCancelledTemplate,
-} from "./reservationCancelled";
-
-export {
-  reservationReminderTemplate,
-} from "./reservationReminder";
-
-export {
-  gymMembershipExpiringTemplate,
-} from "./gymMembershipExpiring";
+export { reservationCreatedTemplate } from "./reservationCreated.js";
+export { reservationConfirmedTemplate } from "./reservationConfirmed.js";
+export { reservationCancelledTemplate } from "./reservationCancelled.js";
+export { reservationReminderTemplate } from "./reservationReminder.js";
+export { gymMembershipExpiringTemplate } from "./gymMembershipExpiring.js";

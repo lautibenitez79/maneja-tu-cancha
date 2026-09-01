@@ -5,7 +5,7 @@ import type {
 
 import {
   reservationCreatedTemplate,
-} from "./templates/reservationCreated";
+} from "./templates/reservationCreated.js";
 
 const FROM_EMAIL =
   "Maneja Tu Cancha <notificaciones@manejatucancha.com.ar>";
