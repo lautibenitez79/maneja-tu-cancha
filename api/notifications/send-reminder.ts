@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { createClient } from "@supabase/supabase-js";
 
-import { reservationReminderTemplate } from "../../src/features/notifications/templates/reservationReminder";
+import { reservationReminderTemplate } from "../../src/features/notifications/templates/reservationReminder.js";
 
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
