@@ -248,11 +248,11 @@ if (authorization !== `Bearer ${cronSecret}`) {
     // Esto permite que el proceso automático
     // encuentre reservas cercanas a las 24 horas.
     const from = new Date(
-      now.getTime() + 23 * 60 * 60 * 1000
+    now.getTime() + 24 * 60 * 60 * 1000
     );
 
     const to = new Date(
-      now.getTime() + 25 * 60 * 60 * 1000
+    now.getTime() + 48 * 60 * 60 * 1000
     );
 
     const { data: reservations, error } = await supabaseAdmin
