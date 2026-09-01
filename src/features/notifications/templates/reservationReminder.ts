@@ -55,6 +55,8 @@ export function reservationReminderTemplate(
           "
         >
 
+          <!-- HEADER -->
+
           <tr>
             <td style="
               padding: 28px 32px;
@@ -72,6 +74,8 @@ export function reservationReminderTemplate(
             </td>
           </tr>
 
+          <!-- CONTENT -->
+
           <tr>
             <td style="
               padding: 32px;
@@ -82,7 +86,7 @@ export function reservationReminderTemplate(
                 font-size: 24px;
                 color: #111827;
               ">
-                Recordatorio de reserva ⏰
+                Recordatorio de tu reserva ⏰
               </h2>
 
               <p style="
@@ -99,9 +103,12 @@ export function reservationReminderTemplate(
                 font-size: 16px;
                 line-height: 1.6;
               ">
-                Te recordamos que tenés una reserva próxima
-                en <strong>${data.clubName}</strong>.
+                Te recordamos que próximamente tenés una
+                reserva en
+                <strong>${data.clubName}</strong>.
               </p>
+
+              <!-- RESERVATION CARD -->
 
               <div style="
                 background-color: #eff6ff;
@@ -133,11 +140,13 @@ export function reservationReminderTemplate(
                 line-height: 1.6;
                 color: #4b5563;
               ">
-                ¡Te esperamos!
+                Te esperamos. ¡Que disfrutes tu turno!
               </p>
 
             </td>
           </tr>
+
+          <!-- FOOTER -->
 
           <tr>
             <td style="
@@ -148,7 +157,15 @@ export function reservationReminderTemplate(
               text-align: center;
             ">
 
-              Este email fue enviado por Maneja Tu Cancha.
+              <p style="margin: 0;">
+                Este email fue enviado por Maneja Tu Cancha.
+              </p>
+
+              <p style="
+                margin: 8px 0 0;
+              ">
+                Gestión de reservas para complejos deportivos.
+              </p>
 
             </td>
           </tr>
