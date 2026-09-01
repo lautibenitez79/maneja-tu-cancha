@@ -62,15 +62,26 @@ async function sendReminder(reservationId: string) {
     throw new Error("La reserva no tiene email del cliente.");
   }
 
-  // Evitar duplicados
-  if (reservation.reminder_sent_at) {
-    return {
-      skipped: true,
-      reason: "already_sent",
-      reservation_id: reservation.id,
-      email: reservation.customer_email,
-    };
-  }
+// Reclamar el recordatorio de forma atómica
+const { data: claimedReservationId, error: claimError } =
+  await supabaseAdmin.rpc("claim_reservation_reminder", {
+    p_reservation_id: reservation.id,
+  });
+
+if (claimError) {
+  throw new Error(
+    `No se pudo reclamar el recordatorio: ${claimError.message}`
+  );
+}
+
+if (!claimedReservationId) {
+  return {
+    skipped: true,
+    reason: "already_sent",
+    reservation_id: reservation.id,
+    email: reservation.customer_email,
+  };
+}
 
   // Buscar club
   const { data: club, error: clubError } = await supabaseAdmin
@@ -173,21 +184,6 @@ async function sendReminder(reservationId: string) {
     );
   }
 
-  // Marcar como enviado SOLO después de que Resend respondió correctamente
-  const { error: updateError } = await supabaseAdmin
-    .from("reservations")
-    .update({
-      reminder_sent_at: new Date().toISOString(),
-    })
-    .eq("id", reservation.id)
-    .is("reminder_sent_at", null);
-
-  if (updateError) {
-    throw new Error(
-      `El email fue enviado, pero no se pudo marcar reminder_sent_at: ${updateError.message}`
-    );
-  }
-
   return {
     skipped: false,
     success: true,
@@ -209,7 +205,7 @@ export default async function handler(
 
   try {
     const { reservation_id } = req.body ?? {};
-    
+
 
 // ------------------------------------------
 // MODO MANUAL
