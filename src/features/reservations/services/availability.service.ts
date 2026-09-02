@@ -63,8 +63,9 @@ class AvailabilityService {
     const resourceBlocks =
       await resourceBlockService.listByWeek(
         resourceId,
-        `${mondayDate}T00:00:00`,
-        `${sundayDate}T23:59:59`,
+        mondayDate,
+        sundayDate,
+        club.timezone,
       );
 
     return this.engine.generateWeek({
