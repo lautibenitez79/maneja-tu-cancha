@@ -18,28 +18,42 @@ export default async function handler(
   }
 
   try {
-    const {
-      club_id,
-      reservation_id,
-    } = req.body ?? {};
+    const { club_id, reservation_id, gym_monthly_fee_id } = req.body ?? {};
 
-    if (!club_id || !reservation_id) {
+    /*
+     * ---------------------------------------------------------
+     * 1. VALIDAR TIPO DE OPERACIÓN
+     * ---------------------------------------------------------
+     *
+     * Debe llegar exactamente uno:
+     *
+     * - reservation_id       → reserva normal
+     * - gym_monthly_fee_id   → cuota mensual de gimnasio
+     */
+
+    const hasReservation = Boolean(reservation_id);
+    const hasGymFee = Boolean(gym_monthly_fee_id);
+
+    if (!club_id) {
+      return res.status(400).json({
+        error: "club_id es obligatorio",
+      });
+    }
+
+    if (hasReservation === hasGymFee) {
       return res.status(400).json({
         error:
-          "club_id y reservation_id son obligatorios",
+          "Debe enviarse exactamente uno de reservation_id o gym_monthly_fee_id",
       });
     }
 
     /*
      * ---------------------------------------------------------
-     * 1. BUSCAR CUENTA DE MERCADO PAGO DEL CLUB
+     * 2. BUSCAR CUENTA DE MERCADO PAGO DEL CLUB
      * ---------------------------------------------------------
      */
 
-    const {
-      data: account,
-      error: accountError,
-    } = await supabaseAdmin
+    const { data: account, error: accountError } = await supabaseAdmin
       .from("club_marketplace_accounts")
       .select(
         `
@@ -64,8 +78,7 @@ export default async function handler(
       );
 
       return res.status(500).json({
-        error:
-          "No se pudo obtener la cuenta de Mercado Pago",
+        error: "No se pudo obtener la cuenta de Mercado Pago",
       });
     }
 
@@ -85,102 +98,180 @@ export default async function handler(
 
     /*
      * ---------------------------------------------------------
-     * 2. BUSCAR RESERVA
+     * 3. VARIABLES GENERALES
      * ---------------------------------------------------------
      */
 
-    const {
-      data: reservation,
-      error: reservationError,
-    } = await supabaseAdmin
-      .from("reservations")
-      .select("*")
-      .eq("id", reservation_id)
-      .eq("club_id", club_id)
-      .maybeSingle();
+    let amount: number;
+    let externalReference: string;
+    let payerEmail: string;
 
-    if (reservationError) {
-      console.error(
-        "Error buscando reserva:",
-        reservationError,
-      );
+    let successUrl: string;
+    let failureUrl: string;
+    let pendingUrl: string;
 
-      return res.status(500).json({
-        error:
-          "No se pudo obtener la reserva",
-      });
-    }
+    let itemId: string;
+    let itemTitle: string;
+    let itemDescription: string;
 
-    if (!reservation) {
-      return res.status(404).json({
-        error:
-          "Reserva no encontrada",
-      });
+    /*
+     * ---------------------------------------------------------
+     * 4. RESERVA NORMAL
+     * ---------------------------------------------------------
+     */
+
+    if (hasReservation) {
+      const {
+        data: reservation,
+        error: reservationError,
+      } = await supabaseAdmin
+        .from("reservations")
+        .select("*")
+        .eq("id", reservation_id)
+        .eq("club_id", club_id)
+        .maybeSingle();
+
+      if (reservationError) {
+        console.error(
+          "Error buscando reserva:",
+          reservationError,
+        );
+
+        return res.status(500).json({
+          error: "No se pudo obtener la reserva",
+        });
+      }
+
+      if (!reservation) {
+        return res.status(404).json({
+          error: "Reserva no encontrada",
+        });
+      }
+
+      /*
+       * La lógica existente de reservas normales
+       * se mantiene exactamente igual.
+       */
+
+      if (reservation.status !== "pending_payment") {
+        return res.status(400).json({
+          error:
+            "La reserva ya no está disponible para pago.",
+        });
+      }
+
+      if (reservation.payment_status !== "pending") {
+        return res.status(400).json({
+          error:
+            "La reserva no está pendiente de pago.",
+        });
+      }
+
+      amount = Number(reservation.deposit_amount);
+
+      if (!Number.isFinite(amount) || amount <= 0) {
+        return res.status(400).json({
+          error:
+            "La reserva no tiene un importe válido para cobrar",
+        });
+      }
+
+      externalReference = reservation.id;
+      payerEmail = reservation.customer_email;
+
+      itemId = reservation.id;
+      itemTitle = "Seña - Cancha";
+      itemDescription = "Seña para reservar la cancha";
+
+    /*
+     * ---------------------------------------------------------
+     * 5. CUOTA MENSUAL DE GIMNASIO
+     * ---------------------------------------------------------
+     */
+
+    } else {
+      const {
+        data: fee,
+        error: feeError,
+      } = await supabaseAdmin
+        .from("gym_monthly_fees")
+        .select("*")
+        .eq("id", gym_monthly_fee_id)
+        .eq("club_id", club_id)
+        .maybeSingle();
+
+      if (feeError) {
+        console.error(
+          "Error buscando cuota de gimnasio:",
+          feeError,
+        );
+
+        return res.status(500).json({
+          error: "No se pudo obtener la cuota de gimnasio",
+        });
+      }
+
+      if (!fee) {
+        return res.status(404).json({
+          error: "Cuota de gimnasio no encontrada",
+        });
+      }
+
+      /*
+       * Solo una cuota pendiente de pago
+       * puede generar una Preference.
+       */
+
+      if (fee.status !== "pending_payment") {
+        return res.status(400).json({
+          error:
+            "La cuota ya no está disponible para pago.",
+        });
+      }
+
+      if (fee.payment_status !== "pending") {
+        return res.status(400).json({
+          error:
+            "La cuota no está pendiente de pago.",
+        });
+      }
+
+      amount = Number(fee.total_amount);
+
+      if (!Number.isFinite(amount) || amount <= 0) {
+        return res.status(400).json({
+          error:
+            "La cuota no tiene un importe válido para cobrar",
+        });
+      }
+
+      /*
+       * Prefijo propio para que el webhook pueda distinguir
+       * una cuota de una reserva normal.
+       */
+
+      externalReference = `gym_fee:${fee.id}`;
+
+      payerEmail = fee.customer_email;
+
+      itemId = fee.id;
+      itemTitle = "Cuota mensual - Gimnasio";
+      itemDescription =
+        `Cuota mensual de gimnasio · ${fee.total_visits} visitas`;
+
     }
 
     /*
      * ---------------------------------------------------------
-     * 3. VERIFICAR ESTADO DE LA RESERVA
-     * ---------------------------------------------------------
-     */
-
-    if (
-      reservation.status !==
-      "pending_payment"
-    ) {
-      return res.status(400).json({
-        error:
-          "La reserva ya no está disponible para pago.",
-      });
-    }
-
-    if (
-      reservation.payment_status !==
-      "pending"
-    ) {
-      return res.status(400).json({
-        error:
-          "La reserva no está pendiente de pago.",
-      });
-    }
-
-    /*
-     * ---------------------------------------------------------
-     * 4. IMPORTE
-     * ---------------------------------------------------------
-     */
-
-    const amount = Number(
-      reservation.deposit_amount,
-    );
-
-    if (
-      !Number.isFinite(amount) ||
-      amount <= 0
-    ) {
-      return res.status(400).json({
-        error:
-          "La reserva no tiene un importe válido para cobrar",
-      });
-    }
-
-    /*
-     * ---------------------------------------------------------
-     * 5. URLS
+     * 6. URLS
      * ---------------------------------------------------------
      */
 
     const appUrl =
-      process.env.PUBLIC_APP_URL?.replace(
-        /\/+$/,
-        "",
-      );
+      process.env.PUBLIC_APP_URL?.replace(/\/+$/, "");
 
     const apiUrl =
-      process.env.PUBLIC_API_URL?.replace(
-        /\/+$/,
-        "",
-      );
+      process.env.PUBLIC_API_URL?.replace(/\/+$/, "");
 
     if (!appUrl || !apiUrl) {
       return res.status(500).json({
@@ -190,42 +281,70 @@ export default async function handler(
     }
 
     /*
+     * Las cuotas usan los mismos destinos de pago,
+     * pero identificadas mediante gym_monthly_fee_id.
+     */
+
+    if (hasGymFee) {
+      successUrl =
+        `${appUrl}/pago/exito?gym_monthly_fee_id=${encodeURIComponent(
+          gym_monthly_fee_id,
+        )}`;
+
+      failureUrl =
+        `${appUrl}/pago/error?gym_monthly_fee_id=${encodeURIComponent(
+          gym_monthly_fee_id,
+        )}`;
+
+      pendingUrl =
+        `${appUrl}/pago/pendiente?gym_monthly_fee_id=${encodeURIComponent(
+          gym_monthly_fee_id,
+        )}`;
+    } else {
+      successUrl =
+        `${appUrl}/pago/exito?reservation_id=${encodeURIComponent(
+          reservation_id,
+        )}`;
+
+      failureUrl =
+        `${appUrl}/pago/error?reservation_id=${encodeURIComponent(
+          reservation_id,
+        )}`;
+
+      pendingUrl =
+        `${appUrl}/pago/pendiente?reservation_id=${encodeURIComponent(
+          reservation_id,
+        )}`;
+    }
+
+    /*
      * ---------------------------------------------------------
-     * 6. CREAR PREFERENCE
+     * 7. CREAR PREFERENCE
      * ---------------------------------------------------------
      */
 
     const preferenceBody = {
       items: [
         {
-          id: reservation.id,
-          title: "Seña - Cancha",
-          description:
-            "Seña para reservar la cancha",
+          id: itemId,
+          title: itemTitle,
+          description: itemDescription,
           quantity: 1,
           currency_id: "ARS",
           unit_price: amount,
         },
       ],
 
-      external_reference:
-        reservation.id,
+      external_reference: externalReference,
 
       payer: {
-        email:
-          reservation.customer_email,
+        email: payerEmail,
       },
 
       back_urls: {
-        success: `${appUrl}/pago/exito?reservation_id=${encodeURIComponent(
-          reservation.id,
-        )}`,
-        failure: `${appUrl}/pago/error?reservation_id=${encodeURIComponent(
-          reservation.id,
-        )}`,
-        pending: `${appUrl}/pago/pendiente?reservation_id=${encodeURIComponent(
-          reservation.id,
-        )}`,
+        success: successUrl,
+        failure: failureUrl,
+        pending: pendingUrl,
       },
 
       auto_return: "approved",
@@ -240,39 +359,27 @@ export default async function handler(
         method: "POST",
 
         headers: {
-          "Content-Type":
-            "application/json",
+          "Content-Type": "application/json",
 
           Authorization:
             `Bearer ${account.access_token}`,
         },
 
-        body: JSON.stringify(
-          preferenceBody,
-        ),
+        body: JSON.stringify(preferenceBody),
       },
     );
 
-    const mpData =
-      await mpResponse.json();
+    const mpData = await mpResponse.json();
 
     console.log(
       "Mercado Pago response:",
       {
-        status:
-          mpResponse.status,
-
-        ok:
-          mpResponse.ok,
-
-        id:
-          mpData?.id,
-
-        collector_id:
-          mpData?.collector_id,
-
-        marketplace_fee:
-          mpData?.marketplace_fee,
+        status: mpResponse.status,
+        ok: mpResponse.ok,
+        id: mpData?.id,
+        collector_id: mpData?.collector_id,
+        marketplace_fee: mpData?.marketplace_fee,
+        external_reference: externalReference,
       },
     );
 
@@ -282,20 +389,51 @@ export default async function handler(
         mpData,
       );
 
-      return res.status(
-        mpResponse.status,
-      ).json({
+      return res.status(mpResponse.status).json({
         error:
           "Mercado Pago rechazó la creación de la Preference",
 
-        details:
-          mpData,
+        details: mpData,
       });
     }
 
     /*
      * ---------------------------------------------------------
-     * 7. RESPUESTA
+     * 8. GUARDAR EXTERNAL_REFERENCE EN LA CUOTA
+     * ---------------------------------------------------------
+     *
+     * Para poder auditar posteriormente qué Preference
+     * corresponde a la cuota.
+     */
+
+    if (hasGymFee) {
+      const { error: feeUpdateError } =
+        await supabaseAdmin
+          .from("gym_monthly_fees")
+          .update({
+            external_reference: externalReference,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", gym_monthly_fee_id)
+          .eq("club_id", club_id);
+
+      if (feeUpdateError) {
+        console.error(
+          "Error guardando external_reference de la cuota:",
+          feeUpdateError,
+        );
+
+        /*
+         * No cancelamos el pago creado.
+         * La Preference ya existe y el webhook seguirá
+         * identificando la cuota mediante external_reference.
+         */
+      }
+    }
+
+    /*
+     * ---------------------------------------------------------
+     * 9. RESPUESTA
      * ---------------------------------------------------------
      */
 
@@ -320,6 +458,9 @@ export default async function handler(
 
       sandbox_init_point:
         mpData.sandbox_init_point,
+
+      external_reference:
+        externalReference,
     });
 
   } catch (error) {

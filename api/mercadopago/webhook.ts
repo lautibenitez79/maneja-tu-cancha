@@ -26,7 +26,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     console.log("=== MERCADO PAGO WEBHOOK ===");
 
     console.log("Body:", JSON.stringify(req.body));
-
     console.log("Query:", JSON.stringify(req.query));
 
     /*
@@ -37,45 +36,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     let paymentId: string | null = null;
 
-    /*
-     * Formato actual:
-     *
-     * {
-     *   "type": "payment",
-     *   "data": {
-     *     "id": "123456"
-     *   }
-     * }
-     */
-
     if (req.body?.type === "payment" && req.body?.data?.id) {
       paymentId = String(req.body.data.id);
     }
-
-    /*
-     * Compatibilidad:
-     *
-     * ?topic=payment&id=123456
-     */
 
     if (!paymentId && req.query.topic === "payment" && req.query.id) {
       paymentId = String(req.query.id);
     }
 
-    /*
-     * Compatibilidad:
-     *
-     * ?type=payment&id=123456
-     */
-
     if (!paymentId && req.query.type === "payment" && req.query.id) {
       paymentId = String(req.query.id);
     }
-
-    /*
-     * Si no tenemos payment_id,
-     * no hay nada que procesar.
-     */
 
     if (!paymentId) {
       console.log("Webhook sin payment_id.");
@@ -90,32 +61,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     /*
      * ---------------------------------------------------------
-     * 2. Buscar el payment y determinar el vendedor
+     * 2. Buscar cuentas Mercado Pago activas
      * ---------------------------------------------------------
-     *
-     * Primero necesitamos conocer:
-     *
-     * - external_reference
-     * - collector_id
-     *
-     * Para eso necesitamos consultar Mercado Pago.
-     *
-     * En esta arquitectura, la reserva nos permite saber
-     * qué club corresponde al pago.
-     */
-
-    /*
-     * ---------------------------------------------------------
-     * 3. Buscar reservas candidatas
-     * ---------------------------------------------------------
-     *
-     * external_reference debería ser el ID de la reserva.
-     *
-     * Como todavía no tenemos el payment, primero obtenemos
-     * el pago utilizando las cuentas conectadas.
-     *
-     * Para mantener compatibilidad con tu implementación actual,
-     * hacemos la búsqueda de cuentas activas.
      */
 
     const { data: accounts, error: accountsError } = await supabaseAdmin
@@ -136,7 +83,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .eq("active", true);
 
     if (accountsError) {
-      console.error("Error buscando cuentas Mercado Pago:", accountsError);
+      console.error(
+        "Error buscando cuentas Mercado Pago:",
+        accountsError,
+      );
 
       return res.status(200).json({
         ok: false,
@@ -157,15 +107,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     /*
      * ---------------------------------------------------------
-     * 4. Encontrar el pago
+     * 3. Encontrar el pago
      * ---------------------------------------------------------
-     *
-     * Importante:
-     *
-     * NO confiamos solamente en que el primer token
-     * pueda consultar el payment.
-     *
-     * Una vez encontrado, verificamos collector_id.
      */
 
     let payment: any = null;
@@ -177,19 +120,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
 
       try {
-        /*
-         * Primero intentamos usar el token existente.
-         */
-
-        let accessToken = account.access_token;
-
-        /*
-         * Si el token necesita renovación,
-         * getValidMercadoPagoToken se encarga.
-         *
-         * No usamos esta función directamente acá todavía
-         * porque primero necesitamos saber el club.
-         */
+        const accessToken = account.access_token;
 
         const mpResponse = await fetch(
           `https://api.mercadopago.com/v1/payments/${encodeURIComponent(
@@ -197,7 +128,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           )}`,
           {
             method: "GET",
-
             headers: {
               Authorization: `Bearer ${accessToken}`,
             },
@@ -214,21 +144,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           continue;
         }
 
-        /*
-         * Encontramos el pago.
-         */
-
         payment = mpData;
-
         sellerAccount = account;
 
         break;
       } catch (error) {
         console.error("Error consultando pago:", {
           club_id: account.club_id,
-
           mp_user_id: account.mp_user_id,
-
           error,
         });
       }
@@ -236,7 +159,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     /*
      * ---------------------------------------------------------
-     * 5. Pago no encontrado
+     * 4. Pago no encontrado
      * ---------------------------------------------------------
      */
 
@@ -252,21 +175,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     console.log("Pago encontrado:", {
       id: payment.id,
-
       status: payment.status,
-
       status_detail: payment.status_detail,
-
       transaction_amount: payment.transaction_amount,
-
       external_reference: payment.external_reference,
-
       collector_id: payment.collector_id,
     });
 
     /*
      * ---------------------------------------------------------
-     * 6. Validar vendedor
+     * 5. Validar vendedor
      * ---------------------------------------------------------
      */
 
@@ -280,20 +198,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
     }
 
-    /*
-     * El collector_id del pago debe coincidir
-     * con la cuenta Mercado Pago encontrada.
-     */
-
     if (
       payment.collector_id &&
       String(payment.collector_id) !== String(sellerAccount.mp_user_id)
     ) {
       console.error("INCONSISTENCIA DE VENDEDOR:", {
         payment_collector_id: payment.collector_id,
-
         account_mp_user_id: sellerAccount.mp_user_id,
-
         club_id: sellerAccount.club_id,
       });
 
@@ -306,7 +217,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     /*
      * ---------------------------------------------------------
-     * 7. Obtener external_reference
+     * 6. Obtener external_reference
      * ---------------------------------------------------------
      */
 
@@ -318,37 +229,432 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(200).json({
         ok: true,
         payment_found: true,
-        reservation_found: false,
         reason: "Pago sin external_reference",
       });
     }
 
     /*
      * ---------------------------------------------------------
-     * 8. Buscar la reserva
+     * 7. Determinar tipo de operación
+     * ---------------------------------------------------------
+     *
+     * Reserva normal:
+     *   external_reference = reservation UUID
+     *
+     * Cuota gimnasio:
+     *   external_reference = gym_fee:<fee UUID>
+     */
+
+    const isGymFee = externalReference.startsWith("gym_fee:");
+
+    if (isGymFee) {
+      /*
+       * =========================================================
+       * FLUJO CUOTA MENSUAL DE GIMNASIO
+       * =========================================================
+       */
+
+      const feeId = externalReference.replace(/^gym_fee:/, "");
+
+      if (!feeId) {
+        console.error("gym_fee sin ID:", externalReference);
+
+        return res.status(200).json({
+          ok: false,
+          payment_found: true,
+          error: "external_reference de cuota inválido",
+        });
+      }
+
+      /*
+       * ---------------------------------------------------------
+       * 7.1 Buscar cuota
+       * ---------------------------------------------------------
+       */
+
+      const { data: fee, error: feeError } = await supabaseAdmin
+        .from("gym_monthly_fees")
+        .select(
+          `
+          id,
+          club_id,
+          customer_name,
+          customer_email,
+          total_visits,
+          total_amount,
+          payment_status,
+          payment_id,
+          status
+          `,
+        )
+        .eq("id", feeId)
+        .maybeSingle();
+
+      if (feeError) {
+        console.error("Error buscando cuota gimnasio:", feeError);
+
+        return res.status(200).json({
+          ok: false,
+          payment_found: true,
+          fee_found: false,
+          error: "Error buscando cuota gimnasio",
+        });
+      }
+
+      if (!fee) {
+        console.error("Cuota gimnasio no encontrada:", feeId);
+
+        return res.status(200).json({
+          ok: true,
+          payment_found: true,
+          fee_found: false,
+          external_reference: externalReference,
+        });
+      }
+
+      /*
+       * ---------------------------------------------------------
+       * 7.2 Validar club
+       * ---------------------------------------------------------
+       */
+
+      if (fee.club_id !== sellerAccount.club_id) {
+        console.error("INCONSISTENCIA DE CLUB EN CUOTA:", {
+          fee_club_id: fee.club_id,
+          seller_club_id: sellerAccount.club_id,
+          payment_id: payment.id,
+          fee_id: fee.id,
+        });
+
+        return res.status(200).json({
+          ok: false,
+          payment_found: true,
+          fee_found: true,
+          error: "La cuota no pertenece al club de la cuenta Mercado Pago",
+        });
+      }
+
+      /*
+       * ---------------------------------------------------------
+       * 7.3 Validar importe
+       * ---------------------------------------------------------
+       */
+
+      const expectedAmount = Number(fee.total_amount);
+      const paidAmount = Number(payment.transaction_amount);
+
+      if (!Number.isFinite(expectedAmount) || !Number.isFinite(paidAmount)) {
+        console.error("Importe inválido para cuota:", {
+          expectedAmount,
+          paidAmount,
+        });
+
+        return res.status(200).json({
+          ok: false,
+          payment_found: true,
+          fee_found: true,
+          error: "Importe inválido",
+        });
+      }
+
+      if (expectedAmount !== paidAmount) {
+        console.error("INCONSISTENCIA DE IMPORTE EN CUOTA:", {
+          expected_amount: expectedAmount,
+          paid_amount: paidAmount,
+          fee_id: fee.id,
+          payment_id: payment.id,
+        });
+
+        return res.status(200).json({
+          ok: false,
+          payment_found: true,
+          fee_found: true,
+          error: "El importe del pago no coincide con la cuota",
+        });
+      }
+
+      /*
+       * ---------------------------------------------------------
+       * 7.4 Idempotencia
+       * ---------------------------------------------------------
+       */
+
+      if (
+        fee.payment_id &&
+        String(fee.payment_id) === String(payment.id)
+      ) {
+        console.log("Pago de cuota ya procesado:", payment.id);
+
+        return res.status(200).json({
+          ok: true,
+          payment_found: true,
+          fee_found: true,
+          already_processed: true,
+          payment: {
+            id: payment.id,
+            status: payment.status,
+            transaction_amount: payment.transaction_amount,
+            external_reference: payment.external_reference,
+          },
+          fee: {
+            id: fee.id,
+            club_id: fee.club_id,
+            payment_id: fee.payment_id,
+            payment_status: fee.payment_status,
+            status: fee.status,
+          },
+        });
+      }
+
+      /*
+       * ---------------------------------------------------------
+       * 7.5 Procesar estado
+       * ---------------------------------------------------------
+       */
+
+      if (payment.status === "approved") {
+        /*
+         * Primero guardamos el payment_id en la cuota.
+         *
+         * La activación posterior crea las reservas
+         * correspondientes a todas las ocurrencias.
+         */
+
+        const { error: feePaymentUpdateError } = await supabaseAdmin
+          .from("gym_monthly_fees")
+          .update({
+            payment_id: String(payment.id),
+            payment_status: "approved",
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", fee.id)
+          .eq("club_id", sellerAccount.club_id);
+
+        if (feePaymentUpdateError) {
+          console.error(
+            "Error guardando pago de cuota:",
+            feePaymentUpdateError,
+          );
+
+          return res.status(200).json({
+            ok: false,
+            payment_found: true,
+            fee_found: true,
+            error: "Error actualizando cuota",
+          });
+        }
+
+        /*
+         * -------------------------------------------------------
+         * Activar cuota
+         * -------------------------------------------------------
+         *
+         * La RPC:
+         *
+         * - crea las reservas confirmadas
+         * - vincula cada ocurrencia
+         * - distribuye el importe total
+         * - marca la cuota como active
+         */
+
+        const { error: activationError } = await supabaseAdmin.rpc(
+          "activate_gym_monthly_fee",
+          {
+            p_fee_id: fee.id,
+            p_payment_id: String(payment.id),
+          },
+        );
+
+        if (activationError) {
+          console.error(
+            "Error activando cuota mensual:",
+            activationError,
+          );
+
+          /*
+           * Dejamos payment_id registrado para trazabilidad,
+           * pero la RPC debe ejecutarse nuevamente de forma
+           * idempotente si Mercado Pago reenvía el webhook.
+           */
+
+          return res.status(200).json({
+            ok: false,
+            payment_found: true,
+            fee_found: true,
+            error: "Error activando cuota mensual",
+            details: activationError,
+          });
+        }
+
+        console.log("Cuota mensual activada correctamente:", {
+          fee_id: fee.id,
+          payment_id: payment.id,
+        });
+
+        return res.status(200).json({
+          ok: true,
+          payment_found: true,
+          fee_found: true,
+          gym_monthly_fee: {
+            id: fee.id,
+            payment_id: payment.id,
+            payment_status: "approved",
+            status: "active",
+          },
+        });
+      }
+
+      /*
+       * ---------------------------------------------------------
+       * Pago rechazado
+       * ---------------------------------------------------------
+       */
+
+      if (payment.status === "rejected") {
+        const { data: updatedFee, error: updateError } =
+          await supabaseAdmin
+            .from("gym_monthly_fees")
+            .update({
+              payment_id: String(payment.id),
+              payment_status: "rejected",
+              status: "pending_payment",
+              updated_at: new Date().toISOString(),
+            })
+            .eq("id", fee.id)
+            .eq("club_id", sellerAccount.club_id)
+            .select(
+              `
+              id,
+              club_id,
+              payment_status,
+              payment_id,
+              status
+              `,
+            )
+            .single();
+
+        if (updateError) {
+          console.error(
+            "Error actualizando cuota rechazada:",
+            updateError,
+          );
+
+          return res.status(200).json({
+            ok: false,
+            payment_found: true,
+            fee_found: true,
+            error: "Error actualizando cuota",
+          });
+        }
+
+        return res.status(200).json({
+          ok: true,
+          payment_found: true,
+          fee_found: true,
+          fee: updatedFee,
+        });
+      }
+
+      /*
+       * ---------------------------------------------------------
+       * Pago pendiente / en proceso
+       * ---------------------------------------------------------
+       */
+
+      if (
+        payment.status === "pending" ||
+        payment.status === "in_process"
+      ) {
+        const { data: updatedFee, error: updateError } =
+          await supabaseAdmin
+            .from("gym_monthly_fees")
+            .update({
+              payment_status: "pending",
+              updated_at: new Date().toISOString(),
+            })
+            .eq("id", fee.id)
+            .eq("club_id", sellerAccount.club_id)
+            .select(
+              `
+              id,
+              club_id,
+              payment_status,
+              payment_id,
+              status
+              `,
+            )
+            .single();
+
+        if (updateError) {
+          console.error(
+            "Error actualizando cuota pendiente:",
+            updateError,
+          );
+
+          return res.status(200).json({
+            ok: false,
+            payment_found: true,
+            fee_found: true,
+            error: "Error actualizando cuota",
+          });
+        }
+
+        return res.status(200).json({
+          ok: true,
+          payment_found: true,
+          fee_found: true,
+          fee: updatedFee,
+        });
+      }
+
+      console.log(
+        "Estado de Mercado Pago no procesado para cuota:",
+        payment.status,
+      );
+
+      return res.status(200).json({
+        ok: true,
+        payment_found: true,
+        fee_found: true,
+        ignored_status: payment.status,
+      });
+    }
+
+    /*
+     * =========================================================
+     * FLUJO RESERVA NORMAL
+     * =========================================================
+     *
+     * Desde acá conservamos el comportamiento existente.
+     */
+
+    /*
+     * ---------------------------------------------------------
+     * 8. Buscar reserva
      * ---------------------------------------------------------
      */
 
-    const { data: reservation, error: reservationError } = await supabaseAdmin
-      .from("reservations")
-      .select(
-        `
-    id,
-    club_id,
-    resource_id,
-    customer_name,
-    customer_email,
-    starts_at,
-    ends_at,
-    deposit_amount,
-    amount_paid,
-    payment_status,
-    payment_id,
-    status
-    `,
-      )
-      .eq("id", externalReference)
-      .maybeSingle();
+    const { data: reservation, error: reservationError } =
+      await supabaseAdmin
+        .from("reservations")
+        .select(
+          `
+          id,
+          club_id,
+          resource_id,
+          customer_name,
+          customer_email,
+          starts_at,
+          ends_at,
+          deposit_amount,
+          amount_paid,
+          payment_status,
+          payment_id,
+          status
+          `,
+        )
+        .eq("id", externalReference)
+        .maybeSingle();
 
     if (reservationError) {
       console.error("Error buscando reserva:", reservationError);
@@ -376,19 +682,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
      * ---------------------------------------------------------
      * 9. Validar club
      * ---------------------------------------------------------
-     *
-     * El club de la reserva tiene que ser exactamente
-     * el club propietario de la cuenta Mercado Pago.
      */
 
     if (reservation.club_id !== sellerAccount.club_id) {
       console.error("INCONSISTENCIA DE CLUB:", {
         reservation_club_id: reservation.club_id,
-
         seller_club_id: sellerAccount.club_id,
-
         payment_id: payment.id,
-
         reservation_id: reservation.id,
       });
 
@@ -404,13 +704,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
      * ---------------------------------------------------------
      * 10. Validar importe
      * ---------------------------------------------------------
-     *
-     * Evitamos confirmar una reserva si Mercado Pago
-     * informa un importe diferente al de la seña.
      */
 
     const expectedAmount = Number(reservation.deposit_amount);
-
     const paidAmount = Number(payment.transaction_amount);
 
     if (!Number.isFinite(expectedAmount) || !Number.isFinite(paidAmount)) {
@@ -430,11 +726,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (expectedAmount !== paidAmount) {
       console.error("INCONSISTENCIA DE IMPORTE:", {
         expected_amount: expectedAmount,
-
         paid_amount: paidAmount,
-
         reservation_id: reservation.id,
-
         payment_id: payment.id,
       });
 
@@ -450,10 +743,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
      * ---------------------------------------------------------
      * 11. Idempotencia
      * ---------------------------------------------------------
-     *
-     * Si Mercado Pago manda nuevamente el mismo webhook
-     * después de que ya procesamos el pago, no necesitamos
-     * modificar nuevamente la reserva.
      */
 
     if (
@@ -469,23 +758,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         already_processed: true,
         payment: {
           id: payment.id,
-
           status: payment.status,
-
           transaction_amount: payment.transaction_amount,
-
           external_reference: payment.external_reference,
         },
-
         reservation: {
           id: reservation.id,
-
           club_id: reservation.club_id,
-
           payment_id: reservation.payment_id,
-
           payment_status: reservation.payment_status,
-
           status: reservation.status,
         },
       });
@@ -499,19 +780,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const updateData: Record<string, unknown> = {
       payment_id: String(payment.id),
-
       updated_at: new Date().toISOString(),
     };
 
     if (payment.status === "approved") {
       updateData.amount_paid = paidAmount;
-
       updateData.payment_status = "approved";
-
       updateData.status = "confirmed";
     } else if (payment.status === "rejected") {
       updateData.payment_status = "rejected";
-
       updateData.status = "pending_payment";
     } else if (
       payment.status === "pending" ||
@@ -519,13 +796,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     ) {
       updateData.payment_status = "pending";
     } else {
-      /*
-       * No modificamos el estado de la reserva
-       * para estados que nuestro sistema todavía
-       * no contempla.
-       */
-
-      console.log("Estado de Mercado Pago no procesado:", payment.status);
+      console.log(
+        "Estado de Mercado Pago no procesado:",
+        payment.status,
+      );
 
       return res.status(200).json({
         ok: true,
@@ -541,7 +815,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
      * ---------------------------------------------------------
      */
 
-    const { data: updatedReservation, error: updateError } = await supabaseAdmin
+    const {
+      data: updatedReservation,
+      error: updateError,
+    } = await supabaseAdmin
       .from("reservations")
       .update(updateData)
       .eq("id", reservation.id)
@@ -569,11 +846,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
     }
 
-    console.log("Reserva actualizada correctamente:", updatedReservation);
+    console.log(
+      "Reserva actualizada correctamente:",
+      updatedReservation,
+    );
 
-    // ---------------------------------------------------------
-    // 14. ENVIAR EMAIL DE RESERVA CONFIRMADA
-    // ---------------------------------------------------------
+    /*
+     * ---------------------------------------------------------
+     * 14. ENVIAR EMAIL DE RESERVA CONFIRMADA
+     * ---------------------------------------------------------
+     */
 
     if (payment.status === "approved" && reservation.customer_email) {
       try {
@@ -622,41 +904,32 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
           const email = reservationConfirmedTemplate({
             customerName: reservation.customer_name,
-
             clubName: club.name,
-
             resourceName: resource.name,
-
             date,
-
             startTime,
-
             endTime,
-
             amount: Number(reservation.amount_paid ?? 0),
-
             depositAmount: Number(reservation.deposit_amount ?? 0),
           });
 
           const appUrl = process.env.PUBLIC_APP_URL?.replace(/\/+$/, "");
 
           if (!appUrl) {
-            console.error("Falta PUBLIC_APP_URL. No se puede enviar el email.");
+            console.error(
+              "Falta PUBLIC_APP_URL. No se puede enviar el email.",
+            );
           } else {
             const emailResponse = await fetch(
               `${appUrl}/api/notifications/send-email`,
               {
                 method: "POST",
-
                 headers: {
                   "Content-Type": "application/json",
                 },
-
                 body: JSON.stringify({
                   to: reservation.customer_email,
-
                   subject: email.subject,
-
                   html: email.html,
                 }),
               },
@@ -670,13 +943,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 emailData,
               );
             } else {
-              console.log("Email de reserva confirmada enviado:", {
-                reservation_id: reservation.id,
-
-                email: reservation.customer_email,
-
-                email_id: emailData?.id,
-              });
+              console.log(
+                "Email de reserva confirmada enviado:",
+                {
+                  reservation_id: reservation.id,
+                  email: reservation.customer_email,
+                  email_id: emailData?.id,
+                },
+              );
             }
           }
         }
@@ -696,31 +970,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     return res.status(200).json({
       ok: true,
-
       payment_found: true,
-
       reservation_found: true,
-
       payment: {
         id: payment.id,
-
         status: payment.status,
-
         status_detail: payment.status_detail,
-
         transaction_amount: payment.transaction_amount,
-
         external_reference: payment.external_reference,
-
         collector_id: payment.collector_id,
       },
-
       seller: {
         club_id: sellerAccount.club_id,
-
         mp_user_id: sellerAccount.mp_user_id,
       },
-
       reservation: updatedReservation,
     });
   } catch (error) {
