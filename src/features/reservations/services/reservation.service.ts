@@ -93,28 +93,30 @@ class ReservationService {
 }
 
   async createPublic(form: CreateReservationForm) {
-    validateReservation(form);
+  validateReservation(form);
 
-    if (form.source !== "web") {
-      throw new Error("Una reserva pública debe tener origen web.");
-    }
+  if (form.source !== "web") {
+    throw new Error("Una reserva pública debe tener origen web.");
+  }
 
-    const { data, error } = await supabase.rpc("create_public_reservation", {
+  const { data, error } = await supabase.rpc(
+    "create_public_reservation",
+    {
       p_resource_id: form.resource_id,
       p_customer_name: form.customer_name.trim(),
       p_customer_phone: form.customer_phone.trim(),
       p_customer_email: form.customer_email.trim(),
       p_starts_at: form.starts_at,
       p_ends_at: form.ends_at,
-      p_notes: form.notes?.trim() || null,
-    });
+    },
+  );
 
-    if (error) {
-      throw error;
-    }
-
-    return data;
+  if (error) {
+    throw error;
   }
+
+  return data;
+}
 
 async updateStatus(
   id: string,

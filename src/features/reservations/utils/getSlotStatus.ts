@@ -1,24 +1,6 @@
-import type {
-  Reservation,
-} from "../types/reservation.types";
-
-import type {
-  WorkingHour,
-} from "@/features/resources/types/working-hours.types";
-
 import {
-  isSlotOpen,
-} from "./isSlotOpen";
-
-import type {
-  ResourceBlock,
-} from "../types/resource-block.types";
-
-import {
-  isSlotBlocked,
-} from "./isSlotBlocked";
-
-import {
+  addDays,
+  format,
   parseISO,
 } from "date-fns";
 
@@ -26,22 +8,89 @@ import {
   fromZonedTime,
 } from "date-fns-tz";
 
+import type {
+  Reservation,
+} from "../types/reservation.types";
+
+import type {
+  ResourceBlock,
+} from "../types/resource-block.types";
+
+import type {
+  WorkingHour,
+} from "@/features/resources/types/working-hours.types";
+
+import { isSlotOpen } from "./isSlotOpen";
+
+function toUtcRange(
+  slotStart: string,
+  slotEnd: string,
+  timezone: string,
+) {
+  const start = fromZonedTime(
+    slotStart,
+    timezone,
+  );
+
+  let localEnd = slotEnd;
+
+  const startTime =
+    slotStart.substring(11, 16);
+
+  const endTime =
+    slotEnd.substring(11, 16);
+
+  /*
+   * Ejemplo:
+   * 23:00 → 00:00
+   *
+   * El final pertenece al día siguiente.
+   */
+  if (endTime <= startTime) {
+    const date = parseISO(
+      slotEnd.substring(0, 10),
+    );
+
+    const nextDate = addDays(
+      date,
+      1,
+    );
+
+    localEnd =
+      `${format(nextDate, "yyyy-MM-dd")}T${endTime}:00`;
+  }
+
+  const end = fromZonedTime(
+    localEnd,
+    timezone,
+  );
+
+  return {
+    start,
+    end,
+  };
+}
+
 export function getSlotStatus(
   slotStart: string,
   slotEnd: string,
   workingHour: WorkingHour,
   reservations: Reservation[],
   resourceBlocks: ResourceBlock[],
+  capacity: number,
   timezone: string,
 ) {
   /*
-   * FUERA DEL HORARIO DE FUNCIONAMIENTO
+   * ---------------------------------------------------------
+   * HORARIO CERRADO
+   * ---------------------------------------------------------
    */
+
   if (
     !isSlotOpen(
       workingHour,
-      slotStart,
-      slotEnd,
+      slotStart.substring(11, 16),
+      slotEnd.substring(11, 16),
     )
   ) {
     return {
@@ -50,71 +99,104 @@ export function getSlotStatus(
     } as const;
   }
 
+  const {
+    start: slotStartUtc,
+    end: slotEndUtc,
+  } = toUtcRange(
+    slotStart,
+    slotEnd,
+    timezone,
+  );
+
   /*
-   * BLOQUEO MANUAL
+   * ---------------------------------------------------------
+   * BLOQUEO
+   * ---------------------------------------------------------
    */
-  const blocked =
-    isSlotBlocked(
-      resourceBlocks,
-      slotStart,
-      slotEnd,
-      timezone,
+
+  const block =
+    resourceBlocks.find(
+      (resourceBlock) => {
+        const blockStart =
+          new Date(
+            resourceBlock.starts_at,
+          ).getTime();
+
+        const blockEnd =
+          new Date(
+            resourceBlock.ends_at,
+          ).getTime();
+
+        const slotStartTime =
+          slotStartUtc.getTime();
+
+        const slotEndTime =
+          slotEndUtc.getTime();
+
+        return (
+          blockStart < slotEndTime &&
+          blockEnd > slotStartTime
+        );
+      },
     );
 
-  if (blocked) {
+  if (block) {
     return {
       status: "blocked",
       clickable: true,
-      resourceBlockId: blocked.id,
+      resourceBlockId: block.id,
     } as const;
   }
 
   /*
-   * RESERVAS
-   *
-   * Puede haber más de una persona
-   * ocupando el mismo horario cuando
-   * el recurso tiene capacidad > 1.
+   * ---------------------------------------------------------
+   * RESERVAS QUE OCUPAN EL SLOT
+   * ---------------------------------------------------------
    */
-  const slotStartUtc = fromZonedTime(
-    parseISO(slotStart),
-    timezone,
-  );
-
-  const slotEndUtc = fromZonedTime(
-    parseISO(slotEnd),
-    timezone,
-  );
 
   const overlappingReservations =
-    reservations.filter((reservation) => {
-      if (
-        reservation.status ===
-        "cancelled"
-      ) {
-        return false;
-      }
+    reservations.filter(
+      (reservation) => {
+        if (
+          reservation.status ===
+          "cancelled"
+        ) {
+          return false;
+        }
 
-      const reservationStart =
-        new Date(reservation.starts_at);
+        const reservationStart =
+          new Date(
+            reservation.starts_at,
+          ).getTime();
 
-      const reservationEnd =
-        new Date(reservation.ends_at);
+        const reservationEnd =
+          new Date(
+            reservation.ends_at,
+          ).getTime();
 
-      return (
-        reservationStart <
-          slotEndUtc &&
-        reservationEnd >
-          slotStartUtc
-      );
-    });
+        const slotStartTime =
+          slotStartUtc.getTime();
+
+        const slotEndTime =
+          slotEndUtc.getTime();
+
+        return (
+          reservationStart <
+            slotEndTime &&
+          reservationEnd >
+            slotStartTime
+        );
+      },
+    );
 
   /*
+   * ---------------------------------------------------------
    * SIN RESERVAS
+   * ---------------------------------------------------------
    */
+
   if (
-    overlappingReservations.length ===
-    0
+    overlappingReservations.length === 0
   ) {
     return {
       status: "available",
@@ -123,8 +205,57 @@ export function getSlotStatus(
   }
 
   /*
-   * RESERVAS ACTIVAS
+   * ---------------------------------------------------------
+   * CAPACIDAD
+   * ---------------------------------------------------------
    */
+
+  const reservationIds =
+    overlappingReservations.map(
+      (reservation) =>
+        reservation.id,
+    );
+
+  const reservationNames =
+    overlappingReservations.map(
+      (reservation) =>
+        reservation.customer_name,
+    );
+
+  /*
+   * Si todavía hay lugar,
+   * el horario continúa disponible.
+   *
+   * Esto es lo que permite:
+   *
+   * capacidad 10
+   * 3 reservas
+   * → todavía se puede reservar.
+   */
+
+  if (
+    overlappingReservations.length <
+    Math.max(1, capacity)
+  ) {
+    return {
+      status: "available",
+      clickable: true,
+
+      reservationId:
+        reservationIds[0],
+
+      reservationIds,
+
+      reservationNames,
+    } as const;
+  }
+
+  /*
+   * ---------------------------------------------------------
+   * CAPACIDAD COMPLETA
+   * ---------------------------------------------------------
+   */
+
   const hasPendingPayment =
     overlappingReservations.some(
       (reservation) =>
@@ -139,31 +270,11 @@ export function getSlotStatus(
 
     clickable: true,
 
-    /*
-     * Compatibilidad con el código actual.
-     * ReservationModal sigue usando
-     * reservationId.
-     */
     reservationId:
-      overlappingReservations[0].id,
+      reservationIds[0],
 
-    /*
-     * Todas las reservas del horario.
-     */
-    reservationIds:
-      overlappingReservations.map(
-        (reservation) =>
-          reservation.id,
-      ),
+    reservationIds,
 
-    /*
-     * Todos los nombres para mostrar
-     * en la celda del calendario.
-     */
-    reservationNames:
-      overlappingReservations.map(
-        (reservation) =>
-          reservation.customer_name,
-      ),
+    reservationNames,
   } as const;
 }

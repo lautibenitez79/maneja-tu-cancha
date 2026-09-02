@@ -10,17 +10,13 @@ export interface CalendarCell {
   starts_at: string;
   ends_at: string;
 
-  status:
-    | "available"
-    | "reserved"
-    | "pending_payment"
-    | "closed"
-    | "blocked";
+  status: CalendarCellStatus;
 
   clickable: boolean;
 
   reservationId?: string;
   reservationIds?: string[];
+
   reservationNames?: string[];
 
   resourceBlockId?: string;

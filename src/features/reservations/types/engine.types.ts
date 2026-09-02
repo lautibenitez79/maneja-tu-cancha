@@ -14,6 +14,8 @@ export interface GenerateDayInput {
 
   reservationDuration: number;
 
+  capacity: number;
+
   date: string;
 
   timezone: string;
@@ -25,6 +27,8 @@ export interface GenerateWeekInput {
   weekStart: Date;
 
   reservationDuration: number;
+
+  capacity: number;
 
   workingHours: WorkingHour[];
 

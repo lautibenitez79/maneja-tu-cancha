@@ -24,6 +24,7 @@ export interface AvailabilitySlot {
 
   reservationId?: string;
   reservationIds?: string[];
+
   reservationNames?: string[];
 
   resourceBlockId?: string;
