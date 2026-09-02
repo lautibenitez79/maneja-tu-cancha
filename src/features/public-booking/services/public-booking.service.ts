@@ -18,6 +18,7 @@ export interface PublicWorkingHour {
 }
 
 export interface CreateGymMonthlyFeeInput {
+  clubId: string;
   resourceId: string;
   customerName: string;
   customerPhone: string;
@@ -136,20 +137,21 @@ class PublicBookingService {
   }
 
   async createGymMonthlyFee({
-    resourceId,
-    customerName,
-    customerPhone,
-    customerEmail,
-    startsOn,
-    endsOn,
-    visitsPerWeek,
-    totalVisits,
-    visitDays,
-    startTime,
-    endTime,
-    totalAmount,
-  }: CreateGymMonthlyFeeInput) {
+  clubId,
+  resourceId,
+  customerName,
+  customerPhone,
+  customerEmail,
+  startsOn,
+  endsOn,
+  visitsPerWeek,
+  visitDays,
+  startTime,
+  endTime,
+  totalAmount,
+}: CreateGymMonthlyFeeInput) {
     const { data, error } = await supabase.rpc("create_gym_monthly_fee", {
+      p_club_id: clubId,
       p_resource_id: resourceId,
       p_customer_name: customerName,
       p_customer_phone: customerPhone,
@@ -157,7 +159,6 @@ class PublicBookingService {
       p_starts_on: startsOn,
       p_ends_on: endsOn,
       p_visits_per_week: visitsPerWeek,
-      p_total_visits: totalVisits,
       p_visit_days: visitDays,
       p_start_time: startTime,
       p_end_time: endTime,
