@@ -6,6 +6,32 @@ import type { Reservation } from "@/features/reservations/types/reservation.type
 
 import type { PublicAvailableSlot } from "../types/public-booking.types";
 
+export interface PublicWorkingHour {
+  id: string;
+  resource_id: string;
+  day_of_week: number;
+  enabled: boolean;
+  opens_at: string;
+  closes_at: string;
+  reopens_at: string | null;
+  final_closes_at: string | null;
+}
+
+export interface CreateGymMonthlyFeeInput {
+  resourceId: string;
+  customerName: string;
+  customerPhone: string;
+  customerEmail: string;
+  startsOn: string;
+  endsOn: string;
+  visitsPerWeek: number;
+  totalVisits: number;
+  visitDays: number[];
+  startTime: string;
+  endTime: string;
+  totalAmount: number;
+}
+
 class PublicBookingService {
   async getClubBySlug(slug: string): Promise<Club | null> {
     const { data, error } = await supabase
@@ -37,6 +63,31 @@ class PublicBookingService {
     return data as Resource[];
   }
 
+  async getWorkingHours(resourceId: string): Promise<PublicWorkingHour[]> {
+    const { data, error } = await supabase
+      .from("working_hours")
+      .select(
+        `
+          id,
+          resource_id,
+          day_of_week,
+          enabled,
+          opens_at,
+          closes_at,
+          reopens_at,
+          final_closes_at
+        `,
+      )
+      .eq("resource_id", resourceId)
+      .order("day_of_week");
+
+    if (error) {
+      throw error;
+    }
+
+    return (data ?? []) as PublicWorkingHour[];
+  }
+
   async getAvailableSlots(
     resourceId: string,
     date: string,
@@ -52,56 +103,85 @@ class PublicBookingService {
 
     return (data ?? []) as PublicAvailableSlot[];
   }
+
   async createReservation({
-  resourceId,
-  customerName,
-  customerPhone,
-  customerEmail,
-  startsAt,
-  endsAt,
-}: {
-  resourceId: string;
-  customerName: string;
-  customerPhone: string;
-  customerEmail: string;
-  startsAt: string;
-  endsAt: string;
-}): Promise<Reservation> {
-  const { data, error } =
-    await supabase.rpc(
-      "create_public_reservation",
-      {
-        p_resource_id: resourceId,
-        p_customer_name: customerName,
-        p_customer_phone: customerPhone,
-        p_customer_email: customerEmail,
-        p_starts_at: startsAt,
-        p_ends_at: endsAt,
-      },
-    );
+    resourceId,
+    customerName,
+    customerPhone,
+    customerEmail,
+    startsAt,
+    endsAt,
+  }: {
+    resourceId: string;
+    customerName: string;
+    customerPhone: string;
+    customerEmail: string;
+    startsAt: string;
+    endsAt: string;
+  }): Promise<Reservation> {
+    const { data, error } = await supabase.rpc("create_public_reservation", {
+      p_resource_id: resourceId,
+      p_customer_name: customerName,
+      p_customer_phone: customerPhone,
+      p_customer_email: customerEmail,
+      p_starts_at: startsAt,
+      p_ends_at: endsAt,
+    });
 
-  if (error) {
-    throw error;
+    if (error) {
+      throw error;
+    }
+
+    return data as Reservation;
   }
 
-  return data as Reservation;
-}
-async cancelReservation(
-  reservationId: string,
-): Promise<Reservation> {
-  const { data, error } = await supabase.rpc(
-    "cancel_public_reservation",
-    {
+  async createGymMonthlyFee({
+    resourceId,
+    customerName,
+    customerPhone,
+    customerEmail,
+    startsOn,
+    endsOn,
+    visitsPerWeek,
+    totalVisits,
+    visitDays,
+    startTime,
+    endTime,
+    totalAmount,
+  }: CreateGymMonthlyFeeInput) {
+    const { data, error } = await supabase.rpc("create_gym_monthly_fee", {
+      p_resource_id: resourceId,
+      p_customer_name: customerName,
+      p_customer_phone: customerPhone,
+      p_customer_email: customerEmail,
+      p_starts_on: startsOn,
+      p_ends_on: endsOn,
+      p_visits_per_week: visitsPerWeek,
+      p_total_visits: totalVisits,
+      p_visit_days: visitDays,
+      p_start_time: startTime,
+      p_end_time: endTime,
+      p_total_amount: totalAmount,
+    });
+
+    if (error) {
+      throw error;
+    }
+
+    return data;
+  }
+
+  async cancelReservation(reservationId: string): Promise<Reservation> {
+    const { data, error } = await supabase.rpc("cancel_public_reservation", {
       p_reservation_id: reservationId,
-    },
-  );
+    });
 
-  if (error) {
-    throw error;
+    if (error) {
+      throw error;
+    }
+
+    return data as Reservation;
   }
-
-  return data as Reservation;
-}
 }
 
 export const publicBookingService = new PublicBookingService();

@@ -381,7 +381,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       if (
         fee.payment_id &&
-        String(fee.payment_id) === String(payment.id)
+        String(fee.payment_id) === String(payment.id) &&
+        fee.status === "active"
       ) {
         console.log("Pago de cuota ya procesado:", payment.id);
 

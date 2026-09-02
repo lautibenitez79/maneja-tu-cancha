@@ -10,10 +10,6 @@ import {
   isSlotOpen,
 } from "./isSlotOpen";
 
-import {
-  isSlotReserved,
-} from "./isSlotReserved";
-
 import type {
   ResourceBlock,
 } from "../types/resource-block.types";
@@ -21,6 +17,14 @@ import type {
 import {
   isSlotBlocked,
 } from "./isSlotBlocked";
+
+import {
+  parseISO,
+} from "date-fns";
+
+import {
+  fromZonedTime,
+} from "date-fns-tz";
 
 export function getSlotStatus(
   slotStart: string,
@@ -66,30 +70,51 @@ export function getSlotStatus(
   }
 
   /*
-   * RESERVA
+   * RESERVAS
+   *
+   * Puede haber más de una persona
+   * ocupando el mismo horario cuando
+   * el recurso tiene capacidad > 1.
    */
-  const reservation =
-    isSlotReserved(
-      reservations,
-      slotStart,
-      slotEnd,
-      timezone,
-    );
+  const slotStartUtc = fromZonedTime(
+    parseISO(slotStart),
+    timezone,
+  );
 
-  if (!reservation) {
-    return {
-      status: "available",
-      clickable: true,
-    } as const;
-  }
+  const slotEndUtc = fromZonedTime(
+    parseISO(slotEnd),
+    timezone,
+  );
+
+  const overlappingReservations =
+    reservations.filter((reservation) => {
+      if (
+        reservation.status ===
+        "cancelled"
+      ) {
+        return false;
+      }
+
+      const reservationStart =
+        new Date(reservation.starts_at);
+
+      const reservationEnd =
+        new Date(reservation.ends_at);
+
+      return (
+        reservationStart <
+          slotEndUtc &&
+        reservationEnd >
+          slotStartUtc
+      );
+    });
 
   /*
-   * RESERVA CANCELADA
-   * El horario vuelve a estar disponible.
+   * SIN RESERVAS
    */
   if (
-    reservation.status ===
-    "cancelled"
+    overlappingReservations.length ===
+    0
   ) {
     return {
       status: "available",
@@ -98,18 +123,47 @@ export function getSlotStatus(
   }
 
   /*
-   * RESERVA ACTIVA
+   * RESERVAS ACTIVAS
    */
+  const hasPendingPayment =
+    overlappingReservations.some(
+      (reservation) =>
+        reservation.status ===
+        "pending_payment",
+    );
+
   return {
-    status:
-      reservation.status ===
-      "pending_payment"
-        ? "pending_payment"
-        : "reserved",
+    status: hasPendingPayment
+      ? "pending_payment"
+      : "reserved",
 
     clickable: true,
 
+    /*
+     * Compatibilidad con el código actual.
+     * ReservationModal sigue usando
+     * reservationId.
+     */
     reservationId:
-      reservation.id,
+      overlappingReservations[0].id,
+
+    /*
+     * Todas las reservas del horario.
+     */
+    reservationIds:
+      overlappingReservations.map(
+        (reservation) =>
+          reservation.id,
+      ),
+
+    /*
+     * Todos los nombres para mostrar
+     * en la celda del calendario.
+     */
+    reservationNames:
+      overlappingReservations.map(
+        (reservation) =>
+          reservation.customer_name,
+      ),
   } as const;
 }

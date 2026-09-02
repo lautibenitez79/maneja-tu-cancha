@@ -22,6 +22,8 @@ function CalendarCell({ cell, onClick }: Props) {
             ? "Bloqueado"
             : "Cerrado";
 
+  const reservationNames = cell.reservationNames ?? [];
+
   return (
     <button
       disabled={!cell.clickable}
@@ -54,7 +56,21 @@ function CalendarCell({ cell, onClick }: Props) {
         {cell.ends_at.substring(11, 16)}
       </span>
 
-      <span className="text-sm">{statusLabel}</span>
+      {reservationNames.length > 0 ? (
+        <div className="max-w-full text-center text-xs leading-tight">
+          {reservationNames.map((name, index) => (
+            <div
+              key={`${name}-${index}`}
+              className="truncate"
+              title={name}
+            >
+              {name}
+            </div>
+          ))}
+        </div>
+      ) : (
+        <span className="text-sm">{statusLabel}</span>
+      )}
     </button>
   );
 }

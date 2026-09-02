@@ -7,9 +7,7 @@ export type CalendarCellStatus =
 
 export interface CalendarCell {
   hour: string;
-
   starts_at: string;
-
   ends_at: string;
 
   status:
@@ -17,29 +15,24 @@ export interface CalendarCell {
     | "reserved"
     | "pending_payment"
     | "closed"
-    | "blocked"; 
+    | "blocked";
 
   clickable: boolean;
 
   reservationId?: string;
+  reservationIds?: string[];
+  reservationNames?: string[];
 
   resourceBlockId?: string;
 }
 
 export interface CalendarDay {
-
   date: string;
-
   title: string;
-
   isToday: boolean;
-
   cells: CalendarCell[];
-
 }
 
 export interface CalendarWeek {
-
   days: CalendarDay[];
-
 }
