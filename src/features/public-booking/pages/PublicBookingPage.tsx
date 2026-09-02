@@ -182,6 +182,9 @@ export default function PublicBookingPage() {
 
   const gymEnabledDays = workingHours.filter((day) => day.enabled);
 
+  console.log("workingHours:", workingHours);
+console.log("gymEnabledDays:", gymEnabledDays);
+
   const selectedGymWorkingHours = workingHours.filter(
     (day) => day.enabled && gymVisitDays.includes(day.day_of_week),
   );
