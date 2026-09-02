@@ -46,6 +46,10 @@ export default function CalendarPage() {
 
   const [actionCell, setActionCell] = useState<CalendarCell | null>(null);
 
+  const [creatingGymReservation, setCreatingGymReservation] = useState(false);
+
+  const [gymActionCell, setGymActionCell] = useState<CalendarCell | null>(null);
+
   const [selectedCell, setSelectedCell] = useState<CalendarCell | null>(null);
 
   const [selectedResourceId, setSelectedResourceId] = useState<string>();
@@ -188,6 +192,12 @@ export default function CalendarPage() {
     await refresh();
   }
 
+  const selectedResource = resources.find(
+    (resource) => resource.id === selectedResourceId,
+  );
+
+  const isGym = selectedResource?.type === "gym";
+
   if (loadingResources) {
     return <Loading />;
   }
@@ -234,6 +244,8 @@ export default function CalendarPage() {
             setSelectedCell(null);
             setSelectedBlockCell(null);
             setActionCell(null);
+            setGymActionCell(null);
+            setCreatingGymReservation(false);
 
             setSelectedResourceId(event.target.value);
           }}
@@ -279,6 +291,11 @@ export default function CalendarPage() {
         <WeeklyCalendar
           week={week}
           onCellClick={(cell) => {
+            if (isGym) {
+              setGymActionCell(cell);
+              return;
+            }
+
             if (cell.status === "available") {
               setActionCell(cell);
               return;
@@ -296,6 +313,7 @@ export default function CalendarPage() {
               setSelectedCell(cell);
             }
           }}
+          isGym={isGym}
         />
       </div>
 
@@ -360,6 +378,11 @@ export default function CalendarPage() {
           <DailyCalendar
             day={selectedDay}
             onCellClick={(cell: CalendarCell) => {
+              if (isGym) {
+                setGymActionCell(cell);
+                return;
+              }
+
               if (cell.status === "available") {
                 setActionCell(cell);
                 return;
@@ -377,6 +400,7 @@ export default function CalendarPage() {
                 setSelectedCell(cell);
               }
             }}
+            isGym={isGym}
           />
         ) : (
           <EmptyState
@@ -385,6 +409,75 @@ export default function CalendarPage() {
           />
         )}
       </div>
+
+      {/* ACCIONES GIMNASIO */}
+
+      {gymActionCell && (
+        <Modal
+          open={true}
+          onClose={() => {
+            setGymActionCell(null);
+            setSelectedCell(null);
+            setCreatingGymReservation(false);
+          }}
+          title="Turnos del gimnasio"
+        >
+          <div className="space-y-4">
+            <div>
+              <p className="text-sm text-slate-500">Horario</p>
+
+              <p className="font-semibold">{gymActionCell.hour}</p>
+            </div>
+
+            <div>
+              <p className="mb-2 text-sm text-slate-500">Personas con turno</p>
+
+              {gymActionCell.reservationNames &&
+              gymActionCell.reservationNames.length > 0 ? (
+                <div className="space-y-2">
+                  {gymActionCell.reservationNames.map((name, index) => (
+                    <div
+                      key={`${name}-${index}`}
+                      className="rounded-lg border px-3 py-2 text-sm font-medium"
+                    >
+                      {name}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-slate-500">
+                  No hay personas con turno.
+                </p>
+              )}
+            </div>
+
+            <div className="border-t pt-4 space-y-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setCreatingGymReservation(true);
+                  setSelectedCell(gymActionCell);
+                  setGymActionCell(null);
+                }}
+                className="w-full rounded-lg bg-[var(--color-primary)] px-4 py-3 font-medium text-white"
+              >
+                Nuevo turno
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedBlockCell(gymActionCell);
+                  setGymActionCell(null);
+                }}
+                className="w-full rounded-lg border px-4 py-3 font-medium hover:bg-slate-50"
+              >
+                Bloquear horario
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
 
       {/* ACCIONES */}
 
@@ -427,9 +520,13 @@ export default function CalendarPage() {
           open={selectedCell !== null}
           cell={selectedCell}
           resourceId={selectedResourceId!}
-          onClose={() => setSelectedCell(null)}
+          onClose={() => {
+            setSelectedCell(null);
+            setCreatingGymReservation(false);
+          }}
           onSubmit={handleCreateReservation}
           onUpdated={handleReservationUpdated}
+          forceCreate={creatingGymReservation}
         />
       )}
 

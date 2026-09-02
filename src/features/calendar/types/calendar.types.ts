@@ -9,17 +9,16 @@ export interface CalendarCell {
   hour: string;
   starts_at: string;
   ends_at: string;
-
   status: CalendarCellStatus;
-
   clickable: boolean;
 
   reservationId?: string;
   reservationIds?: string[];
-
   reservationNames?: string[];
 
   resourceBlockId?: string;
+
+  isGym?: boolean;
 }
 
 export interface CalendarDay {

@@ -8,13 +8,14 @@ import type {
 
 interface Props {
   day: CalendarDay;
-
   onCellClick(cell: CalendarCellType): void;
+  isGym?: boolean;
 }
 
 export default function DailyCalendar({
   day,
   onCellClick,
+  isGym = false,
 }: Props) {
   return (
     <div className="overflow-hidden rounded-xl border bg-[var(--color-card)]">
@@ -37,6 +38,7 @@ export default function DailyCalendar({
             <CalendarCell
               cell={cell}
               onClick={onCellClick}
+              isGym={isGym}
             />
           </div>
         ))}

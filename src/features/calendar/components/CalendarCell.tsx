@@ -8,11 +8,13 @@ import type {
 interface Props {
   cell: Cell;
   onClick(cell: Cell): void;
+  isGym?: boolean;
 }
 
 function CalendarCell({
   cell,
   onClick,
+  isGym = false,
 }: Props) {
   const statusLabel =
     cell.status === "available"
@@ -27,6 +29,9 @@ function CalendarCell({
 
   const reservationNames =
     cell.reservationNames ?? [];
+
+  const reservationCount =
+    reservationNames.length;
 
   return (
     <button
@@ -77,7 +82,23 @@ function CalendarCell({
         )}
       </span>
 
-      {reservationNames.length > 0 ? (
+      {isGym ? (
+        <div className="flex flex-row gap-2">
+          <span className="text-sm">
+            {statusLabel}
+          </span>
+
+          {reservationCount > 0 &&
+            cell.status === "available" && (
+              <span className="text-xs opacity-70">
+                {reservationCount}{" "}
+                {reservationCount === 1
+                  ? "reserva"
+                  : "reservas"}
+              </span>
+            )}
+        </div>
+      ) : reservationNames.length > 0 ? (
         <div className="max-w-full text-center text-xs leading-tight">
           {reservationNames.map(
             (name, index) => (

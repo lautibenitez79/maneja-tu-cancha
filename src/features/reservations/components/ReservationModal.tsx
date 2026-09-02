@@ -27,16 +27,12 @@ import {
 
 interface Props {
   open: boolean;
-
   cell: CalendarCell | null;
-
   resourceId: string;
-
   onClose(): void;
-
   onSubmit(values: CreateReservationForm): Promise<void>;
-
   onUpdated(): Promise<void>;
+  forceCreate?: boolean;
 }
 
 export default function ReservationModal({
@@ -46,6 +42,7 @@ export default function ReservationModal({
   onClose,
   onSubmit,
   onUpdated,
+  forceCreate = false,
 }: Props) {
   const [reservation, setReservation] = useState<Reservation | null>(null);
 
@@ -72,10 +69,10 @@ export default function ReservationModal({
   const [endsAt, setEndsAt] = useState("");
 
   useEffect(() => {
-    if (!cell || !cell.reservationId) {
-      setReservation(null);
-      return;
-    }
+  if (forceCreate || !cell || !cell.reservationId) {
+    setReservation(null);
+    return;
+  }
 
     const reservationId = cell.reservationId;
 
@@ -125,7 +122,7 @@ export default function ReservationModal({
     }
 
     loadReservation();
-  }, [cell]);
+  }, [cell, forceCreate]);
 
   async function handleSave() {
     const amount = Number(amountPaid);

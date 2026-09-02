@@ -24,25 +24,38 @@ import type {
 
 export class AvailabilityEngine {
   private generateDay(
-    input: GenerateDayInput,
-  ): AvailabilitySlot[] {
-    return createSlots(
-      input.reservationDuration,
-    ).map((slot) => ({
-      starts_at: `${input.date}T${slot.starts_at}:00`,
-      ends_at: `${input.date}T${slot.ends_at}:00`,
+  input: GenerateDayInput,
+): AvailabilitySlot[] {
+  const slots = createSlots(
+    input.reservationDuration,
+  );
 
-      ...getSlotStatus(
-        `${input.date}T${slot.starts_at}:00`,
-        `${input.date}T${slot.ends_at}:00`,
-        input.workingHour,
-        input.reservations,
-        input.resourceBlocks,
-        input.capacity,
-        input.timezone,
-      ),
-    }));
+  return slots.map((slot) => {
+  const result = getSlotStatus(
+    `${input.date}T${slot.starts_at}:00`,
+    `${input.date}T${slot.ends_at}:00`,
+    input.workingHour,
+    input.reservations,
+    input.resourceBlocks,
+    input.capacity,
+    input.timezone,
+  );
+
+  if (
+    input.date === "2026-09-02" &&
+    ["09:00", "10:00", "11:00", "12:00"].includes(
+      slot.starts_at,
+    )
+  ) {
   }
+
+  return {
+    starts_at: `${input.date}T${slot.starts_at}:00`,
+    ends_at: `${input.date}T${slot.ends_at}:00`,
+    ...result,
+  };
+});
+}
 
   public generateWeek(
     input: GenerateWeekInput,
