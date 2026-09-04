@@ -61,7 +61,7 @@ export default function UserForm({
       <div>
         <label
           htmlFor="fullName"
-          className="mb-2 block text-sm font-medium text-gray-700"
+          className="mb-2 block text-sm font-medium text-[var(--color-text)]"
         >
           Nombre
         </label>
@@ -82,7 +82,7 @@ export default function UserForm({
       <div>
         <label
           htmlFor="email"
-          className="mb-2 block text-sm font-medium text-gray-700"
+          className="mb-2 block text-sm font-medium text-[var(--color-text)]"
         >
           Email
         </label>
@@ -112,7 +112,7 @@ export default function UserForm({
             type="button"
             onClick={onCancel}
             disabled={loading}
-            className="rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:opacity-50"
+            className="rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-[var(--color-text)] transition hover:bg-gray-50 disabled:opacity-50"
           >
             Cancelar
           </button>
