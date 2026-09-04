@@ -5,6 +5,7 @@ import Login from "./Login";
 import Contacto from "./Contacto";
 import QuienesSomos from "./QuienesSomos";
 import ProtectedRoute from "../features/auth/components/ProtectedRoute";
+import RoleRoute from "../features/auth/components/RoleRoute";
 import DashboardGate from "@/features/dashboard/components/DashboardGate";
 import DashboardLayout from "@/features/dashboard/components/DashboardLayout";
 import DashboardHome from "@/features/dashboard/pages/DashboardHome";
@@ -13,6 +14,7 @@ import CreateResourcePage from "@/features/resources/pages/CreateResourcePage";
 import EditResourcePage from "@/features/resources/pages/EditResourcePage";
 // import CustomersPage from "@/features/customers/pages/CustomersPage";
 import CalendarPage from "@/features/calendar/pages/CalendarPage";
+import UsersPage from "../features/users/pages/UsersPage";
 import PublicBookingPage from "@/features/public-booking/pages/PublicBookingPage";
 import PaymentSuccessPage from "@/features/public-booking/pages/PaymentSuccessPage";
 import PaymentErrorPage from "@/features/public-booking/pages/PaymentErrorPage";
@@ -88,17 +90,38 @@ export function AppRouter() {
 
         <Route
           path="resources"
-          element={<ResourcesPage />}
+          element={
+            <RoleRoute allowedRoles={["admin"]}>
+              <ResourcesPage />
+            </RoleRoute>
+          }
+        />
+
+        <Route
+          path="users"
+          element={
+            <RoleRoute allowedRoles={["admin"]}>
+              <UsersPage />
+            </RoleRoute>
+          }
         />
 
         <Route
           path="resources/new"
-          element={<CreateResourcePage />}
+          element={
+            <RoleRoute allowedRoles={["admin"]}>
+              <CreateResourcePage />
+            </RoleRoute>
+          }
         />
 
         <Route
           path="resources/:id/edit"
-          element={<EditResourcePage />}
+          element={
+            <RoleRoute allowedRoles={["admin"]}>
+              <EditResourcePage />
+            </RoleRoute>
+          }
         />
         {/* <Route
             path="customers"

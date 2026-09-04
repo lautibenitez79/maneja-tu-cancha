@@ -47,7 +47,7 @@ const initialForm: CreateClubForm = {
 };
 
 export default function CreateClubWizard() {
-  const { user, refreshProfile } = useAuth();
+  const { refreshProfile } = useAuth();
 
   const [step, setStep] = useState<number>(WIZARD_STEPS.NAME);
 
@@ -75,28 +75,23 @@ export default function CreateClubWizard() {
     setStep((prev) => prev - 1);
 
   const handleSubmit = async () => {
-    if (!user) return;
+  if (!validateStep4(form)) return;
 
-    if (!validateStep4(form)) return;
+  try {
+    setLoading(true);
 
-    try {
-      setLoading(true);
+    await clubService.createFirstClub(form);
 
-      await clubService.createFirstClub(
-        user.id,
-        form
-      );
-
-      await refreshProfile();
-    } catch (error) {
-      console.error(error);
-      toast.error(
-        "No se pudo crear tu recurso."
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
+    await refreshProfile();
+  } catch (error) {
+    console.error(error);
+    toast.error(
+      "No se pudo crear tu recurso."
+    );
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div className="mx-auto max-w-xl space-y-10 rounded-[var(--radius-card)] border bg-white p-8 shadow-[var(--shadow-card)]">

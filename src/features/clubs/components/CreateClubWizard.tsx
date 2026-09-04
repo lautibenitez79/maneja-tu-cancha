@@ -25,7 +25,7 @@ export default function CreateClubWizard() {
       setLoading(true);
       setError("");
 
-      await clubService.createFirstClub(user.id, {
+      await clubService.createFirstClub({
         name: name.trim(),
         phone: "",
         email: user.email ?? "",

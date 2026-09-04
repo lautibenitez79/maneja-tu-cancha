@@ -8,14 +8,22 @@ const items = [
   {
     label: "Dashboard",
     href: "/dashboard",
+    roles: ["admin", "user"],
   },
   {
     label: "Recursos",
     href: "/dashboard/resources",
+    roles: ["admin"],
   },
   {
     label: "Calendario",
     href: "/dashboard/calendar",
+    roles: ["admin", "user"],
+  },
+  {
+    label: "Usuarios",
+    href: "/dashboard/users",
+    roles: ["admin"],
   },
 ];
 
@@ -25,7 +33,11 @@ interface Props {
 
 export default function Sidebar({ onNavigate }: Props) {
   const navigate = useNavigate();
-  const { logout } = useAuth();
+
+  const {
+    logout,
+    profile,
+  } = useAuth();
 
   async function handleLogout() {
     try {
@@ -47,6 +59,12 @@ export default function Sidebar({ onNavigate }: Props) {
     }
   }
 
+  const visibleItems = items.filter(
+    (item) =>
+      profile &&
+      item.roles.includes(profile.role),
+  );
+
   return (
     <div className="flex h-full min-h-screen flex-col">
       {/* Logo */}
@@ -58,7 +76,7 @@ export default function Sidebar({ onNavigate }: Props) {
 
       {/* Navegación */}
       <nav className="flex-1 p-3 sm:p-4">
-        {items.map((item) => (
+        {visibleItems.map((item) => (
           <NavLink
             key={item.href}
             to={item.href}

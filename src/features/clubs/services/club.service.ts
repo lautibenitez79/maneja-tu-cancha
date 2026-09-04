@@ -1,5 +1,4 @@
 import { supabase } from "../../../lib/supabase";
-import { profileService } from "../../profiles/services/profile.service";
 
 import type { Club } from "../types/club.types";
 import type { CreateClubForm } from "../types/create-club-form.types";
@@ -28,10 +27,7 @@ class ClubService {
     return data;
   }
 
-  async createClub(
-    ownerId: string,
-    form: CreateClubForm
-  ): Promise<Club> {
+  async createClub(ownerId: string, form: CreateClubForm): Promise<Club> {
     const existing = await this.getClubByOwner(ownerId);
 
     if (existing) {
@@ -63,18 +59,29 @@ class ClubService {
     return data;
   }
 
-  async createFirstClub(
-    ownerId: string,
-    form: CreateClubForm
-  ) {
-    const club = await this.createClub(
-      ownerId,
-      form
-    );
+  async createFirstClub(form: CreateClubForm): Promise<Club> {
+    const slug = this.generateSlug(form.name);
 
-    await profileService.updateProfile(ownerId, {
-      club_id: club.id,
+    const { data: clubId, error } = await supabase.rpc("create_first_club", {
+      p_name: form.name,
+      p_slug: slug,
+      p_phone: form.phone,
+      p_email: form.email,
+      p_address: form.address,
+      p_city: form.city,
+      p_province: form.province,
+      p_country: form.country,
+      p_timezone: form.timezone,
+      p_currency: form.currency,
     });
+
+    if (error) throw error;
+
+    const club = await this.getClub(clubId);
+
+    if (!club) {
+      throw new Error("El complejo fue creado pero no pudo recuperarse.");
+    }
 
     return club;
   }
@@ -91,9 +98,7 @@ class ClubService {
     return data;
   }
 
-  async getClubBySlug(
-    slug: string
-  ): Promise<Club | null> {
+  async getClubBySlug(slug: string): Promise<Club | null> {
     const { data, error } = await supabase
       .from("clubs")
       .select("*")
@@ -107,5 +112,4 @@ class ClubService {
   }
 }
 
-export const clubService =
-  new ClubService();
+export const clubService = new ClubService();
