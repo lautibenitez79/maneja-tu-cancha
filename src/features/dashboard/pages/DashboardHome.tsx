@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Navigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 
 import DashboardHeader from "../components/DashboardHeader";
@@ -125,12 +126,20 @@ export default function DashboardHome() {
 
       {/* CONEXIONES / CONFIGURACIÓN */}
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div
+        className={
+          profile.role === "admin"
+            ? "grid gap-6 lg:grid-cols-2"
+            : "grid gap-6"
+        }
+      >
         <WelcomeCard />
 
-        <MercadoPagoConnectionCard
-          clubId={profile.club_id}
-        />
+        {profile.role === "admin" && (
+          <MercadoPagoConnectionCard
+            clubId={profile.club_id}
+          />
+        )}
       </div>
 
       <SetupChecklist
