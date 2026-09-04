@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { Navigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 
 import DashboardHeader from "../components/DashboardHeader";
