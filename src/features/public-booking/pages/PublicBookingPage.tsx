@@ -269,7 +269,7 @@ export default function PublicBookingPage() {
 
       const fee = await publicBookingService.createGymMonthlyFee({
         clubId: club.id,
-        
+
         resourceId: selectedResource.id,
 
         customerName: values.customer_name,
@@ -512,26 +512,46 @@ export default function PublicBookingPage() {
     const duration = selectedResource?.reservation_duration ?? 60;
 
     const availableByDay = selectedGymWorkingHours.map((day) => {
-      const open = timeToMinutes(day.opens_at);
+      const ranges: Array<[number, number]> = [];
 
-      let close = timeToMinutes(day.closes_at);
+      function addRange(startValue: string | null, endValue: string | null) {
+        if (!startValue || !endValue) {
+          return;
+        }
 
-      if (close === 0 && open > 0) {
-        close = 1440;
+        const open = timeToMinutes(startValue);
+
+        let close = timeToMinutes(endValue);
+
+        if (close === 0 && open > 0) {
+          close = 1440;
+        }
+
+        if (open === 0 && close === 0) {
+          close = 1440;
+        }
+
+        if (close > open) {
+          ranges.push([open, close]);
+        }
       }
 
-      if (open === 0 && close === 0) {
-        close = 1440;
-      }
+      // Primer bloque: 09:00 → 13:00
+      addRange(day.opens_at, day.closes_at);
+
+      // Segundo bloque: 16:00 → 21:00
+      addRange(day.reopens_at, day.final_closes_at);
 
       const result = new Set<string>();
 
-      for (
-        let minutes = open;
-        minutes + duration <= close;
-        minutes += duration
-      ) {
-        result.add(minutesToTime(minutes));
+      for (const [open, close] of ranges) {
+        for (
+          let minutes = open;
+          minutes + duration <= close;
+          minutes += duration
+        ) {
+          result.add(minutesToTime(minutes));
+        }
       }
 
       return result;
@@ -541,6 +561,7 @@ export default function PublicBookingPage() {
       return [];
     }
 
+    // Solo mostramos horarios que existen en TODOS los días seleccionados.
     return Array.from(availableByDay[0]).filter((time) =>
       availableByDay.every((times) => times.has(time)),
     );
