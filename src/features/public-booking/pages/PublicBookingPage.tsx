@@ -670,7 +670,7 @@ export default function PublicBookingPage() {
                     }}
                     className={`group rounded-2xl border p-5 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${
                       selected
-                        ? "border-blue-500 bg-blue-50"
+                        ? "bg-[var(--color-card)] border-blue-500"
                         : "bg-[var(--color-card)]"
                     }`}
                   >
@@ -729,7 +729,7 @@ export default function PublicBookingPage() {
             {/* FRECUENCIA */}
             <div>
               <h3 className="text-lg font-semibold text-[var(--color-title)]">
-                Frecuencia de visitas
+                ¿Qué días vas a ir?
               </h3>
 
               <p className="mt-1 text-sm text-gray-500">
@@ -747,7 +747,7 @@ export default function PublicBookingPage() {
                 className="mt-3 w-full rounded-xl border p-3"
               >
                 {gymEnabledDays.map((_, index) => (
-                  <option key={index + 1} value={index + 1}>
+                  <option key={index + 1} value={index + 1} className="bg-[var(--color-card)]">
                     {index + 1} {index === 0 ? "día" : "días"} por semana
                   </option>
                 ))}
@@ -786,8 +786,8 @@ export default function PublicBookingPage() {
                       }}
                       className={`rounded-xl border p-3 text-sm font-medium transition ${
                         selected
-                          ? "border-black bg-black text-white"
-                          : "border-gray-200 bg-white text-gray-700"
+                          ? "border-black bg-[var(--color-card)] text-gray-700"
+                          : "border-gray-200 bg-[var(--color-card)] text-[var(--color-text)]"
                       }`}
                     >
                       {labels[day.day_of_week]}
@@ -831,10 +831,10 @@ export default function PublicBookingPage() {
                   }}
                   className="mt-3 w-full rounded-xl border p-3"
                 >
-                  <option value="">Seleccioná un horario</option>
+                  <option value="" className="bg-[var(--color-card)]">Seleccioná un horario</option>
 
                   {getGymTimeOptionsForSelectedDays().map((time) => (
-                    <option key={time} value={time}>
+                    <option key={time} value={time} className="bg-[var(--color-card)]" >
                       {time}
                     </option>
                   ))}
@@ -844,7 +844,7 @@ export default function PublicBookingPage() {
 
             {/* RESUMEN DE CUOTA */}
             {gymTotalVisits > 0 && gymStartTime && (
-              <div className="rounded-xl border bg-gray-50 p-4">
+              <div className="rounded-xl border bg-[var(--color-card)] p-4">
                 <div className="flex justify-between">
                   <span className="text-gray-600">Visitas del mes</span>
 
