@@ -425,12 +425,7 @@ export default function SubscriptionPage() {
 
               <button
                 type="button"
-                onClick={() =>
-                  handlePlanClick(
-                    "test",
-                    "testcrm524@gmail.com",
-                  )
-                }
+                onClick={() => handlePlanClick("test")}
                 disabled={loadingPlan === "test"}
                 className="mt-4 rounded-xl bg-orange-600 px-5 py-3 text-sm font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
               >
