@@ -1,17 +1,26 @@
 import { useEffect, useState } from "react";
-import { CheckCircle2, Clock, Gift } from "lucide-react";
+import { CheckCircle2, Clock, Gift, FlaskConical } from "lucide-react";
 import { toast } from "sonner";
 
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/lib/supabase";
 
-type SubscriptionPlan = "monthly" | "three_months" | "annual";
+type SubscriptionPlan =
+  | "monthly"
+  | "three_months"
+  | "annual"
+  | "test";
 
 interface SaasSubscription {
   id: string;
   club_id: string;
   plan: SubscriptionPlan | null;
-  status: "trialing" | "active" | "past_due" | "cancelled" | "expired";
+  status:
+    | "trialing"
+    | "active"
+    | "past_due"
+    | "cancelled"
+    | "expired";
   trial_starts_at: string | null;
   trial_ends_at: string | null;
   starts_at: string;
@@ -20,7 +29,6 @@ interface SaasSubscription {
   access_type: "paid" | "complimentary";
   access_until: string | null;
 }
-
 
 const plans = [
   {
@@ -91,6 +99,8 @@ function getPlanLabel(plan: SubscriptionPlan | null) {
       return "3 meses";
     case "annual":
       return "Anual";
+    case "test":
+      return "Prueba técnica";
     default:
       return "—";
   }
@@ -99,12 +109,13 @@ function getPlanLabel(plan: SubscriptionPlan | null) {
 export default function SubscriptionPage() {
   const { profile, loading: authLoading } = useAuth();
 
-  const [subscription, setSubscription] = useState<SaasSubscription | null>(
-    null,
-  );
+  const [subscription, setSubscription] =
+    useState<SaasSubscription | null>(null);
 
   const [loading, setLoading] = useState(true);
-  const [loadingPlan, setLoadingPlan] = useState<SubscriptionPlan | null>(null);
+
+  const [loadingPlan, setLoadingPlan] =
+    useState<SubscriptionPlan | null>(null);
 
   useEffect(() => {
     if (authLoading || !profile?.club_id) {
@@ -152,22 +163,30 @@ export default function SubscriptionPage() {
     loadSubscription();
   }, [authLoading, profile?.club_id]);
 
-  async function handlePlanClick(plan: SubscriptionPlan) {
+  async function handlePlanClick(
+    plan: SubscriptionPlan,
+    forcedEmail?: string,
+  ) {
     try {
       setLoadingPlan(plan);
 
-      const { data: sessionData } = await supabase.auth.getSession();
+      const { data: sessionData } =
+        await supabase.auth.getSession();
 
       const token = sessionData.session?.access_token;
 
       if (!token) {
-        toast.error("Tu sesión expiró. Volvé a iniciar sesión.");
+        toast.error(
+          "Tu sesión expiró. Volvé a iniciar sesión.",
+        );
         return;
       }
 
-      const payerEmail = window.prompt(
-        "Ingresá el email de la cuenta de Mercado Pago que va a pagar:",
-      );
+      const payerEmail =
+        forcedEmail ??
+        window.prompt(
+          "Ingresá el email de la cuenta de Mercado Pago que va a pagar:",
+        );
 
       if (!payerEmail) {
         return;
@@ -183,7 +202,7 @@ export default function SubscriptionPage() {
           },
           body: JSON.stringify({
             plan,
-            payer_email: payerEmail,
+            payer_email: payerEmail.trim().toLowerCase(),
           }),
         },
       );
@@ -192,16 +211,21 @@ export default function SubscriptionPage() {
 
       if (!response.ok || !data.init_point) {
         throw new Error(
-          data.error ?? "No se pudo crear el checkout de Mercado Pago.",
+          data.error ??
+            "No se pudo crear el checkout de Mercado Pago.",
         );
       }
+
+      console.log("Checkout SaaS creado:", data);
 
       window.location.href = data.init_point;
     } catch (error) {
       console.error(error);
 
       toast.error(
-        error instanceof Error ? error.message : "No se pudo iniciar el pago.",
+        error instanceof Error
+          ? error.message
+          : "No se pudo iniciar el pago.",
       );
     } finally {
       setLoadingPlan(null);
@@ -211,18 +235,23 @@ export default function SubscriptionPage() {
   if (loading || authLoading) {
     return (
       <div className="flex min-h-[400px] items-center justify-center">
-        <p className="text-sm text-gray-500">Cargando suscripción...</p>
+        <p className="text-sm text-gray-500">
+          Cargando suscripción...
+        </p>
       </div>
     );
   }
 
-  const isComplimentary = subscription?.access_type === "complimentary";
+  const isComplimentary =
+    subscription?.access_type === "complimentary";
 
   return (
     <div className="space-y-8">
       {/* Encabezado */}
       <div>
-        <h1 className="text-2xl font-bold">Suscripción</h1>
+        <h1 className="text-2xl font-bold">
+          Suscripción
+        </h1>
 
         <p className="mt-1 text-sm text-gray-500">
           Administrá el acceso a Maneja Tu Cancha.
@@ -241,7 +270,9 @@ export default function SubscriptionPage() {
           )}
 
           <div className="flex-1">
-            <p className="text-sm text-gray-500">Estado actual</p>
+            <p className="text-sm text-gray-500">
+              Estado actual
+            </p>
 
             <h2 className="mt-1 text-xl font-semibold">
               {getStatusLabel(subscription)}
@@ -258,12 +289,20 @@ export default function SubscriptionPage() {
             ) : subscription?.status === "trialing" ? (
               <p className="mt-2 text-sm text-gray-600">
                 Tu prueba gratuita finaliza el{" "}
-                <strong>{formatDate(subscription.trial_ends_at)}</strong>.
+                <strong>
+                  {formatDate(subscription.trial_ends_at)}
+                </strong>
+                .
               </p>
             ) : subscription?.status === "active" ? (
               <p className="mt-2 text-sm text-gray-600">
                 Próximo vencimiento:{" "}
-                <strong>{formatDate(subscription.current_period_end)}</strong>.
+                <strong>
+                  {formatDate(
+                    subscription.current_period_end,
+                  )}
+                </strong>
+                .
               </p>
             ) : null}
           </div>
@@ -272,7 +311,9 @@ export default function SubscriptionPage() {
         {subscription && !isComplimentary && (
           <div className="mt-6 grid gap-4 border-t border-[var(--color-border)] pt-6 sm:grid-cols-2">
             <div>
-              <p className="text-xs text-gray-500">Plan</p>
+              <p className="text-xs text-gray-500">
+                Plan
+              </p>
 
               <p className="mt-1 font-medium">
                 {getPlanLabel(subscription.plan)}
@@ -280,12 +321,18 @@ export default function SubscriptionPage() {
             </div>
 
             <div>
-              <p className="text-xs text-gray-500">Período actual</p>
+              <p className="text-xs text-gray-500">
+                Período actual
+              </p>
 
               <p className="mt-1 font-medium">
-                {formatDate(subscription.current_period_start)}
+                {formatDate(
+                  subscription.current_period_start,
+                )}
                 {" — "}
-                {formatDate(subscription.current_period_end)}
+                {formatDate(
+                  subscription.current_period_end,
+                )}
               </p>
             </div>
           </div>
@@ -296,10 +343,13 @@ export default function SubscriptionPage() {
       {!isComplimentary && (
         <section>
           <div className="mb-5">
-            <h2 className="text-xl font-bold">Elegí tu plan</h2>
+            <h2 className="text-xl font-bold">
+              Elegí tu plan
+            </h2>
 
             <p className="mt-1 text-sm text-gray-500">
-              Todos los planes incluyen el acceso a Maneja Tu Cancha.
+              Todos los planes incluyen el acceso a
+              Maneja Tu Cancha.
             </p>
           </div>
 
@@ -319,10 +369,14 @@ export default function SubscriptionPage() {
                   </span>
                 )}
 
-                <h3 className="text-lg font-semibold">{plan.name}</h3>
+                <h3 className="text-lg font-semibold">
+                  {plan.name}
+                </h3>
 
                 <div className="mt-5">
-                  <span className="text-3xl font-bold">{plan.price}</span>
+                  <span className="text-3xl font-bold">
+                    {plan.price}
+                  </span>
 
                   <span className="ml-2 text-sm text-gray-500">
                     {plan.period}
@@ -334,15 +388,57 @@ export default function SubscriptionPage() {
                 </p>
 
                 <button
-                    type="button"
-                    onClick={() => handlePlanClick(plan.key)}
-                    disabled={loadingPlan === plan.key}
-                    className="mt-6 w-full rounded-xl bg-[var(--color-primary)] px-4 py-3 text-sm font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
-                    >
-                    {loadingPlan === plan.key ? "Procesando..." : "Contratar plan"}
+                  type="button"
+                  onClick={() =>
+                    handlePlanClick(plan.key)
+                  }
+                  disabled={loadingPlan === plan.key}
+                  className="mt-6 w-full rounded-xl bg-[var(--color-primary)] px-4 py-3 text-sm font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {loadingPlan === plan.key
+                    ? "Procesando..."
+                    : "Contratar plan"}
                 </button>
               </article>
             ))}
+          </div>
+        </section>
+      )}
+
+      {/* PRUEBA TEMPORAL DE MERCADO PAGO */}
+      {!isComplimentary && (
+        <section className="rounded-2xl border border-dashed border-orange-300 bg-orange-50 p-6">
+          <div className="flex items-start gap-3">
+            <FlaskConical className="mt-1 h-6 w-6 text-orange-600" />
+
+            <div className="flex-1">
+              <h2 className="text-lg font-bold text-orange-900">
+                Prueba técnica de Mercado Pago
+              </h2>
+
+              <p className="mt-1 text-sm text-orange-800">
+                Esta opción es temporal. Crea una
+                suscripción de $100 para verificar el
+                webhook usando otra cuenta de Mercado
+                Pago.
+              </p>
+
+              <button
+                type="button"
+                onClick={() =>
+                  handlePlanClick(
+                    "test",
+                    "testcrm524@gmail.com",
+                  )
+                }
+                disabled={loadingPlan === "test"}
+                className="mt-4 rounded-xl bg-orange-600 px-5 py-3 text-sm font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {loadingPlan === "test"
+                  ? "Generando checkout..."
+                  : "Probar pago de $100"}
+              </button>
+            </div>
           </div>
         </section>
       )}
