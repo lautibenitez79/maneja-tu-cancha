@@ -177,33 +177,25 @@ async function processSaasPayment(paymentId: string) {
     return null;
   }
 
-  // Si el token de Client Credentials pudo consultar este pago,
-  // Mercado Pago lo está exponiendo para la cuenta propia de la aplicación.
-  // No necesitamos otra variable MERCADOPAGO_SAAS_USER_ID.
+  /*
+   * Para SaaS la asociación NO se hace por email.
+   *
+   * El pago puede ser realizado desde una cuenta de Mercado Pago
+   * distinta de la cuenta del administrador de Maneja Tu Cancha.
+   *
+   * La relación segura es:
+   *
+   *   preapproval.external_reference
+   *     -> saas:club:{club_id}:plan:{plan}
+   *
+   * El email del pagador se usa únicamente como fallback para
+   * localizar la preapproval cuando Mercado Pago no entrega
+   * directamente su ID dentro del pago.
+   */
 
-  const payerEmail = String(payment?.payer?.email ?? "").trim().toLowerCase();
-
-  if (!payerEmail) {
-    console.error("Pago SaaS sin email del pagador:", paymentId);
-    return null;
-  }
-
-  const { data: profile, error: profileError } = await supabaseAdmin
-    .from("profiles")
-    .select("id, email, club_id, role")
-    .eq("email", payerEmail)
-    .eq("role", "admin")
-    .not("club_id", "is", null)
-    .maybeSingle();
-
-  if (profileError) {
-    console.error("Error buscando perfil para pago SaaS:", profileError);
-    return null;
-  }
-
-  if (!profile?.club_id) {
-    return null;
-  }
+  const payerEmail = String(payment?.payer?.email ?? "")
+    .trim()
+    .toLowerCase();
 
   const preapproval = await findSaasPreapproval(
     payerEmail,
@@ -211,17 +203,87 @@ async function processSaasPayment(paymentId: string) {
     accessToken,
   );
 
-  const plan = resolveSaasPlan(preapproval);
-
-  if (!plan) {
-    console.error("No se pudo identificar el plan SaaS:", {
+  if (!preapproval?.id) {
+    console.log("Pago SaaS sin preapproval identificable:", {
       payment_id: paymentId,
-      payer_email: payerEmail,
-      preapproval_id: preapproval?.id,
-      preapproval_plan_id: preapproval?.preapproval_plan_id,
+      payer_email: payerEmail || null,
     });
+
     return null;
   }
+
+  const externalReference = String(
+    preapproval?.external_reference ?? "",
+  ).trim();
+
+  const referenceMatch = externalReference.match(
+    /^saas:club:([0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}):plan:(monthly|three_months|annual|test)$/i,
+  );
+
+  if (!referenceMatch) {
+    console.log("Preapproval sin external_reference SaaS válido:", {
+      payment_id: paymentId,
+      preapproval_id: preapproval.id,
+      external_reference: externalReference || null,
+    });
+
+    return null;
+  }
+
+  const clubId = referenceMatch[1];
+  const planFromReference = referenceMatch[2].toLowerCase() as
+    | "monthly"
+    | "three_months"
+    | "annual"
+    | "test";
+
+  const { data: club, error: clubError } = await supabaseAdmin
+    .from("clubs")
+    .select("id")
+    .eq("id", clubId)
+    .maybeSingle();
+
+  if (clubError) {
+    console.error("Error validando club de suscripción SaaS:", clubError);
+    return null;
+  }
+
+  if (!club?.id) {
+    console.error("El external_reference apunta a un club inexistente:", {
+      payment_id: paymentId,
+      club_id: clubId,
+      external_reference: externalReference,
+    });
+
+    return null;
+  }
+
+  const planFromMp = resolveSaasPlan(preapproval);
+
+  if (!planFromMp) {
+    console.error("No se pudo identificar el plan SaaS desde Mercado Pago:", {
+      payment_id: paymentId,
+      preapproval_id: preapproval.id,
+      preapproval_plan_id: preapproval?.preapproval_plan_id,
+      external_reference: externalReference,
+    });
+
+    return null;
+  }
+
+  if (planFromMp !== planFromReference) {
+    console.error("INCONSISTENCIA DE PLAN SaaS:", {
+      payment_id: paymentId,
+      preapproval_id: preapproval.id,
+      plan_from_reference: planFromReference,
+      plan_from_mercadopago: planFromMp,
+      external_reference: externalReference,
+    });
+
+    return null;
+  }
+
+  const plan = planFromReference;
 
   const now = new Date();
   const nowIso = now.toISOString();
@@ -240,19 +302,21 @@ async function processSaasPayment(paymentId: string) {
     console.log("Pago SaaS todavía no confirmado:", {
       payment_id: paymentId,
       status: payment.status,
+      club_id: clubId,
+      plan,
     });
 
     return {
       handled: true,
       payment_id: paymentId,
-      club_id: profile.club_id,
+      club_id: clubId,
       plan,
       payment_status: payment.status,
     };
   }
 
   const subscriptionData = {
-    club_id: profile.club_id,
+    club_id: clubId,
     plan,
     status,
     starts_at: startDate,
@@ -309,24 +373,26 @@ async function processSaasPayment(paymentId: string) {
     return {
       handled: true,
       payment_id: paymentId,
-      club_id: profile.club_id,
+      club_id: clubId,
       plan,
       error: "Error actualizando suscripción SaaS",
     };
   }
 
   console.log("Suscripción SaaS actualizada:", {
-    club_id: profile.club_id,
+    club_id: clubId,
     plan,
     status,
     payment_id: paymentId,
     subscription_id: preapproval?.id,
+    payer_id: preapproval?.payer_id ?? payment?.payer?.id ?? null,
+    external_reference: externalReference,
   });
 
   return {
     handled: true,
     payment_id: paymentId,
-    club_id: profile.club_id,
+    club_id: clubId,
     plan,
     status,
     subscription,
