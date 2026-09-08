@@ -95,6 +95,7 @@ function getSaasPlanIdMap() {
     monthly: process.env.MERCADOPAGO_SAAS_PLAN_MONTHLY_ID,
     three_months: process.env.MERCADOPAGO_SAAS_PLAN_THREE_MONTHS_ID,
     annual: process.env.MERCADOPAGO_SAAS_PLAN_ANNUAL_ID,
+    test: process.env.MERCADOPAGO_SAAS_PLAN_TEST_ID,
   } as const;
 }
 
@@ -155,6 +156,7 @@ function resolveSaasPlan(preapproval: any) {
     return "three_months" as const;
   }
   if (planId && planId === planIds.annual) return "annual" as const;
+  if (planId && planId === planIds.test) return "test" as const;
 
   return null;
 }
