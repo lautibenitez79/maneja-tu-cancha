@@ -8,6 +8,329 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!,
 );
 
+
+let cachedSaasAccessToken: string | null = null;
+let cachedSaasAccessTokenExpiresAt = 0;
+
+async function getSaasAccessToken() {
+  const clientId = process.env.MERCADOPAGO_CLIENT_ID;
+  const clientSecret = process.env.MERCADOPAGO_CLIENT_SECRET;
+
+  if (!clientId || !clientSecret) {
+    console.error(
+      "Faltan MERCADOPAGO_CLIENT_ID o MERCADOPAGO_CLIENT_SECRET para obtener el Access Token SaaS.",
+    );
+    return null;
+  }
+
+  const now = Date.now();
+
+  if (cachedSaasAccessToken && now < cachedSaasAccessTokenExpiresAt) {
+    return cachedSaasAccessToken;
+  }
+
+  try {
+    const response = await fetch(
+      "https://api.mercadopago.com/oauth/token",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          client_id: clientId,
+          client_secret: clientSecret,
+          grant_type: "client_credentials",
+        }),
+      },
+    );
+
+    if (!response.ok) {
+      const body = await response.text();
+      console.error("Error obteniendo Access Token SaaS:", {
+        status: response.status,
+        body,
+      });
+      return null;
+    }
+
+    const data = await response.json();
+    const accessToken = String(data?.access_token ?? "").trim();
+
+    if (!accessToken) {
+      console.error("Mercado Pago no devolvió Access Token SaaS.");
+      return null;
+    }
+
+    const expiresInSeconds = Number(data?.expires_in ?? 21600);
+
+    cachedSaasAccessToken = accessToken;
+    cachedSaasAccessTokenExpiresAt =
+      now + Math.max(expiresInSeconds - 300, 300) * 1000;
+
+    return accessToken;
+  } catch (error) {
+    console.error("Error solicitando Access Token SaaS:", error);
+    return null;
+  }
+}
+
+async function fetchMercadoPagoJson(url: string, accessToken: string) {
+  const response = await fetch(url, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+
+  if (!response.ok) {
+    return null;
+  }
+
+  return response.json();
+}
+
+function getSaasPlanIdMap() {
+  return {
+    monthly: process.env.MERCADOPAGO_SAAS_PLAN_MONTHLY_ID,
+    three_months: process.env.MERCADOPAGO_SAAS_PLAN_THREE_MONTHS_ID,
+    annual: process.env.MERCADOPAGO_SAAS_PLAN_ANNUAL_ID,
+  } as const;
+}
+
+async function findSaasPreapproval(
+  payerEmail: string,
+  payment: any,
+  accessToken: string,
+) {
+  const directId =
+    payment?.preapproval_id ??
+    payment?.preapproval_plan_id ??
+    payment?.metadata?.preapproval_id;
+
+  if (directId) {
+    const direct = await fetchMercadoPagoJson(
+      `https://api.mercadopago.com/preapproval/${encodeURIComponent(String(directId))}`,
+      accessToken,
+    );
+
+    if (direct?.id) {
+      return direct;
+    }
+  }
+
+  const searchUrl =
+    `https://api.mercadopago.com/preapproval/search?payer_email=${encodeURIComponent(payerEmail)}`;
+
+  const searchResult = await fetchMercadoPagoJson(searchUrl, accessToken);
+  const results = Array.isArray(searchResult?.results)
+    ? searchResult.results
+    : [];
+
+  if (!results.length) {
+    return null;
+  }
+
+  const planIds = Object.values(getSaasPlanIdMap()).filter(Boolean);
+
+  return (
+    results.find(
+      (item: any) =>
+        planIds.includes(String(item?.preapproval_plan_id ?? "")) &&
+        ["authorized", "active"].includes(String(item?.status ?? "")),
+    ) ??
+    results.find((item: any) =>
+      planIds.includes(String(item?.preapproval_plan_id ?? "")),
+    ) ??
+    results[0]
+  );
+}
+
+function resolveSaasPlan(preapproval: any) {
+  const planIds = getSaasPlanIdMap();
+  const planId = String(preapproval?.preapproval_plan_id ?? "");
+
+  if (planId && planId === planIds.monthly) return "monthly" as const;
+  if (planId && planId === planIds.three_months) {
+    return "three_months" as const;
+  }
+  if (planId && planId === planIds.annual) return "annual" as const;
+
+  return null;
+}
+
+async function processSaasPayment(paymentId: string) {
+  const accessToken = await getSaasAccessToken();
+
+  if (!accessToken) {
+    return null;
+  }
+
+  const payment = await fetchMercadoPagoJson(
+    `https://api.mercadopago.com/v1/payments/${encodeURIComponent(paymentId)}`,
+    accessToken,
+  );
+
+  if (!payment?.id) {
+    return null;
+  }
+
+  // Si el token de Client Credentials pudo consultar este pago,
+  // Mercado Pago lo está exponiendo para la cuenta propia de la aplicación.
+  // No necesitamos otra variable MERCADOPAGO_SAAS_USER_ID.
+
+  const payerEmail = String(payment?.payer?.email ?? "").trim().toLowerCase();
+
+  if (!payerEmail) {
+    console.error("Pago SaaS sin email del pagador:", paymentId);
+    return null;
+  }
+
+  const { data: profile, error: profileError } = await supabaseAdmin
+    .from("profiles")
+    .select("id, email, club_id, role")
+    .eq("email", payerEmail)
+    .eq("role", "admin")
+    .not("club_id", "is", null)
+    .maybeSingle();
+
+  if (profileError) {
+    console.error("Error buscando perfil para pago SaaS:", profileError);
+    return null;
+  }
+
+  if (!profile?.club_id) {
+    return null;
+  }
+
+  const preapproval = await findSaasPreapproval(
+    payerEmail,
+    payment,
+    accessToken,
+  );
+
+  const plan = resolveSaasPlan(preapproval);
+
+  if (!plan) {
+    console.error("No se pudo identificar el plan SaaS:", {
+      payment_id: paymentId,
+      payer_email: payerEmail,
+      preapproval_id: preapproval?.id,
+      preapproval_plan_id: preapproval?.preapproval_plan_id,
+    });
+    return null;
+  }
+
+  const now = new Date();
+  const nowIso = now.toISOString();
+  const startDate =
+    preapproval?.start_date ?? preapproval?.date_created ?? nowIso;
+  const nextPaymentDate = preapproval?.next_payment_date ?? null;
+
+  const status =
+    payment.status === "approved"
+      ? "active"
+      : payment.status === "rejected"
+        ? "past_due"
+        : null;
+
+  if (!status) {
+    console.log("Pago SaaS todavía no confirmado:", {
+      payment_id: paymentId,
+      status: payment.status,
+    });
+
+    return {
+      handled: true,
+      payment_id: paymentId,
+      club_id: profile.club_id,
+      plan,
+      payment_status: payment.status,
+    };
+  }
+
+  const subscriptionData = {
+    club_id: profile.club_id,
+    plan,
+    status,
+    starts_at: startDate,
+    current_period_start: startDate,
+    current_period_end: nextPaymentDate ?? startDate,
+    mercadopago_plan_id: String(preapproval.preapproval_plan_id),
+    mercadopago_subscription_id: preapproval?.id
+      ? String(preapproval.id)
+      : null,
+    mercadopago_payer_id: preapproval?.payer_id
+      ? String(preapproval.payer_id)
+      : payment?.payer?.id
+        ? String(payment.payer.id)
+        : null,
+    last_payment_id: String(payment.id),
+    last_payment_at: nowIso,
+    next_payment_at: nextPaymentDate,
+    access_type: "paid",
+    access_until: null,
+    updated_at: nowIso,
+  };
+
+  const { data: subscription, error: subscriptionError } =
+    await supabaseAdmin
+      .from("saas_subscriptions")
+      .upsert(subscriptionData, { onConflict: "club_id" })
+      .select(
+        `
+        id,
+        club_id,
+        plan,
+        status,
+        access_type,
+        trial_starts_at,
+        trial_ends_at,
+        starts_at,
+        current_period_start,
+        current_period_end,
+        mercadopago_plan_id,
+        mercadopago_subscription_id,
+        mercadopago_payer_id,
+        last_payment_id,
+        last_payment_at,
+        next_payment_at,
+        access_until,
+        updated_at
+        `,
+      )
+      .single();
+
+  if (subscriptionError) {
+    console.error("Error actualizando suscripción SaaS:", subscriptionError);
+
+    return {
+      handled: true,
+      payment_id: paymentId,
+      club_id: profile.club_id,
+      plan,
+      error: "Error actualizando suscripción SaaS",
+    };
+  }
+
+  console.log("Suscripción SaaS actualizada:", {
+    club_id: profile.club_id,
+    plan,
+    status,
+    payment_id: paymentId,
+    subscription_id: preapproval?.id,
+  });
+
+  return {
+    handled: true,
+    payment_id: paymentId,
+    club_id: profile.club_id,
+    plan,
+    status,
+    subscription,
+  };
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   /*
    * Mercado Pago espera una respuesta rápida.
@@ -61,7 +384,29 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     /*
      * ---------------------------------------------------------
-     * 2. Buscar cuentas Mercado Pago activas
+     * 2. Suscripciones SaaS
+     * ---------------------------------------------------------
+     *
+     * Las suscripciones de Maneja Tu Cancha cobran en la cuenta
+     * Mercado Pago propia de la plataforma, no en las cuentas
+     * OAuth de los clubes. Intentamos primero este flujo.
+     * Si el pago no pertenece a la cuenta SaaS, devolvemos null
+     * y continuamos exactamente con el flujo existente del club.
+     */
+
+    const saasResult = await processSaasPayment(paymentId);
+
+    if (saasResult?.handled) {
+      return res.status(200).json({
+        ok: !saasResult.error,
+        saas_subscription: true,
+        ...saasResult,
+      });
+    }
+
+    /*
+     * ---------------------------------------------------------
+     * 3. Buscar cuentas Mercado Pago activas
      * ---------------------------------------------------------
      */
 

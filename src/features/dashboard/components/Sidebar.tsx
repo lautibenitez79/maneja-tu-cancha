@@ -25,6 +25,11 @@ const items = [
     href: "/dashboard/users",
     roles: ["admin"],
   },
+  {
+    label: "Suscripción",
+    href: "/dashboard/subscription",
+    roles: ["admin"],
+  },
 ];
 
 interface Props {

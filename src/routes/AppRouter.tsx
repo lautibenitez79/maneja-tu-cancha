@@ -21,6 +21,7 @@ import PaymentErrorPage from "@/features/public-booking/pages/PaymentErrorPage";
 import PaymentPendingPage from "@/features/public-booking/pages/PaymentPendingPage";
 import ForgotPassword from "./ForgotPassword";
 import ResetPassword from "./ResetPassword";
+import SubscriptionPage from "@/features/subscription/pages/SubscriptionPage";
 
 export function AppRouter() {
   return (
@@ -87,6 +88,15 @@ export function AppRouter() {
         }
       >
         <Route index element={<DashboardHome />} />
+
+        <Route
+          path="subscription"
+          element={
+            <RoleRoute allowedRoles={["admin", "user"]}>
+              <SubscriptionPage />
+            </RoleRoute>
+          }
+        />
 
         <Route
           path="resources"
