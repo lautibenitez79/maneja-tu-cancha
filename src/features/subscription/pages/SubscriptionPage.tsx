@@ -404,39 +404,6 @@ export default function SubscriptionPage() {
           </div>
         </section>
       )}
-
-      {/* PRUEBA TEMPORAL DE MERCADO PAGO */}
-      {!isComplimentary && (
-        <section className="rounded-2xl border border-dashed border-orange-300 bg-orange-50 p-6">
-          <div className="flex items-start gap-3">
-            <FlaskConical className="mt-1 h-6 w-6 text-orange-600" />
-
-            <div className="flex-1">
-              <h2 className="text-lg font-bold text-orange-900">
-                Prueba técnica de Mercado Pago
-              </h2>
-
-              <p className="mt-1 text-sm text-orange-800">
-                Esta opción es temporal. Crea una
-                suscripción de $100 para verificar el
-                webhook usando otra cuenta de Mercado
-                Pago.
-              </p>
-
-              <button
-                type="button"
-                onClick={() => handlePlanClick("test")}
-                disabled={loadingPlan === "test"}
-                className="mt-4 rounded-xl bg-orange-600 px-5 py-3 text-sm font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {loadingPlan === "test"
-                  ? "Generando checkout..."
-                  : "Probar pago de $100"}
-              </button>
-            </div>
-          </div>
-        </section>
-      )}
     </div>
   );
 }
