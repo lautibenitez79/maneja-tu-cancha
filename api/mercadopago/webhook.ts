@@ -93,10 +93,36 @@ async function fetchMercadoPagoJson(url: string, accessToken: string) {
 function getSaasPlanIdMap() {
   return {
     monthly: process.env.MERCADOPAGO_SAAS_PLAN_MONTHLY_ID,
-    three_months: process.env.MERCADOPAGO_SAAS_PLAN_THREE_MONTHS_ID,
+    three_months:
+      process.env.MERCADOPAGO_SAAS_PLAN_THREE_MONTHS_ID,
     annual: process.env.MERCADOPAGO_SAAS_PLAN_ANNUAL_ID,
     test: process.env.MERCADOPAGO_SAAS_PLAN_TEST_ID,
   } as const;
+}
+
+type SaasPlan =
+  | "monthly"
+  | "three_months"
+  | "annual"
+  | "test";
+
+function parseSaasExternalReference(
+  externalReference: unknown,
+) {
+  const value = String(externalReference ?? "").trim();
+
+  const match = value.match(
+    /^saas:club:([0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}):plan:(monthly|three_months|annual|test)$/i,
+  );
+
+  if (!match) {
+    return null;
+  }
+
+  return {
+    clubId: match[1],
+    plan: match[2].toLowerCase() as SaasPlan,
+  };
 }
 
 async function findSaasPreapproval(
@@ -111,7 +137,9 @@ async function findSaasPreapproval(
 
   if (directId) {
     const direct = await fetchMercadoPagoJson(
-      `https://api.mercadopago.com/preapproval/${encodeURIComponent(String(directId))}`,
+      `https://api.mercadopago.com/preapproval/${encodeURIComponent(
+        String(directId),
+      )}`,
       accessToken,
     );
 
@@ -121,9 +149,15 @@ async function findSaasPreapproval(
   }
 
   const searchUrl =
-    `https://api.mercadopago.com/preapproval/search?payer_email=${encodeURIComponent(payerEmail)}`;
+    `https://api.mercadopago.com/preapproval/search?payer_email=${encodeURIComponent(
+      payerEmail,
+    )}`;
 
-  const searchResult = await fetchMercadoPagoJson(searchUrl, accessToken);
+  const searchResult = await fetchMercadoPagoJson(
+    searchUrl,
+    accessToken,
+  );
+
   const results = Array.isArray(searchResult?.results)
     ? searchResult.results
     : [];
@@ -132,164 +166,302 @@ async function findSaasPreapproval(
     return null;
   }
 
-  const planIds = Object.values(getSaasPlanIdMap()).filter(Boolean);
+  /*
+   * Para suscripciones nuevas sin plan asociado,
+   * external_reference es nuestra fuente de verdad.
+   */
+  const saasResult = results.find((item: any) =>
+    parseSaasExternalReference(
+      item?.external_reference,
+    ),
+  );
+
+  if (saasResult) {
+    return saasResult;
+  }
+
+  /*
+   * Compatibilidad con las suscripciones antiguas
+   * creadas mediante preapproval_plan_id.
+   */
+  const planIds = Object.values(
+    getSaasPlanIdMap(),
+  ).filter(Boolean);
 
   return (
     results.find(
       (item: any) =>
-        planIds.includes(String(item?.preapproval_plan_id ?? "")) &&
-        ["authorized", "active"].includes(String(item?.status ?? "")),
+        planIds.includes(
+          String(item?.preapproval_plan_id ?? ""),
+        ) &&
+        ["authorized", "active"].includes(
+          String(item?.status ?? ""),
+        ),
     ) ??
     results.find((item: any) =>
-      planIds.includes(String(item?.preapproval_plan_id ?? "")),
+      planIds.includes(
+        String(item?.preapproval_plan_id ?? ""),
+      ),
     ) ??
-    results[0]
+    null
   );
 }
 
-function resolveSaasPlan(preapproval: any) {
-  const planIds = getSaasPlanIdMap();
-  const planId = String(preapproval?.preapproval_plan_id ?? "");
+function resolveSaasPlan(
+  preapproval: any,
+): SaasPlan | null {
+  /*
+   * Primero intentamos nuestro external_reference.
+   * Esto es lo que usamos para las suscripciones
+   * nuevas sin plan asociado.
+   */
+  const parsedReference =
+    parseSaasExternalReference(
+      preapproval?.external_reference,
+    );
 
-  if (planId && planId === planIds.monthly) return "monthly" as const;
-  if (planId && planId === planIds.three_months) {
-    return "three_months" as const;
+  if (parsedReference) {
+    return parsedReference.plan;
   }
-  if (planId && planId === planIds.annual) return "annual" as const;
-  if (planId && planId === planIds.test) return "test" as const;
+
+  /*
+   * Compatibilidad con suscripciones antiguas
+   * que sí tenían preapproval_plan_id.
+   */
+  const planIds = getSaasPlanIdMap();
+
+  const planId = String(
+    preapproval?.preapproval_plan_id ?? "",
+  );
+
+  if (
+    planId &&
+    planId === planIds.monthly
+  ) {
+    return "monthly";
+  }
+
+  if (
+    planId &&
+    planId === planIds.three_months
+  ) {
+    return "three_months";
+  }
+
+  if (
+    planId &&
+    planId === planIds.annual
+  ) {
+    return "annual";
+  }
+
+  if (
+    planId &&
+    planId === planIds.test
+  ) {
+    return "test";
+  }
 
   return null;
 }
 
-async function processSaasPayment(paymentId: string) {
-  const accessToken = await getSaasAccessToken();
+async function processSaasPayment(
+  paymentId: string,
+) {
+  const accessToken =
+    await getSaasAccessToken();
 
   if (!accessToken) {
     return null;
   }
 
-  const payment = await fetchMercadoPagoJson(
-    `https://api.mercadopago.com/v1/payments/${encodeURIComponent(paymentId)}`,
-    accessToken,
-  );
+  /*
+   * ---------------------------------------------------------
+   * 1. Obtener pago
+   * ---------------------------------------------------------
+   */
+
+  const payment =
+    await fetchMercadoPagoJson(
+      `https://api.mercadopago.com/v1/payments/${encodeURIComponent(
+        paymentId,
+      )}`,
+      accessToken,
+    );
 
   if (!payment?.id) {
     return null;
   }
 
-  /*
-   * Para SaaS la asociación NO se hace por email.
-   *
-   * El pago puede ser realizado desde una cuenta de Mercado Pago
-   * distinta de la cuenta del administrador de Maneja Tu Cancha.
-   *
-   * La relación segura es:
-   *
-   *   preapproval.external_reference
-   *     -> saas:club:{club_id}:plan:{plan}
-   *
-   * El email del pagador se usa únicamente como fallback para
-   * localizar la preapproval cuando Mercado Pago no entrega
-   * directamente su ID dentro del pago.
-   */
-
-  const payerEmail = String(payment?.payer?.email ?? "")
+  const payerEmail = String(
+    payment?.payer?.email ?? "",
+  )
     .trim()
     .toLowerCase();
 
-  const preapproval = await findSaasPreapproval(
-    payerEmail,
-    payment,
-    accessToken,
-  );
+  if (!payerEmail) {
+    console.error(
+      "Pago SaaS sin email del pagador:",
+      paymentId,
+    );
+
+    return null;
+  }
+
+  /*
+   * ---------------------------------------------------------
+   * 2. Buscar la suscripción de Mercado Pago
+   * ---------------------------------------------------------
+   *
+   * El email se utiliza SOLO para localizar la
+   * suscripción dentro de Mercado Pago.
+   *
+   * NO se utiliza para determinar el club.
+   */
+
+  const preapproval =
+    await findSaasPreapproval(
+      payerEmail,
+      payment,
+      accessToken,
+    );
 
   if (!preapproval?.id) {
-    console.log("Pago SaaS sin preapproval identificable:", {
-      payment_id: paymentId,
-      payer_email: payerEmail || null,
-    });
-
     return null;
   }
 
-  const externalReference = String(
-    preapproval?.external_reference ?? "",
-  ).trim();
+  /*
+   * ---------------------------------------------------------
+   * 3. Obtener external_reference
+   * ---------------------------------------------------------
+   */
 
-  const referenceMatch = externalReference.match(
-    /^saas:club:([0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}):plan:(monthly|three_months|annual|test)$/i,
-  );
+  const parsedReference =
+    parseSaasExternalReference(
+      preapproval.external_reference,
+    );
 
-  if (!referenceMatch) {
-    console.log("Preapproval sin external_reference SaaS válido:", {
-      payment_id: paymentId,
-      preapproval_id: preapproval.id,
-      external_reference: externalReference || null,
-    });
-
+  if (!parsedReference) {
+    /*
+     * No es una suscripción SaaS de Maneja Tu Cancha.
+     * Dejamos continuar el flujo normal del webhook.
+     */
     return null;
   }
 
-  const clubId = referenceMatch[1];
-  const planFromReference = referenceMatch[2].toLowerCase() as
-    | "monthly"
-    | "three_months"
-    | "annual"
-    | "test";
+  const clubId =
+    parsedReference.clubId;
 
-  const { data: club, error: clubError } = await supabaseAdmin
+  const referencePlan =
+    parsedReference.plan;
+
+  /*
+   * ---------------------------------------------------------
+   * 4. Resolver plan
+   * ---------------------------------------------------------
+   */
+
+  const resolvedPlan =
+    resolveSaasPlan(preapproval);
+
+  if (
+    resolvedPlan &&
+    resolvedPlan !== referencePlan
+  ) {
+    console.error(
+      "INCONSISTENCIA DE PLAN SaaS:",
+      {
+        payment_id: paymentId,
+        preapproval_id: preapproval.id,
+        reference_plan: referencePlan,
+        resolved_plan: resolvedPlan,
+        external_reference:
+          preapproval.external_reference,
+      },
+    );
+
+    return {
+      handled: true,
+      payment_id: paymentId,
+      club_id: clubId,
+      plan: referencePlan,
+      error:
+        "El plan de la suscripción no coincide con external_reference.",
+    };
+  }
+
+  const plan =
+    referencePlan;
+
+  /*
+   * ---------------------------------------------------------
+   * 5. Validar que el club exista
+   * ---------------------------------------------------------
+   */
+
+  const {
+    data: club,
+    error: clubError,
+  } = await supabaseAdmin
     .from("clubs")
     .select("id")
     .eq("id", clubId)
     .maybeSingle();
 
   if (clubError) {
-    console.error("Error validando club de suscripción SaaS:", clubError);
-    return null;
-  }
+    console.error(
+      "Error buscando club SaaS:",
+      clubError,
+    );
 
-  if (!club?.id) {
-    console.error("El external_reference apunta a un club inexistente:", {
+    return {
+      handled: true,
       payment_id: paymentId,
       club_id: clubId,
-      external_reference: externalReference,
-    });
-
-    return null;
+      plan,
+      error:
+        "Error validando el club de la suscripción SaaS.",
+    };
   }
 
-  const planFromMp = resolveSaasPlan(preapproval);
+  if (!club) {
+    console.error(
+      "Club SaaS no encontrado:",
+      {
+        club_id: clubId,
+        payment_id: paymentId,
+        external_reference:
+          preapproval.external_reference,
+      },
+    );
 
-  if (!planFromMp) {
-    console.error("No se pudo identificar el plan SaaS desde Mercado Pago:", {
+    return {
+      handled: true,
       payment_id: paymentId,
-      preapproval_id: preapproval.id,
-      preapproval_plan_id: preapproval?.preapproval_plan_id,
-      external_reference: externalReference,
-    });
-
-    return null;
+      club_id: clubId,
+      plan,
+      error:
+        "El club indicado por external_reference no existe.",
+    };
   }
 
-  if (planFromMp !== planFromReference) {
-    console.error("INCONSISTENCIA DE PLAN SaaS:", {
-      payment_id: paymentId,
-      preapproval_id: preapproval.id,
-      plan_from_reference: planFromReference,
-      plan_from_mercadopago: planFromMp,
-      external_reference: externalReference,
-    });
-
-    return null;
-  }
-
-  const plan = planFromReference;
+  /*
+   * ---------------------------------------------------------
+   * 6. Estado del pago
+   * ---------------------------------------------------------
+   */
 
   const now = new Date();
   const nowIso = now.toISOString();
+
   const startDate =
-    preapproval?.start_date ?? preapproval?.date_created ?? nowIso;
-  const nextPaymentDate = preapproval?.next_payment_date ?? null;
+    preapproval?.start_date ??
+    preapproval?.date_created ??
+    nowIso;
+
+  const nextPaymentDate =
+    preapproval?.next_payment_date ??
+    null;
 
   const status =
     payment.status === "approved"
@@ -298,96 +470,154 @@ async function processSaasPayment(paymentId: string) {
         ? "past_due"
         : null;
 
+  /*
+   * ---------------------------------------------------------
+   * 7. Pago todavía no confirmado
+   * ---------------------------------------------------------
+   */
+
   if (!status) {
-    console.log("Pago SaaS todavía no confirmado:", {
-      payment_id: paymentId,
-      status: payment.status,
-      club_id: clubId,
-      plan,
-    });
+    console.log(
+      "Pago SaaS todavía no confirmado:",
+      {
+        payment_id: paymentId,
+        club_id: clubId,
+        plan,
+        status: payment.status,
+      },
+    );
 
     return {
       handled: true,
       payment_id: paymentId,
       club_id: clubId,
       plan,
-      payment_status: payment.status,
+      payment_status:
+        payment.status,
     };
   }
+
+  /*
+   * ---------------------------------------------------------
+   * 8. Actualizar suscripción
+   * ---------------------------------------------------------
+   */
 
   const subscriptionData = {
     club_id: clubId,
+
     plan,
+
     status,
+
     starts_at: startDate,
-    current_period_start: startDate,
-    current_period_end: nextPaymentDate ?? startDate,
-    mercadopago_plan_id: String(preapproval.preapproval_plan_id),
-    mercadopago_subscription_id: preapproval?.id
-      ? String(preapproval.id)
-      : null,
-    mercadopago_payer_id: preapproval?.payer_id
-      ? String(preapproval.payer_id)
-      : payment?.payer?.id
-        ? String(payment.payer.id)
+
+    current_period_start:
+      startDate,
+
+    current_period_end:
+      nextPaymentDate ??
+      startDate,
+
+    mercadopago_plan_id:
+      preapproval?.preapproval_plan_id
+        ? String(
+            preapproval.preapproval_plan_id,
+          )
         : null,
-    last_payment_id: String(payment.id),
-    last_payment_at: nowIso,
-    next_payment_at: nextPaymentDate,
+
+    mercadopago_subscription_id:
+      preapproval?.id
+        ? String(preapproval.id)
+        : null,
+
+    mercadopago_payer_id:
+      preapproval?.payer_id
+        ? String(preapproval.payer_id)
+        : payment?.payer?.id
+          ? String(payment.payer.id)
+          : null,
+
+    last_payment_id:
+      String(payment.id),
+
+    last_payment_at:
+      nowIso,
+
+    next_payment_at:
+      nextPaymentDate,
+
     access_type: "paid",
+
     access_until: null,
+
     updated_at: nowIso,
   };
 
-  const { data: subscription, error: subscriptionError } =
-    await supabaseAdmin
-      .from("saas_subscriptions")
-      .upsert(subscriptionData, { onConflict: "club_id" })
-      .select(
-        `
-        id,
-        club_id,
-        plan,
-        status,
-        access_type,
-        trial_starts_at,
-        trial_ends_at,
-        starts_at,
-        current_period_start,
-        current_period_end,
-        mercadopago_plan_id,
-        mercadopago_subscription_id,
-        mercadopago_payer_id,
-        last_payment_id,
-        last_payment_at,
-        next_payment_at,
-        access_until,
-        updated_at
-        `,
-      )
-      .single();
+  const {
+    data: subscription,
+    error: subscriptionError,
+  } = await supabaseAdmin
+    .from("saas_subscriptions")
+    .upsert(
+      subscriptionData,
+      {
+        onConflict: "club_id",
+      },
+    )
+    .select(
+      `
+      id,
+      club_id,
+      plan,
+      status,
+      access_type,
+      trial_starts_at,
+      trial_ends_at,
+      starts_at,
+      current_period_start,
+      current_period_end,
+      mercadopago_plan_id,
+      mercadopago_subscription_id,
+      mercadopago_payer_id,
+      last_payment_id,
+      last_payment_at,
+      next_payment_at,
+      access_until,
+      updated_at
+      `,
+    )
+    .single();
 
   if (subscriptionError) {
-    console.error("Error actualizando suscripción SaaS:", subscriptionError);
+    console.error(
+      "Error actualizando suscripción SaaS:",
+      subscriptionError,
+    );
 
     return {
       handled: true,
       payment_id: paymentId,
       club_id: clubId,
       plan,
-      error: "Error actualizando suscripción SaaS",
+      error:
+        "Error actualizando suscripción SaaS",
     };
   }
 
-  console.log("Suscripción SaaS actualizada:", {
-    club_id: clubId,
-    plan,
-    status,
-    payment_id: paymentId,
-    subscription_id: preapproval?.id,
-    payer_id: preapproval?.payer_id ?? payment?.payer?.id ?? null,
-    external_reference: externalReference,
-  });
+  console.log(
+    "Suscripción SaaS actualizada:",
+    {
+      club_id: clubId,
+      plan,
+      status,
+      payment_id: paymentId,
+      subscription_id:
+        preapproval.id,
+      external_reference:
+        preapproval.external_reference,
+    },
+  );
 
   return {
     handled: true,
