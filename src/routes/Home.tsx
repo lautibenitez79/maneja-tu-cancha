@@ -88,21 +88,23 @@ function Home() {
             ripple
             fontSize={82}
             fontWeight={600}
-            style={{ height: "200px" , color: "text-[var(--color-title)]" }}
+            style={{ color: "text-[var(--color-title)]" }}
             fontFamily="inherit"
             letterSpacing={0}
             lineHeight={0.9}
           />
 
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            className="max-w-3xl text-md leading-8 font-semibold text-muted-foreground md:text-xl"
-          >
-            Reservas online, clientes, estadísticas, pagos y administración
-            completa desde cualquier dispositivo.
-          </motion.p>
+          <div className="mt-6 h-10 text-base font-semibold md:text-2xl md:mt-10">
+            <Typewriter
+              words={[
+                "Reservas online.",
+                "Clientes.",
+                "Pagos.",
+                "Estadísticas.",
+                "Administración completa desde cualquier dispositivo.",
+              ]}
+            />
+          </div>
 
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -114,12 +116,12 @@ function Home() {
               <SpecularButton
                 size="lg"
                 radius={18}
-                tint="text-[var(--color-title)]"
+                tint="#ffffff"
                 tintOpacity={0}
                 blur={0}
                 textColor="text-[var(--color-title)]"
                 lineColor="text-[var(--color-title)]"
-                baseColor="#1900ff"
+                baseColor="#2b7fff"
                 intensity={1}
                 shineSize={10}
                 shineFade={40}
@@ -137,12 +139,12 @@ function Home() {
               <SpecularButton
                 size="lg"
                 radius={18}
-                tint="text-[var(--color-title)]"
+                tint="#ffffff"
                 tintOpacity={0}
                 blur={0}
                 textColor="text-[var(--color-title)]"
                 lineColor="text-[var(--color-title)]"
-                baseColor="#1900ff"
+                baseColor="#2b7fff"
                 intensity={1}
                 shineSize={10}
                 shineFade={40}
@@ -156,30 +158,6 @@ function Home() {
               </SpecularButton>
             </a>
           </motion.div>
-
-          <div className="mt-14 h-10 text-2xl font-semibold">
-            <Typewriter
-              words={[
-                "Reservas online.",
-                "Clientes.",
-                "Pagos.",
-                "Estadísticas.",
-                "Todo desde un solo lugar.",
-              ]}
-            />
-          </div>
-
-          <div className="mt-16 flex flex-wrap justify-center gap-3">
-            <TextType
-              text={sports}
-              typingSpeed={75}
-              pauseDuration={1500}
-              showCursor
-              cursorCharacter="_"
-              deletingSpeed={50}
-              cursorBlinkDuration={0.5}
-            />
-          </div>
         </div>
       </section>
 
