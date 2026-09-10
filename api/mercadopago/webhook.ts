@@ -5,9 +5,8 @@ import { createClient } from "@supabase/supabase-js";
 
 const supabaseAdmin = createClient(
   process.env.SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
-
 
 let cachedSaasAccessToken: string | null = null;
 let cachedSaasAccessTokenExpiresAt = 0;
@@ -18,7 +17,7 @@ async function getSaasAccessToken() {
 
   if (!clientId || !clientSecret) {
     console.error(
-      "Faltan MERCADOPAGO_CLIENT_ID o MERCADOPAGO_CLIENT_SECRET para obtener el Access Token SaaS.",
+      "Faltan MERCADOPAGO_CLIENT_ID o MERCADOPAGO_CLIENT_SECRET para obtener el Access Token SaaS."
     );
     return null;
   }
@@ -30,20 +29,17 @@ async function getSaasAccessToken() {
   }
 
   try {
-    const response = await fetch(
-      "https://api.mercadopago.com/oauth/token",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          client_id: clientId,
-          client_secret: clientSecret,
-          grant_type: "client_credentials",
-        }),
+    const response = await fetch("https://api.mercadopago.com/oauth/token", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
       },
-    );
+      body: JSON.stringify({
+        client_id: clientId,
+        client_secret: clientSecret,
+        grant_type: "client_credentials",
+      }),
+    });
 
     if (!response.ok) {
       const body = await response.text();
@@ -93,26 +89,19 @@ async function fetchMercadoPagoJson(url: string, accessToken: string) {
 function getSaasPlanIdMap() {
   return {
     monthly: process.env.MERCADOPAGO_SAAS_PLAN_MONTHLY_ID,
-    three_months:
-      process.env.MERCADOPAGO_SAAS_PLAN_THREE_MONTHS_ID,
+    three_months: process.env.MERCADOPAGO_SAAS_PLAN_THREE_MONTHS_ID,
     annual: process.env.MERCADOPAGO_SAAS_PLAN_ANNUAL_ID,
     test: process.env.MERCADOPAGO_SAAS_PLAN_TEST_ID,
   } as const;
 }
 
-type SaasPlan =
-  | "monthly"
-  | "three_months"
-  | "annual"
-  | "test";
+type SaasPlan = "monthly" | "three_months" | "annual" | "test";
 
-function parseSaasExternalReference(
-  externalReference: unknown,
-) {
+function parseSaasExternalReference(externalReference: unknown) {
   const value = String(externalReference ?? "").trim();
 
   const match = value.match(
-    /^saas:club:([0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}):plan:(monthly|three_months|annual|test)$/i,
+    /^saas:club:([0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}):plan:(monthly|three_months|annual|test)$/i
   );
 
   if (!match) {
@@ -128,7 +117,7 @@ function parseSaasExternalReference(
 async function findSaasPreapproval(
   payerEmail: string,
   payment: any,
-  accessToken: string,
+  accessToken: string
 ) {
   const directId =
     payment?.preapproval_id ??
@@ -138,9 +127,9 @@ async function findSaasPreapproval(
   if (directId) {
     const direct = await fetchMercadoPagoJson(
       `https://api.mercadopago.com/preapproval/${encodeURIComponent(
-        String(directId),
+        String(directId)
       )}`,
-      accessToken,
+      accessToken
     );
 
     if (direct?.id) {
@@ -148,15 +137,11 @@ async function findSaasPreapproval(
     }
   }
 
-  const searchUrl =
-    `https://api.mercadopago.com/preapproval/search?payer_email=${encodeURIComponent(
-      payerEmail,
-    )}`;
+  const searchUrl = `https://api.mercadopago.com/preapproval/search?payer_email=${encodeURIComponent(
+    payerEmail
+  )}`;
 
-  const searchResult = await fetchMercadoPagoJson(
-    searchUrl,
-    accessToken,
-  );
+  const searchResult = await fetchMercadoPagoJson(searchUrl, accessToken);
 
   const results = Array.isArray(searchResult?.results)
     ? searchResult.results
@@ -171,9 +156,7 @@ async function findSaasPreapproval(
    * external_reference es nuestra fuente de verdad.
    */
   const saasResult = results.find((item: any) =>
-    parseSaasExternalReference(
-      item?.external_reference,
-    ),
+    parseSaasExternalReference(item?.external_reference)
   );
 
   if (saasResult) {
@@ -184,41 +167,30 @@ async function findSaasPreapproval(
    * Compatibilidad con las suscripciones antiguas
    * creadas mediante preapproval_plan_id.
    */
-  const planIds = Object.values(
-    getSaasPlanIdMap(),
-  ).filter(Boolean);
+  const planIds = Object.values(getSaasPlanIdMap()).filter(Boolean);
 
   return (
     results.find(
       (item: any) =>
-        planIds.includes(
-          String(item?.preapproval_plan_id ?? ""),
-        ) &&
-        ["authorized", "active"].includes(
-          String(item?.status ?? ""),
-        ),
+        planIds.includes(String(item?.preapproval_plan_id ?? "")) &&
+        ["authorized", "active"].includes(String(item?.status ?? ""))
     ) ??
     results.find((item: any) =>
-      planIds.includes(
-        String(item?.preapproval_plan_id ?? ""),
-      ),
+      planIds.includes(String(item?.preapproval_plan_id ?? ""))
     ) ??
     null
   );
 }
 
-function resolveSaasPlan(
-  preapproval: any,
-): SaasPlan | null {
+function resolveSaasPlan(preapproval: any): SaasPlan | null {
   /*
    * Primero intentamos nuestro external_reference.
    * Esto es lo que usamos para las suscripciones
    * nuevas sin plan asociado.
    */
-  const parsedReference =
-    parseSaasExternalReference(
-      preapproval?.external_reference,
-    );
+  const parsedReference = parseSaasExternalReference(
+    preapproval?.external_reference
+  );
 
   if (parsedReference) {
     return parsedReference.plan;
@@ -230,46 +202,29 @@ function resolveSaasPlan(
    */
   const planIds = getSaasPlanIdMap();
 
-  const planId = String(
-    preapproval?.preapproval_plan_id ?? "",
-  );
+  const planId = String(preapproval?.preapproval_plan_id ?? "");
 
-  if (
-    planId &&
-    planId === planIds.monthly
-  ) {
+  if (planId && planId === planIds.monthly) {
     return "monthly";
   }
 
-  if (
-    planId &&
-    planId === planIds.three_months
-  ) {
+  if (planId && planId === planIds.three_months) {
     return "three_months";
   }
 
-  if (
-    planId &&
-    planId === planIds.annual
-  ) {
+  if (planId && planId === planIds.annual) {
     return "annual";
   }
 
-  if (
-    planId &&
-    planId === planIds.test
-  ) {
+  if (planId && planId === planIds.test) {
     return "test";
   }
 
   return null;
 }
 
-async function processSaasPayment(
-  paymentId: string,
-) {
-  const accessToken =
-    await getSaasAccessToken();
+async function processSaasPayment(paymentId: string) {
+  const accessToken = await getSaasAccessToken();
 
   if (!accessToken) {
     return null;
@@ -281,29 +236,21 @@ async function processSaasPayment(
    * ---------------------------------------------------------
    */
 
-  const payment =
-    await fetchMercadoPagoJson(
-      `https://api.mercadopago.com/v1/payments/${encodeURIComponent(
-        paymentId,
-      )}`,
-      accessToken,
-    );
+  const payment = await fetchMercadoPagoJson(
+    `https://api.mercadopago.com/v1/payments/${encodeURIComponent(paymentId)}`,
+    accessToken
+  );
 
   if (!payment?.id) {
     return null;
   }
 
-  const payerEmail = String(
-    payment?.payer?.email ?? "",
-  )
+  const payerEmail = String(payment?.payer?.email ?? "")
     .trim()
     .toLowerCase();
 
   if (!payerEmail) {
-    console.error(
-      "Pago SaaS sin email del pagador:",
-      paymentId,
-    );
+    console.error("Pago SaaS sin email del pagador:", paymentId);
 
     return null;
   }
@@ -319,12 +266,11 @@ async function processSaasPayment(
    * NO se utiliza para determinar el club.
    */
 
-  const preapproval =
-    await findSaasPreapproval(
-      payerEmail,
-      payment,
-      accessToken,
-    );
+  const preapproval = await findSaasPreapproval(
+    payerEmail,
+    payment,
+    accessToken
+  );
 
   if (!preapproval?.id) {
     return null;
@@ -336,10 +282,9 @@ async function processSaasPayment(
    * ---------------------------------------------------------
    */
 
-  const parsedReference =
-    parseSaasExternalReference(
-      preapproval.external_reference,
-    );
+  const parsedReference = parseSaasExternalReference(
+    preapproval.external_reference
+  );
 
   if (!parsedReference) {
     /*
@@ -349,11 +294,9 @@ async function processSaasPayment(
     return null;
   }
 
-  const clubId =
-    parsedReference.clubId;
+  const clubId = parsedReference.clubId;
 
-  const referencePlan =
-    parsedReference.plan;
+  const referencePlan = parsedReference.plan;
 
   /*
    * ---------------------------------------------------------
@@ -361,37 +304,27 @@ async function processSaasPayment(
    * ---------------------------------------------------------
    */
 
-  const resolvedPlan =
-    resolveSaasPlan(preapproval);
+  const resolvedPlan = resolveSaasPlan(preapproval);
 
-  if (
-    resolvedPlan &&
-    resolvedPlan !== referencePlan
-  ) {
-    console.error(
-      "INCONSISTENCIA DE PLAN SaaS:",
-      {
-        payment_id: paymentId,
-        preapproval_id: preapproval.id,
-        reference_plan: referencePlan,
-        resolved_plan: resolvedPlan,
-        external_reference:
-          preapproval.external_reference,
-      },
-    );
+  if (resolvedPlan && resolvedPlan !== referencePlan) {
+    console.error("INCONSISTENCIA DE PLAN SaaS:", {
+      payment_id: paymentId,
+      preapproval_id: preapproval.id,
+      reference_plan: referencePlan,
+      resolved_plan: resolvedPlan,
+      external_reference: preapproval.external_reference,
+    });
 
     return {
       handled: true,
       payment_id: paymentId,
       club_id: clubId,
       plan: referencePlan,
-      error:
-        "El plan de la suscripción no coincide con external_reference.",
+      error: "El plan de la suscripción no coincide con external_reference.",
     };
   }
 
-  const plan =
-    referencePlan;
+  const plan = referencePlan;
 
   /*
    * ---------------------------------------------------------
@@ -399,49 +332,37 @@ async function processSaasPayment(
    * ---------------------------------------------------------
    */
 
-  const {
-    data: club,
-    error: clubError,
-  } = await supabaseAdmin
+  const { data: club, error: clubError } = await supabaseAdmin
     .from("clubs")
     .select("id")
     .eq("id", clubId)
     .maybeSingle();
 
   if (clubError) {
-    console.error(
-      "Error buscando club SaaS:",
-      clubError,
-    );
+    console.error("Error buscando club SaaS:", clubError);
 
     return {
       handled: true,
       payment_id: paymentId,
       club_id: clubId,
       plan,
-      error:
-        "Error validando el club de la suscripción SaaS.",
+      error: "Error validando el club de la suscripción SaaS.",
     };
   }
 
   if (!club) {
-    console.error(
-      "Club SaaS no encontrado:",
-      {
-        club_id: clubId,
-        payment_id: paymentId,
-        external_reference:
-          preapproval.external_reference,
-      },
-    );
+    console.error("Club SaaS no encontrado:", {
+      club_id: clubId,
+      payment_id: paymentId,
+      external_reference: preapproval.external_reference,
+    });
 
     return {
       handled: true,
       payment_id: paymentId,
       club_id: clubId,
       plan,
-      error:
-        "El club indicado por external_reference no existe.",
+      error: "El club indicado por external_reference no existe.",
     };
   }
 
@@ -455,20 +376,16 @@ async function processSaasPayment(
   const nowIso = now.toISOString();
 
   const startDate =
-    preapproval?.start_date ??
-    preapproval?.date_created ??
-    nowIso;
+    preapproval?.start_date ?? preapproval?.date_created ?? nowIso;
 
-  const nextPaymentDate =
-    preapproval?.next_payment_date ??
-    null;
+  const nextPaymentDate = preapproval?.next_payment_date ?? null;
 
   const status =
     payment.status === "approved"
       ? "active"
       : payment.status === "rejected"
-        ? "past_due"
-        : null;
+      ? "past_due"
+      : null;
 
   /*
    * ---------------------------------------------------------
@@ -477,23 +394,19 @@ async function processSaasPayment(
    */
 
   if (!status) {
-    console.log(
-      "Pago SaaS todavía no confirmado:",
-      {
-        payment_id: paymentId,
-        club_id: clubId,
-        plan,
-        status: payment.status,
-      },
-    );
+    console.log("Pago SaaS todavía no confirmado:", {
+      payment_id: paymentId,
+      club_id: clubId,
+      plan,
+      status: payment.status,
+    });
 
     return {
       handled: true,
       payment_id: paymentId,
       club_id: clubId,
       plan,
-      payment_status:
-        payment.status,
+      payment_status: payment.status,
     };
   }
 
@@ -512,40 +425,29 @@ async function processSaasPayment(
 
     starts_at: startDate,
 
-    current_period_start:
-      startDate,
+    current_period_start: startDate,
 
-    current_period_end:
-      nextPaymentDate ??
-      startDate,
+    current_period_end: nextPaymentDate ?? startDate,
 
-    mercadopago_plan_id:
-      preapproval?.preapproval_plan_id
-        ? String(
-            preapproval.preapproval_plan_id,
-          )
-        : null,
+    mercadopago_plan_id: preapproval?.preapproval_plan_id
+      ? String(preapproval.preapproval_plan_id)
+      : null,
 
-    mercadopago_subscription_id:
-      preapproval?.id
-        ? String(preapproval.id)
-        : null,
+    mercadopago_subscription_id: preapproval?.id
+      ? String(preapproval.id)
+      : null,
 
-    mercadopago_payer_id:
-      preapproval?.payer_id
-        ? String(preapproval.payer_id)
-        : payment?.payer?.id
-          ? String(payment.payer.id)
-          : null,
+    mercadopago_payer_id: preapproval?.payer_id
+      ? String(preapproval.payer_id)
+      : payment?.payer?.id
+      ? String(payment.payer.id)
+      : null,
 
-    last_payment_id:
-      String(payment.id),
+    last_payment_id: String(payment.id),
 
-    last_payment_at:
-      nowIso,
+    last_payment_at: nowIso,
 
-    next_payment_at:
-      nextPaymentDate,
+    next_payment_at: nextPaymentDate,
 
     access_type: "paid",
 
@@ -554,17 +456,11 @@ async function processSaasPayment(
     updated_at: nowIso,
   };
 
-  const {
-    data: subscription,
-    error: subscriptionError,
-  } = await supabaseAdmin
+  const { data: subscription, error: subscriptionError } = await supabaseAdmin
     .from("saas_subscriptions")
-    .upsert(
-      subscriptionData,
-      {
-        onConflict: "club_id",
-      },
-    )
+    .upsert(subscriptionData, {
+      onConflict: "club_id",
+    })
     .select(
       `
       id,
@@ -585,39 +481,30 @@ async function processSaasPayment(
       next_payment_at,
       access_until,
       updated_at
-      `,
+      `
     )
     .single();
 
   if (subscriptionError) {
-    console.error(
-      "Error actualizando suscripción SaaS:",
-      subscriptionError,
-    );
+    console.error("Error actualizando suscripción SaaS:", subscriptionError);
 
     return {
       handled: true,
       payment_id: paymentId,
       club_id: clubId,
       plan,
-      error:
-        "Error actualizando suscripción SaaS",
+      error: "Error actualizando suscripción SaaS",
     };
   }
 
-  console.log(
-    "Suscripción SaaS actualizada:",
-    {
-      club_id: clubId,
-      plan,
-      status,
-      payment_id: paymentId,
-      subscription_id:
-        preapproval.id,
-      external_reference:
-        preapproval.external_reference,
-    },
-  );
+  console.log("Suscripción SaaS actualizada:", {
+    club_id: clubId,
+    plan,
+    status,
+    payment_id: paymentId,
+    subscription_id: preapproval.id,
+    external_reference: preapproval.external_reference,
+  });
 
   return {
     handled: true,
@@ -625,6 +512,251 @@ async function processSaasPayment(
     club_id: clubId,
     plan,
     status,
+    subscription,
+  };
+}
+
+async function processSaasAuthorizedPayment(authorizedPaymentId: string) {
+  const accessToken = await getSaasAccessToken();
+
+  if (!accessToken) {
+    return null;
+  }
+
+  const authorizedPayment = await fetchMercadoPagoJson(
+    `https://api.mercadopago.com/authorized_payments/${encodeURIComponent(
+      authorizedPaymentId
+    )}`,
+    accessToken
+  );
+
+  if (!authorizedPayment?.id) {
+    return null;
+  }
+
+  const preapprovalId = String(authorizedPayment?.preapproval_id ?? "").trim();
+
+  if (!preapprovalId) {
+    return null;
+  }
+
+  const preapproval = await fetchMercadoPagoJson(
+    `https://api.mercadopago.com/preapproval/${encodeURIComponent(
+      preapprovalId
+    )}`,
+    accessToken
+  );
+
+  if (!preapproval?.id) {
+    return null;
+  }
+
+  const parsedReference = parseSaasExternalReference(
+    preapproval.external_reference
+  );
+
+  if (!parsedReference) {
+    return null;
+  }
+
+  const clubId = parsedReference.clubId;
+  const plan = parsedReference.plan;
+
+  const { data: subscription, error } = await supabaseAdmin
+    .from("saas_subscriptions")
+    .select("*")
+    .eq("mercadopago_subscription_id", String(preapproval.id))
+    .maybeSingle();
+
+  if (error) {
+    console.error("Error buscando suscripción SaaS:", error);
+
+    return {
+      handled: true,
+      error: "Error buscando suscripción SaaS",
+    };
+  }
+
+  if (!subscription) {
+    console.error("Suscripción SaaS no encontrada:", preapproval.id);
+
+    return {
+      handled: true,
+      error: "Suscripción SaaS no encontrada en la base de datos",
+    };
+  }
+
+  const paymentStatus = String(
+    authorizedPayment?.payment?.status ?? authorizedPayment?.status ?? ""
+  ).toLowerCase();
+
+  if (paymentStatus !== "processed" && paymentStatus !== "approved") {
+    console.log("Pago recurrente SaaS todavía no confirmado:", {
+      authorized_payment_id: authorizedPaymentId,
+      status: paymentStatus,
+    });
+
+    return {
+      handled: true,
+      payment_id: authorizedPaymentId,
+      club_id: clubId,
+      plan,
+      payment_status: paymentStatus,
+    };
+  }
+
+  const nowIso = new Date().toISOString();
+
+  const nextPaymentDate = preapproval?.next_payment_date ?? null;
+
+  const periodStart =
+    authorizedPayment?.debit_date ?? authorizedPayment?.date_created ?? nowIso;
+
+  const { data: updatedSubscription, error: updateError } = await supabaseAdmin
+    .from("saas_subscriptions")
+    .update({
+      plan,
+      status: "active",
+      current_period_start: periodStart,
+      current_period_end: nextPaymentDate ?? subscription.current_period_end,
+      mercadopago_subscription_id: String(preapproval.id),
+      mercadopago_payer_id: preapproval?.payer_id
+        ? String(preapproval.payer_id)
+        : subscription.mercadopago_payer_id,
+      last_payment_id: authorizedPayment?.payment?.id
+        ? String(authorizedPayment.payment.id)
+        : subscription.last_payment_id,
+      last_payment_at: authorizedPayment?.date_created ?? nowIso,
+      next_payment_at: nextPaymentDate,
+      access_type: "paid",
+      access_until: null,
+      updated_at: nowIso,
+    })
+    .eq("club_id", clubId)
+    .select()
+    .single();
+
+  if (updateError) {
+    console.error("Error actualizando renovación SaaS:", updateError);
+
+    return {
+      handled: true,
+      payment_id: authorizedPaymentId,
+      club_id: clubId,
+      plan,
+      error: "Error actualizando renovación SaaS",
+    };
+  }
+
+  console.log("Renovación SaaS procesada correctamente:", {
+    club_id: clubId,
+    plan,
+    authorized_payment_id: authorizedPaymentId,
+    payment_id: authorizedPayment?.payment?.id,
+    next_payment_at: nextPaymentDate,
+  });
+
+  return {
+    handled: true,
+    payment_id: authorizedPaymentId,
+    club_id: clubId,
+    plan,
+    status: "active",
+    subscription: updatedSubscription,
+  };
+}
+
+async function processSaasPreapproval(preapprovalId: string) {
+  const accessToken = await getSaasAccessToken();
+
+  if (!accessToken) {
+    return null;
+  }
+
+  const preapproval = await fetchMercadoPagoJson(
+    `https://api.mercadopago.com/preapproval/${encodeURIComponent(
+      preapprovalId
+    )}`,
+    accessToken
+  );
+
+  if (!preapproval?.id) {
+    return null;
+  }
+
+  const parsedReference = parseSaasExternalReference(
+    preapproval.external_reference
+  );
+
+  if (!parsedReference) {
+    return null;
+  }
+
+  const clubId = parsedReference.clubId;
+  const plan = parsedReference.plan;
+
+  const mpStatus = String(preapproval.status ?? "").toLowerCase();
+
+  /*
+   * No activamos una suscripción simplemente
+   * porque Mercado Pago la haya creado.
+   *
+   * La activación inicial la hace el pago aprobado.
+   */
+  if (mpStatus !== "paused" && mpStatus !== "cancelled") {
+    return {
+      handled: true,
+      club_id: clubId,
+      plan,
+      subscription_status: mpStatus,
+      ignored: true,
+    };
+  }
+
+  const newStatus = mpStatus === "cancelled" ? "cancelled" : "past_due";
+
+  const nowIso = new Date().toISOString();
+
+  const updateData: Record<string, unknown> = {
+    status: newStatus,
+    updated_at: nowIso,
+  };
+
+  if (newStatus === "cancelled") {
+    updateData.cancelled_at = nowIso;
+  }
+
+  const { data: subscription, error } = await supabaseAdmin
+    .from("saas_subscriptions")
+    .update(updateData)
+    .eq("mercadopago_subscription_id", String(preapproval.id))
+    .select()
+    .maybeSingle();
+
+  if (error) {
+    console.error("Error actualizando estado de suscripción SaaS:", error);
+
+    return {
+      handled: true,
+      club_id: clubId,
+      plan,
+      error: "Error actualizando estado de suscripción SaaS",
+    };
+  }
+
+  console.log("Estado de suscripción SaaS actualizado:", {
+    club_id: clubId,
+    plan,
+    mercadopago_subscription_id: preapproval.id,
+    mercado_pago_status: mpStatus,
+    status: newStatus,
+  });
+
+  return {
+    handled: true,
+    club_id: clubId,
+    plan,
+    status: newStatus,
     subscription,
   };
 }
@@ -644,41 +776,28 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    console.log("=== MERCADO PAGO WEBHOOK ===");
-
-    console.log("Body:", JSON.stringify(req.body));
-    console.log("Query:", JSON.stringify(req.query));
-
     /*
      * ---------------------------------------------------------
      * 1. Obtener payment_id
      * ---------------------------------------------------------
      */
 
-    let paymentId: string | null = null;
+    const notificationType = String(
+      req.body?.type ?? req.query.type ?? req.query.topic ?? ""
+    ).trim();
 
-    if (req.body?.type === "payment" && req.body?.data?.id) {
-      paymentId = String(req.body.data.id);
-    }
+    const notificationId = String(
+      req.body?.data?.id ?? req.query.id ?? ""
+    ).trim();
 
-    if (!paymentId && req.query.topic === "payment" && req.query.id) {
-      paymentId = String(req.query.id);
-    }
-
-    if (!paymentId && req.query.type === "payment" && req.query.id) {
-      paymentId = String(req.query.id);
-    }
-
-    if (!paymentId) {
-      console.log("Webhook sin payment_id.");
+    if (!notificationType || !notificationId) {
+      console.log("Webhook sin tipo o ID.");
 
       return res.status(200).json({
         ok: true,
         ignored: true,
       });
     }
-
-    console.log("Payment ID recibido:", paymentId);
 
     /*
      * ---------------------------------------------------------
@@ -687,12 +806,40 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
      *
      * Las suscripciones de Maneja Tu Cancha cobran en la cuenta
      * Mercado Pago propia de la plataforma, no en las cuentas
-     * OAuth de los clubes. Intentamos primero este flujo.
-     * Si el pago no pertenece a la cuenta SaaS, devolvemos null
-     * y continuamos exactamente con el flujo existente del club.
+     * OAuth de los clubes.
      */
 
-    const saasResult = await processSaasPayment(paymentId);
+    /*
+     * ---------------------------------------------------------
+     * SUSCRIPCIONES SaaS
+     * ---------------------------------------------------------
+     */
+
+    if (notificationType === "subscription_authorized_payment") {
+      const saasResult = await processSaasAuthorizedPayment(notificationId);
+
+      if (saasResult?.handled) {
+        return res.status(200).json({
+          ok: !saasResult.error,
+          saas_subscription: true,
+          ...saasResult,
+        });
+      }
+    }
+
+    if (notificationType === "subscription_preapproval") {
+      const saasResult = await processSaasPreapproval(notificationId);
+
+      if (saasResult?.handled) {
+        return res.status(200).json({
+          ok: !saasResult.error,
+          saas_subscription: true,
+          ...saasResult,
+        });
+      }
+    }
+
+    const saasResult = await processSaasPayment(notificationId);
 
     if (saasResult?.handled) {
       return res.status(200).json({
@@ -708,6 +855,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
      * ---------------------------------------------------------
      */
 
+    if (notificationType !== "payment") {
+      return res.status(200).json({
+        ok: true,
+        ignored: true,
+      });
+    }
+
+    const paymentId = notificationId;
+
     const { data: accounts, error: accountsError } = await supabaseAdmin
       .from("club_marketplace_accounts")
       .select(
@@ -720,16 +876,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         scope,
         expires_at,
         active
-        `,
+        `
       )
       .eq("provider", "mercadopago")
       .eq("active", true);
 
     if (accountsError) {
-      console.error(
-        "Error buscando cuentas Mercado Pago:",
-        accountsError,
-      );
+      console.error("Error buscando cuentas Mercado Pago:", accountsError);
 
       return res.status(200).json({
         ok: false,
@@ -767,14 +920,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
         const mpResponse = await fetch(
           `https://api.mercadopago.com/v1/payments/${encodeURIComponent(
-            paymentId,
+            paymentId
           )}`,
           {
             method: "GET",
             headers: {
               Authorization: `Bearer ${accessToken}`,
             },
-          },
+          }
         );
 
         if (!mpResponse.ok) {
@@ -928,7 +1081,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           payment_status,
           payment_id,
           status
-          `,
+          `
         )
         .eq("id", feeId)
         .maybeSingle();
@@ -1077,7 +1230,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         if (feePaymentUpdateError) {
           console.error(
             "Error guardando pago de cuota:",
-            feePaymentUpdateError,
+            feePaymentUpdateError
           );
 
           return res.status(200).json({
@@ -1106,14 +1259,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           {
             p_fee_id: fee.id,
             p_payment_id: String(payment.id),
-          },
+          }
         );
 
         if (activationError) {
-          console.error(
-            "Error activando cuota mensual:",
-            activationError,
-          );
+          console.error("Error activando cuota mensual:", activationError);
 
           /*
            * Dejamos payment_id registrado para trazabilidad,
@@ -1155,33 +1305,29 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
        */
 
       if (payment.status === "rejected") {
-        const { data: updatedFee, error: updateError } =
-          await supabaseAdmin
-            .from("gym_monthly_fees")
-            .update({
-              payment_id: String(payment.id),
-              payment_status: "rejected",
-              status: "pending_payment",
-              updated_at: new Date().toISOString(),
-            })
-            .eq("id", fee.id)
-            .eq("club_id", sellerAccount.club_id)
-            .select(
-              `
+        const { data: updatedFee, error: updateError } = await supabaseAdmin
+          .from("gym_monthly_fees")
+          .update({
+            payment_id: String(payment.id),
+            payment_status: "rejected",
+            status: "pending_payment",
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", fee.id)
+          .eq("club_id", sellerAccount.club_id)
+          .select(
+            `
               id,
               club_id,
               payment_status,
               payment_id,
               status
-              `,
-            )
-            .single();
+              `
+          )
+          .single();
 
         if (updateError) {
-          console.error(
-            "Error actualizando cuota rechazada:",
-            updateError,
-          );
+          console.error("Error actualizando cuota rechazada:", updateError);
 
           return res.status(200).json({
             ok: false,
@@ -1205,35 +1351,28 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
        * ---------------------------------------------------------
        */
 
-      if (
-        payment.status === "pending" ||
-        payment.status === "in_process"
-      ) {
-        const { data: updatedFee, error: updateError } =
-          await supabaseAdmin
-            .from("gym_monthly_fees")
-            .update({
-              payment_status: "pending",
-              updated_at: new Date().toISOString(),
-            })
-            .eq("id", fee.id)
-            .eq("club_id", sellerAccount.club_id)
-            .select(
-              `
+      if (payment.status === "pending" || payment.status === "in_process") {
+        const { data: updatedFee, error: updateError } = await supabaseAdmin
+          .from("gym_monthly_fees")
+          .update({
+            payment_status: "pending",
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", fee.id)
+          .eq("club_id", sellerAccount.club_id)
+          .select(
+            `
               id,
               club_id,
               payment_status,
               payment_id,
               status
-              `,
-            )
-            .single();
+              `
+          )
+          .single();
 
         if (updateError) {
-          console.error(
-            "Error actualizando cuota pendiente:",
-            updateError,
-          );
+          console.error("Error actualizando cuota pendiente:", updateError);
 
           return res.status(200).json({
             ok: false,
@@ -1253,7 +1392,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       console.log(
         "Estado de Mercado Pago no procesado para cuota:",
-        payment.status,
+        payment.status
       );
 
       return res.status(200).json({
@@ -1278,11 +1417,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
      * ---------------------------------------------------------
      */
 
-    const { data: reservation, error: reservationError } =
-      await supabaseAdmin
-        .from("reservations")
-        .select(
-          `
+    const { data: reservation, error: reservationError } = await supabaseAdmin
+      .from("reservations")
+      .select(
+        `
           id,
           club_id,
           resource_id,
@@ -1295,10 +1433,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           payment_status,
           payment_id,
           status
-          `,
-        )
-        .eq("id", externalReference)
-        .maybeSingle();
+          `
+      )
+      .eq("id", externalReference)
+      .maybeSingle();
 
     if (reservationError) {
       console.error("Error buscando reserva:", reservationError);
@@ -1440,10 +1578,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     ) {
       updateData.payment_status = "pending";
     } else {
-      console.log(
-        "Estado de Mercado Pago no procesado:",
-        payment.status,
-      );
+      console.log("Estado de Mercado Pago no procesado:", payment.status);
 
       return res.status(200).json({
         ok: true,
@@ -1459,10 +1594,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
      * ---------------------------------------------------------
      */
 
-    const {
-      data: updatedReservation,
-      error: updateError,
-    } = await supabaseAdmin
+    const { data: updatedReservation, error: updateError } = await supabaseAdmin
       .from("reservations")
       .update(updateData)
       .eq("id", reservation.id)
@@ -1474,7 +1606,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         payment_status,
         payment_id,
         status
-        `,
+        `
       )
       .single();
 
@@ -1490,10 +1622,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
     }
 
-    console.log(
-      "Reserva actualizada correctamente:",
-      updatedReservation,
-    );
+    console.log("Reserva actualizada correctamente:", updatedReservation);
 
     /*
      * ---------------------------------------------------------
@@ -1520,30 +1649,30 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         if (!club) {
           console.error(
             "No se pudo obtener el club para el email.",
-            reservation.club_id,
+            reservation.club_id
           );
         } else if (!resource) {
           console.error(
             "No se pudo obtener el recurso para el email.",
-            reservation.resource_id,
+            reservation.resource_id
           );
         } else {
           const date = formatInTimeZone(
             reservation.starts_at,
             club.timezone,
-            "dd/MM/yyyy",
+            "dd/MM/yyyy"
           );
 
           const startTime = formatInTimeZone(
             reservation.starts_at,
             club.timezone,
-            "HH:mm",
+            "HH:mm"
           );
 
           const endTime = formatInTimeZone(
             reservation.ends_at,
             club.timezone,
-            "HH:mm",
+            "HH:mm"
           );
 
           const email = reservationConfirmedTemplate({
@@ -1560,9 +1689,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           const appUrl = process.env.PUBLIC_APP_URL?.replace(/\/+$/, "");
 
           if (!appUrl) {
-            console.error(
-              "Falta PUBLIC_APP_URL. No se puede enviar el email.",
-            );
+            console.error("Falta PUBLIC_APP_URL. No se puede enviar el email.");
           } else {
             const emailResponse = await fetch(
               `${appUrl}/api/notifications/send-email`,
@@ -1576,7 +1703,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                   subject: email.subject,
                   html: email.html,
                 }),
-              },
+              }
             );
 
             const emailData = await emailResponse.json();
@@ -1584,24 +1711,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             if (!emailResponse.ok) {
               console.error(
                 "No se pudo enviar el email de reserva confirmada:",
-                emailData,
+                emailData
               );
             } else {
-              console.log(
-                "Email de reserva confirmada enviado:",
-                {
-                  reservation_id: reservation.id,
-                  email: reservation.customer_email,
-                  email_id: emailData?.id,
-                },
-              );
+              console.log("Email de reserva confirmada enviado:", {
+                reservation_id: reservation.id,
+                email: reservation.customer_email,
+                email_id: emailData?.id,
+              });
             }
           }
         }
       } catch (emailError) {
         console.error(
           "Error enviando email de reserva confirmada:",
-          emailError,
+          emailError
         );
       }
     }
