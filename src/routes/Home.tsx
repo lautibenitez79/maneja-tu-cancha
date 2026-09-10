@@ -13,18 +13,7 @@ import {
 import { SiteLayout } from "../components/site/SiteLayout";
 import { Typewriter } from "../components/site/Typewriter";
 import WarpText from "@/components/ui/WarpText/WarpText";
-import TextType from "@/components/ui/TextType/TextType";
 import SpecularButton from "@/components/ui/SpecularButton/SpecularButton";
-
-const sports = [
-  "Fútbol",
-  "Paddle",
-  "Tenis",
-  "Hockey",
-  "Básquet",
-  "Vóley",
-  "Cualquier deporte",
-];
 
 const steps = [
   {
