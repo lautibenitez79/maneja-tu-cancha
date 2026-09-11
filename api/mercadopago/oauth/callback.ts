@@ -2,21 +2,14 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { createClient } from "@supabase/supabase-js";
 
 const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseServiceRoleKey =
-  process.env.SUPABASE_SERVICE_ROLE_KEY;
+const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 const clientId = process.env.MERCADOPAGO_CLIENT_ID;
-const clientSecret =
-  process.env.MERCADOPAGO_CLIENT_SECRET;
-const redirectUri =
-  process.env.MERCADOPAGO_REDIRECT_URI;
-const publicAppUrl =
-  process.env.PUBLIC_APP_URL;
+const clientSecret = process.env.MERCADOPAGO_CLIENT_SECRET;
+const redirectUri = process.env.MERCADOPAGO_REDIRECT_URI;
+const publicAppUrl = process.env.PUBLIC_APP_URL;
 
-export default async function handler(
-  req: VercelRequest,
-  res: VercelResponse,
-) {
+export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== "GET") {
     return res.status(405).send("Método no permitido.");
   }
@@ -33,15 +26,11 @@ export default async function handler(
     console.log("State recibido:", !!state);
 
     if (typeof code !== "string" || !code) {
-      return res.status(400).send(
-        "No se recibió el código de autorización.",
-      );
+      return res.status(400).send("No se recibió el código de autorización.");
     }
 
     if (typeof state !== "string" || !state) {
-      return res.status(400).send(
-        "No se recibió el state.",
-      );
+      return res.status(400).send("No se recibió el state.");
     }
 
     /*
@@ -56,29 +45,19 @@ export default async function handler(
     };
 
     try {
-      const decodedState = Buffer.from(
-        state,
-        "base64url",
-      ).toString("utf8");
+      const decodedState = Buffer.from(state, "base64url").toString("utf8");
 
       stateData = JSON.parse(decodedState);
     } catch (error) {
-      console.error(
-        "Error decodificando state:",
-        error,
-      );
+      console.error("Error decodificando state:", error);
 
-      return res.status(400).send(
-        "State inválido.",
-      );
+      return res.status(400).send("State inválido.");
     }
 
     const clubId = stateData.clubId;
 
     if (!clubId) {
-      return res.status(400).send(
-        "El state no contiene clubId.",
-      );
+      return res.status(400).send("El state no contiene clubId.");
     }
 
     console.log("Club ID:", clubId);
@@ -90,53 +69,33 @@ export default async function handler(
      */
 
     if (!clientId) {
-      console.error(
-        "Falta MERCADOPAGO_CLIENT_ID",
-      );
+      console.error("Falta MERCADOPAGO_CLIENT_ID");
 
-      return res.status(500).send(
-        "Falta MERCADOPAGO_CLIENT_ID.",
-      );
+      return res.status(500).send("Falta MERCADOPAGO_CLIENT_ID.");
     }
 
     if (!clientSecret) {
-      console.error(
-        "Falta MERCADOPAGO_CLIENT_SECRET",
-      );
+      console.error("Falta MERCADOPAGO_CLIENT_SECRET");
 
-      return res.status(500).send(
-        "Falta MERCADOPAGO_CLIENT_SECRET.",
-      );
+      return res.status(500).send("Falta MERCADOPAGO_CLIENT_SECRET.");
     }
 
     if (!redirectUri) {
-      console.error(
-        "Falta MERCADOPAGO_REDIRECT_URI",
-      );
+      console.error("Falta MERCADOPAGO_REDIRECT_URI");
 
-      return res.status(500).send(
-        "Falta MERCADOPAGO_REDIRECT_URI.",
-      );
+      return res.status(500).send("Falta MERCADOPAGO_REDIRECT_URI.");
     }
 
     if (!supabaseUrl) {
-      console.error(
-        "Falta SUPABASE_URL",
-      );
+      console.error("Falta SUPABASE_URL");
 
-      return res.status(500).send(
-        "Falta SUPABASE_URL.",
-      );
+      return res.status(500).send("Falta SUPABASE_URL.");
     }
 
     if (!supabaseServiceRoleKey) {
-      console.error(
-        "Falta SUPABASE_SERVICE_ROLE_KEY",
-      );
+      console.error("Falta SUPABASE_SERVICE_ROLE_KEY");
 
-      return res.status(500).send(
-        "Falta SUPABASE_SERVICE_ROLE_KEY.",
-      );
+      return res.status(500).send("Falta SUPABASE_SERVICE_ROLE_KEY.");
     }
 
     /*
@@ -145,10 +104,7 @@ export default async function handler(
      * ============================
      */
 
-    const supabaseAdmin = createClient(
-      supabaseUrl,
-      supabaseServiceRoleKey,
-    );
+    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey);
 
     /*
      * ============================
@@ -157,9 +113,7 @@ export default async function handler(
      * ============================
      */
 
-    console.log(
-      "Enviando código a Mercado Pago...",
-    );
+    console.log("Enviando código a Mercado Pago...");
 
     console.log({
       clientId,
@@ -169,30 +123,15 @@ export default async function handler(
 
     const body = new URLSearchParams();
 
-    body.set(
-      "client_id",
-      clientId,
-    );
+    body.set("client_id", clientId);
 
-    body.set(
-      "client_secret",
-      clientSecret,
-    );
+    body.set("client_secret", clientSecret);
 
-    body.set(
-      "grant_type",
-      "authorization_code",
-    );
+    body.set("grant_type", "authorization_code");
 
-    body.set(
-      "code",
-      code,
-    );
+    body.set("code", code);
 
-    body.set(
-      "redirect_uri",
-      redirectUri,
-    );
+    body.set("redirect_uri", redirectUri);
 
     /*
      * IMPORTANTE:
@@ -211,26 +150,21 @@ export default async function handler(
 
         headers: {
           Accept: "application/json",
-          "Content-Type":
-            "application/x-www-form-urlencoded",
+          "Content-Type": "application/x-www-form-urlencoded",
         },
 
         body: body.toString(),
       },
     );
 
-    const tokenData =
-      await tokenResponse.json();
+    const tokenData = await tokenResponse.json();
 
-    console.log(
-      "Mercado Pago OAuth response:",
-      {
-        ok: tokenResponse.ok,
-        status: tokenResponse.status,
-        error: tokenData?.error,
-        message: tokenData?.message,
-      },
-    );
+    console.log("Mercado Pago OAuth response:", {
+      ok: tokenResponse.ok,
+      status: tokenResponse.status,
+      error: tokenData?.error,
+      message: tokenData?.message,
+    });
 
     /*
      * ============================
@@ -239,14 +173,10 @@ export default async function handler(
      */
 
     if (!tokenResponse.ok) {
-      console.error(
-        "Mercado Pago rechazó el intercambio:",
-        tokenData,
-      );
+      console.error("Mercado Pago rechazó el intercambio:", tokenData);
 
       return res.status(500).json({
-        error:
-          "Mercado Pago rechazó el intercambio del código.",
+        error: "Mercado Pago rechazó el intercambio del código.",
         mercadoPago: tokenData,
       });
     }
@@ -268,14 +198,9 @@ export default async function handler(
     } = tokenData;
 
     if (!access_token) {
-      console.error(
-        "Mercado Pago no devolvió access_token:",
-        tokenData,
-      );
+      console.error("Mercado Pago no devolvió access_token:", tokenData);
 
-      return res.status(500).send(
-        "Mercado Pago no devolvió un Access Token.",
-      );
+      return res.status(500).send("Mercado Pago no devolvió un Access Token.");
     }
 
     /*
@@ -285,10 +210,7 @@ export default async function handler(
      */
 
     const expiresAt = expires_in
-      ? new Date(
-          Date.now() +
-            Number(expires_in) * 1000,
-        ).toISOString()
+      ? new Date(Date.now() + Number(expires_in) * 1000).toISOString()
       : null;
 
     /*
@@ -297,77 +219,53 @@ export default async function handler(
      * ============================
      */
 
-    const { error: dbError } =
-      await supabaseAdmin
-        .from(
-          "club_marketplace_accounts",
-        )
-        .upsert(
-          {
-            club_id: clubId,
+    const { error: dbError } = await supabaseAdmin
+      .from("club_marketplace_accounts")
+      .upsert(
+        {
+          club_id: clubId,
 
-            provider: "mercadopago",
+          provider: "mercadopago",
 
-            mp_user_id:
-              user_id?.toString() ?? null,
+          mp_user_id: user_id?.toString() ?? null,
 
-            access_token,
+          access_token,
 
-            refresh_token:
-              refresh_token ?? null,
+          refresh_token: refresh_token ?? null,
 
-            token_type:
-              token_type ?? "bearer",
+          token_type: token_type ?? "bearer",
 
-            scope:
-              scope ?? null,
+          scope: scope ?? null,
 
-            expires_at:
-              expiresAt,
+          expires_at: expiresAt,
 
-            updated_at:
-              new Date().toISOString(),
-          },
-          {
-            onConflict:
-              "club_id,provider",
-          },
-        );
+          active: true,
 
-    if (dbError) {
-      console.error(
-        "Error guardando Mercado Pago en Supabase:",
-        dbError,
+          updated_at: new Date().toISOString(),
+        },
+        {
+          onConflict: "club_id,provider",
+        },
       );
 
+    if (dbError) {
+      console.error("Error guardando Mercado Pago en Supabase:", dbError);
+
       return res.status(500).json({
-        error:
-          "No se pudo guardar la conexión.",
+        error: "No se pudo guardar la conexión.",
         details: dbError.message,
       });
     }
 
-    console.log(
-      "=================================",
-    );
+    console.log("=================================");
 
-    console.log(
-      "MERCADO PAGO CONECTADO CORRECTAMENTE",
-    );
+    console.log("MERCADO PAGO CONECTADO CORRECTAMENTE");
 
-    console.log(
-      "Club:",
-      clubId,
-    );
+    console.log("Club:", clubId);
 
-    console.log(
-      "MP User:",
-      user_id,
-    );
+    console.log("MP User:", user_id);
 
-    console.log(
-      "=================================",
-    );
+    console.log("=================================");
 
     /*
      * ============================
@@ -380,18 +278,11 @@ export default async function handler(
       `${publicAppUrl}/configuracion?mercadopago=connected`,
     );
   } catch (error) {
-    console.error(
-      "Mercado Pago OAuth callback error:",
-      error,
-    );
+    console.error("Mercado Pago OAuth callback error:", error);
 
     return res.status(500).json({
-      error:
-        "Error conectando Mercado Pago.",
-      details:
-        error instanceof Error
-          ? error.message
-          : String(error),
+      error: "Error conectando Mercado Pago.",
+      details: error instanceof Error ? error.message : String(error),
     });
   }
 }
