@@ -5,7 +5,7 @@ import { createClient } from "@supabase/supabase-js";
 
 const supabaseAdmin = createClient(
   process.env.SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
+  process.env.SUPABASE_SERVICE_ROLE_KEY!,
 );
 
 let cachedSaasAccessToken: string | null = null;
@@ -17,7 +17,7 @@ async function getSaasAccessToken() {
 
   if (!clientId || !clientSecret) {
     console.error(
-      "Faltan MERCADOPAGO_CLIENT_ID o MERCADOPAGO_CLIENT_SECRET para obtener el Access Token SaaS."
+      "Faltan MERCADOPAGO_CLIENT_ID o MERCADOPAGO_CLIENT_SECRET para obtener el Access Token SaaS.",
     );
     return null;
   }
@@ -101,7 +101,7 @@ function parseSaasExternalReference(externalReference: unknown) {
   const value = String(externalReference ?? "").trim();
 
   const match = value.match(
-    /^saas:club:([0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}):plan:(monthly|three_months|annual|test)$/i
+    /^saas:club:([0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}):plan:(monthly|three_months|annual|test)$/i,
   );
 
   if (!match) {
@@ -117,7 +117,7 @@ function parseSaasExternalReference(externalReference: unknown) {
 async function findSaasPreapproval(
   payerEmail: string,
   payment: any,
-  accessToken: string
+  accessToken: string,
 ) {
   const directId =
     payment?.preapproval_id ??
@@ -127,9 +127,9 @@ async function findSaasPreapproval(
   if (directId) {
     const direct = await fetchMercadoPagoJson(
       `https://api.mercadopago.com/preapproval/${encodeURIComponent(
-        String(directId)
+        String(directId),
       )}`,
-      accessToken
+      accessToken,
     );
 
     if (direct?.id) {
@@ -138,7 +138,7 @@ async function findSaasPreapproval(
   }
 
   const searchUrl = `https://api.mercadopago.com/preapproval/search?payer_email=${encodeURIComponent(
-    payerEmail
+    payerEmail,
   )}`;
 
   const searchResult = await fetchMercadoPagoJson(searchUrl, accessToken);
@@ -156,7 +156,7 @@ async function findSaasPreapproval(
    * external_reference es nuestra fuente de verdad.
    */
   const saasResult = results.find((item: any) =>
-    parseSaasExternalReference(item?.external_reference)
+    parseSaasExternalReference(item?.external_reference),
   );
 
   if (saasResult) {
@@ -173,10 +173,10 @@ async function findSaasPreapproval(
     results.find(
       (item: any) =>
         planIds.includes(String(item?.preapproval_plan_id ?? "")) &&
-        ["authorized", "active"].includes(String(item?.status ?? ""))
+        ["authorized", "active"].includes(String(item?.status ?? "")),
     ) ??
     results.find((item: any) =>
-      planIds.includes(String(item?.preapproval_plan_id ?? ""))
+      planIds.includes(String(item?.preapproval_plan_id ?? "")),
     ) ??
     null
   );
@@ -189,7 +189,7 @@ function resolveSaasPlan(preapproval: any): SaasPlan | null {
    * nuevas sin plan asociado.
    */
   const parsedReference = parseSaasExternalReference(
-    preapproval?.external_reference
+    preapproval?.external_reference,
   );
 
   if (parsedReference) {
@@ -238,10 +238,33 @@ async function processSaasPayment(paymentId: string) {
 
   const payment = await fetchMercadoPagoJson(
     `https://api.mercadopago.com/v1/payments/${encodeURIComponent(paymentId)}`,
-    accessToken
+    accessToken,
   );
 
   if (!payment?.id) {
+    return null;
+  }
+
+  /*
+   * Un pago SaaS debe estar identificado por
+   * nuestro external_reference.
+   *
+   * Si el pago ya tiene un external_reference y
+   * NO corresponde al formato SaaS, dejamos que
+   * continúe el flujo normal de reservas/cuotas.
+   *
+   * Si no tiene external_reference, permitimos continuar
+   * porque las suscripciones antiguas pueden necesitar
+   * resolverse mediante el preapproval.
+   */
+  const paymentExternalReference = String(
+    payment?.external_reference ?? "",
+  ).trim();
+
+  if (
+    paymentExternalReference &&
+    !parseSaasExternalReference(paymentExternalReference)
+  ) {
     return null;
   }
 
@@ -269,7 +292,7 @@ async function processSaasPayment(paymentId: string) {
   const preapproval = await findSaasPreapproval(
     payerEmail,
     payment,
-    accessToken
+    accessToken,
   );
 
   if (!preapproval?.id) {
@@ -283,7 +306,7 @@ async function processSaasPayment(paymentId: string) {
    */
 
   const parsedReference = parseSaasExternalReference(
-    preapproval.external_reference
+    preapproval.external_reference,
   );
 
   if (!parsedReference) {
@@ -384,8 +407,8 @@ async function processSaasPayment(paymentId: string) {
     payment.status === "approved"
       ? "active"
       : payment.status === "rejected"
-      ? "past_due"
-      : null;
+        ? "past_due"
+        : null;
 
   /*
    * ---------------------------------------------------------
@@ -440,8 +463,8 @@ async function processSaasPayment(paymentId: string) {
     mercadopago_payer_id: preapproval?.payer_id
       ? String(preapproval.payer_id)
       : payment?.payer?.id
-      ? String(payment.payer.id)
-      : null,
+        ? String(payment.payer.id)
+        : null,
 
     last_payment_id: String(payment.id),
 
@@ -481,7 +504,7 @@ async function processSaasPayment(paymentId: string) {
       next_payment_at,
       access_until,
       updated_at
-      `
+      `,
     )
     .single();
 
@@ -525,9 +548,9 @@ async function processSaasAuthorizedPayment(authorizedPaymentId: string) {
 
   const authorizedPayment = await fetchMercadoPagoJson(
     `https://api.mercadopago.com/authorized_payments/${encodeURIComponent(
-      authorizedPaymentId
+      authorizedPaymentId,
     )}`,
-    accessToken
+    accessToken,
   );
 
   if (!authorizedPayment?.id) {
@@ -542,9 +565,9 @@ async function processSaasAuthorizedPayment(authorizedPaymentId: string) {
 
   const preapproval = await fetchMercadoPagoJson(
     `https://api.mercadopago.com/preapproval/${encodeURIComponent(
-      preapprovalId
+      preapprovalId,
     )}`,
-    accessToken
+    accessToken,
   );
 
   if (!preapproval?.id) {
@@ -552,7 +575,7 @@ async function processSaasAuthorizedPayment(authorizedPaymentId: string) {
   }
 
   const parsedReference = parseSaasExternalReference(
-    preapproval.external_reference
+    preapproval.external_reference,
   );
 
   if (!parsedReference) {
@@ -587,7 +610,7 @@ async function processSaasAuthorizedPayment(authorizedPaymentId: string) {
   }
 
   const paymentStatus = String(
-    authorizedPayment?.payment?.status ?? authorizedPayment?.status ?? ""
+    authorizedPayment?.payment?.status ?? authorizedPayment?.status ?? "",
   ).toLowerCase();
 
   if (paymentStatus !== "processed" && paymentStatus !== "approved") {
@@ -675,9 +698,9 @@ async function processSaasPreapproval(preapprovalId: string) {
 
   const preapproval = await fetchMercadoPagoJson(
     `https://api.mercadopago.com/preapproval/${encodeURIComponent(
-      preapprovalId
+      preapprovalId,
     )}`,
-    accessToken
+    accessToken,
   );
 
   if (!preapproval?.id) {
@@ -685,7 +708,7 @@ async function processSaasPreapproval(preapprovalId: string) {
   }
 
   const parsedReference = parseSaasExternalReference(
-    preapproval.external_reference
+    preapproval.external_reference,
   );
 
   if (!parsedReference) {
@@ -783,11 +806,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
      */
 
     const notificationType = String(
-      req.body?.type ?? req.query.type ?? req.query.topic ?? ""
+      req.body?.type ?? req.query.type ?? req.query.topic ?? "",
     ).trim();
 
     const notificationId = String(
-      req.body?.data?.id ?? req.query.id ?? ""
+      req.body?.data?.id ?? req.query.id ?? "",
     ).trim();
 
     if (!notificationType || !notificationId) {
@@ -876,7 +899,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         scope,
         expires_at,
         active
-        `
+        `,
       )
       .eq("provider", "mercadopago")
       .eq("active", true);
@@ -920,14 +943,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
         const mpResponse = await fetch(
           `https://api.mercadopago.com/v1/payments/${encodeURIComponent(
-            paymentId
+            paymentId,
           )}`,
           {
             method: "GET",
             headers: {
               Authorization: `Bearer ${accessToken}`,
             },
-          }
+          },
         );
 
         if (!mpResponse.ok) {
@@ -1081,7 +1104,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           payment_status,
           payment_id,
           status
-          `
+          `,
         )
         .eq("id", feeId)
         .maybeSingle();
@@ -1230,7 +1253,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         if (feePaymentUpdateError) {
           console.error(
             "Error guardando pago de cuota:",
-            feePaymentUpdateError
+            feePaymentUpdateError,
           );
 
           return res.status(200).json({
@@ -1259,7 +1282,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           {
             p_fee_id: fee.id,
             p_payment_id: String(payment.id),
-          }
+          },
         );
 
         if (activationError) {
@@ -1322,7 +1345,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               payment_status,
               payment_id,
               status
-              `
+              `,
           )
           .single();
 
@@ -1367,7 +1390,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               payment_status,
               payment_id,
               status
-              `
+              `,
           )
           .single();
 
@@ -1392,7 +1415,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       console.log(
         "Estado de Mercado Pago no procesado para cuota:",
-        payment.status
+        payment.status,
       );
 
       return res.status(200).json({
@@ -1433,7 +1456,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           payment_status,
           payment_id,
           status
-          `
+          `,
       )
       .eq("id", externalReference)
       .maybeSingle();
@@ -1606,7 +1629,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         payment_status,
         payment_id,
         status
-        `
+        `,
       )
       .single();
 
@@ -1649,30 +1672,30 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         if (!club) {
           console.error(
             "No se pudo obtener el club para el email.",
-            reservation.club_id
+            reservation.club_id,
           );
         } else if (!resource) {
           console.error(
             "No se pudo obtener el recurso para el email.",
-            reservation.resource_id
+            reservation.resource_id,
           );
         } else {
           const date = formatInTimeZone(
             reservation.starts_at,
             club.timezone,
-            "dd/MM/yyyy"
+            "dd/MM/yyyy",
           );
 
           const startTime = formatInTimeZone(
             reservation.starts_at,
             club.timezone,
-            "HH:mm"
+            "HH:mm",
           );
 
           const endTime = formatInTimeZone(
             reservation.ends_at,
             club.timezone,
-            "HH:mm"
+            "HH:mm",
           );
 
           const email = reservationConfirmedTemplate({
@@ -1703,7 +1726,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                   subject: email.subject,
                   html: email.html,
                 }),
-              }
+              },
             );
 
             const emailData = await emailResponse.json();
@@ -1711,7 +1734,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             if (!emailResponse.ok) {
               console.error(
                 "No se pudo enviar el email de reserva confirmada:",
-                emailData
+                emailData,
               );
             } else {
               console.log("Email de reserva confirmada enviado:", {
@@ -1725,7 +1748,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       } catch (emailError) {
         console.error(
           "Error enviando email de reserva confirmada:",
-          emailError
+          emailError,
         );
       }
     }
