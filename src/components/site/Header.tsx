@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Menu, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
+import SpecularButton from "../ui/SpecularButton/SpecularButton";
 
 const nav = [
   {
@@ -22,6 +23,16 @@ export function Header() {
 
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
+
+  const [theme, setTheme] = useState<"light" | "dark">("light");
+
+  useEffect(() => {
+    const savedTheme = localStorage.getItem("theme");
+
+    if (savedTheme === "dark" || savedTheme === "light") {
+      setTheme(savedTheme);
+    }
+  }, []);
 
   useEffect(() => {
 
@@ -60,27 +71,19 @@ export function Header() {
           className="flex h-16 items-center gap-3"
         >
 
-          <div className="flex h-11 w-11 items-center justify-center rounded-[var(--radius-card)] bg-gradient-to-br from-primary to-blue-500 text-lg font-bold text-white shadow-[0_0_40px_rgba(59,130,246,.40)]">
-
-            M
-
-          </div>
-
-          <div>
-
-            <p className="text-lg font-bold tracking-tight">
-
-              Maneja Tu Cancha
-
-            </p>
-
-            <p className="text-xs text-muted-foreground">
-
-              Administración deportiva
-
-            </p>
-
-          </div>
+          {theme === "dark" ? (
+            <img
+              src="/MANEJA-TU-CANCHA-DARK.png"
+              alt="Maneja Tu Cancha"
+              className="h-15 w-auto"
+            />
+          ) : (
+            <img
+              src="/MANEJA-TU-CANCHA-LIGHT-SIN-FONDO.png"
+              alt="Maneja Tu Cancha"
+              className="h-15 w-auto"
+            />
+          )}
 
         </Link>
 
@@ -106,16 +109,98 @@ export function Header() {
 
           <Link
             to="/login"
-            className="rounded-full border border-border px-5 py-2.5 text-sm font-semibold transition hover:bg-secondary"
           >
-            Ingresar
+            {theme === "dark" ? (
+                <SpecularButton
+                  size="sm"
+                  radius={18}
+                  tint="#ffffff"
+                  tintOpacity={0}
+                  blur={0}
+                  textColor="#ffffff"
+                  lineColor="#ffffff"
+                  baseColor="#2b7fff"
+                  intensity={1}
+                  shineSize={10}
+                  shineFade={40}
+                  thickness={1}
+                  speed={0.35}
+                  followMouse
+                  proximity={250}
+                  autoAnimate={false}
+                >
+                  Ingresar
+                </SpecularButton>
+              ) : (
+                <SpecularButton
+                  size="sm"
+                  radius={18}
+                  tint="#ffffff"
+                  tintOpacity={0}
+                  blur={0}
+                  textColor="text-[var(--color-title)]"
+                  lineColor="text-[var(--color-title)]"
+                  baseColor="#2b7fff"
+                  intensity={1}
+                  shineSize={4}
+                  shineFade={40}
+                  thickness={1}
+                  speed={0.35}
+                  followMouse
+                  proximity={250}
+                  autoAnimate={false}
+                >
+                  Ingresar
+                </SpecularButton>
+              )}
           </Link>
 
           <Link
             to="/login"
-            className="rounded-full bg-primary px-6 py-2.5 text-sm font-semibold text-white shadow-[0_0_40px_rgba(59,130,246,.35)] transition hover:scale-105"
           >
-            Comenzar
+            {theme === "dark" ? (
+                <SpecularButton
+                  size="sm"
+                  radius={18}
+                  tint="#ffffff"
+                  tintOpacity={0}
+                  blur={0}
+                  textColor="#ffffff"
+                  lineColor="#ffffff"
+                  baseColor="#2b7fff"
+                  intensity={1}
+                  shineSize={10}
+                  shineFade={40}
+                  thickness={1}
+                  speed={0.35}
+                  followMouse
+                  proximity={250}
+                  autoAnimate={false}
+                >
+                  Comenzar
+                </SpecularButton>
+              ) : (
+                <SpecularButton
+                  size="sm"
+                  radius={18}
+                  tint="#ffffff"
+                  tintOpacity={0}
+                  blur={0}
+                  textColor="text-[var(--color-title)]"
+                  lineColor="text-[var(--color-title)]"
+                  baseColor="#2b7fff"
+                  intensity={1}
+                  shineSize={10}
+                  shineFade={40}
+                  thickness={1}
+                  speed={0.35}
+                  followMouse
+                  proximity={250}
+                  autoAnimate={false}
+                >
+                  Comenzar
+                </SpecularButton>
+              )}
           </Link>
 
         </div>

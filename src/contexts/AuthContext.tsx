@@ -53,8 +53,17 @@ export function AuthProvider({ children }: Props) {
   const [profile, setProfile] = useState<Profile | null>(null);
 
   useEffect(() => {
-    async function initialize() {
-      const currentUser = await authService.getUser();
+  let mounted = true;
+
+  async function initialize() {
+    try {
+      const currentSession = await authService.getSession();
+
+      if (!mounted) return;
+
+      setSession(currentSession);
+
+      const currentUser = currentSession?.user ?? null;
 
       setUser(currentUser);
 
@@ -62,44 +71,81 @@ export function AuthProvider({ children }: Props) {
         try {
           const profile = await profileService.getProfile(currentUser.id);
 
+          if (!mounted) return;
+
           setProfile(profile);
         } catch (error) {
           console.error("No se encontró el perfil", error);
-          setProfile(null);
+
+          if (mounted) {
+            setProfile(null);
+          }
         }
-      }
-
-      setLoading(false);
-    }
-
-    initialize();
-
-    const {
-      data: { subscription },
-    } = authService.onAuthStateChange(async (_event, session) => {
-      try {
-        setSession(session);
-
-        const currentUser = session?.user ?? null;
-
-        setUser(currentUser);
-
-        if (currentUser) {
-          const profile = await profileService.getProfile(currentUser.id);
-          setProfile(profile);
-        } else {
-          setProfile(null);
-        }
-      } catch (error) {
-        console.error(error);
+      } else {
         setProfile(null);
-      } finally {
+      }
+    } catch (error) {
+      console.error(
+        "Error inicializando autenticación:",
+        error,
+      );
+
+      if (mounted) {
+        setSession(null);
+        setUser(null);
+        setProfile(null);
+      }
+    } finally {
+      if (mounted) {
         setLoading(false);
       }
-    });
+    }
+  }
 
-    return () => subscription.unsubscribe();
-  }, []);
+  initialize();
+
+  const {
+    data: { subscription },
+  } = authService.onAuthStateChange(
+    async (_event, session) => {
+      if (!mounted) return;
+
+      setSession(session);
+
+      const currentUser = session?.user ?? null;
+
+      setUser(currentUser);
+
+      if (!currentUser) {
+        setProfile(null);
+        return;
+      }
+
+      try {
+        const profile =
+          await profileService.getProfile(currentUser.id);
+
+        if (mounted) {
+          setProfile(profile);
+        }
+      } catch (error) {
+        console.error(
+          "No se encontró el perfil",
+          error,
+        );
+
+        if (mounted) {
+          setProfile(null);
+        }
+      }
+    },
+  );
+
+  return () => {
+    mounted = false;
+    subscription.unsubscribe();
+  };
+}, []);
 
   async function login(data: LoginData) {
     await authService.signIn(data);

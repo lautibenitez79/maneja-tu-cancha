@@ -14,6 +14,7 @@ import { SiteLayout } from "../components/site/SiteLayout";
 import { Typewriter } from "../components/site/Typewriter";
 import WarpText from "@/components/ui/WarpText/WarpText";
 import SpecularButton from "@/components/ui/SpecularButton/SpecularButton";
+import { useEffect, useState } from "react";
 
 const steps = [
   {
@@ -43,6 +44,15 @@ const benefits = [
 ];
 
 function Home() {
+  const [theme, setTheme] = useState<"light" | "dark">("light");
+
+  useEffect(() => {
+    const savedTheme = localStorage.getItem("theme");
+
+    if (savedTheme === "dark" || savedTheme === "light") {
+      setTheme(savedTheme);
+    }
+  }, []);
   return (
     <SiteLayout>
       {/* HERO */}
@@ -102,49 +112,95 @@ function Home() {
             className="mt-12 flex flex-col gap-4 sm:flex-row"
           >
             <Link to="/login">
-              <SpecularButton
-                size="lg"
-                radius={18}
-                tint="#ffffff"
-                tintOpacity={0}
-                blur={0}
-                textColor="text-[var(--color-title)]"
-                lineColor="text-[var(--color-title)]"
-                baseColor="#2b7fff"
-                intensity={1}
-                shineSize={10}
-                shineFade={40}
-                thickness={1}
-                speed={0.35}
-                followMouse
-                proximity={250}
-                autoAnimate={false}
-              >
-                Comenzar Gratis
-              </SpecularButton>
+              {theme === "dark" ? (
+                <SpecularButton
+                  size="lg"
+                  radius={18}
+                  tint="#ffffff"
+                  tintOpacity={0}
+                  blur={0}
+                  textColor="#ffffff"
+                  lineColor="#ffffff"
+                  baseColor="#2b7fff"
+                  intensity={1}
+                  shineSize={10}
+                  shineFade={40}
+                  thickness={1}
+                  speed={0.35}
+                  followMouse
+                  proximity={250}
+                  autoAnimate={false}
+                >
+                  Comenzar Gratis
+                </SpecularButton>
+              ) : (
+                <SpecularButton
+                  size="lg"
+                  radius={18}
+                  tint="#ffffff"
+                  tintOpacity={0}
+                  blur={0}
+                  textColor="text-[var(--color-title)]"
+                  lineColor="text-[var(--color-title)]"
+                  baseColor="#2b7fff"
+                  intensity={1}
+                  shineSize={10}
+                  shineFade={40}
+                  thickness={1}
+                  speed={0.35}
+                  followMouse
+                  proximity={250}
+                  autoAnimate={false}
+                >
+                  Comenzar Gratis
+                </SpecularButton>
+              )}
             </Link>
 
             <a href="#como-funciona">
-              <SpecularButton
-                size="lg"
-                radius={18}
-                tint="#ffffff"
-                tintOpacity={0}
-                blur={0}
-                textColor="text-[var(--color-title)]"
-                lineColor="text-[var(--color-title)]"
-                baseColor="#2b7fff"
-                intensity={1}
-                shineSize={10}
-                shineFade={40}
-                thickness={1}
-                speed={0.35}
-                followMouse
-                proximity={250}
-                autoAnimate={false}
-              >
-                Ver demostración
-              </SpecularButton>
+              {theme === "dark" ? (
+                <SpecularButton
+                  size="lg"
+                  radius={18}
+                  tint="#ffffff"
+                  tintOpacity={0}
+                  blur={0}
+                  textColor="#ffffff"
+                  lineColor="#ffffff"
+                  baseColor="#2b7fff"
+                  intensity={1}
+                  shineSize={10}
+                  shineFade={40}
+                  thickness={1}
+                  speed={0.35}
+                  followMouse
+                  proximity={250}
+                  autoAnimate={false}
+                >
+                  Ver demostración
+                </SpecularButton>
+              ) : (
+                <SpecularButton
+                  size="lg"
+                  radius={18}
+                  tint="#ffffff"
+                  tintOpacity={0}
+                  blur={0}
+                  textColor="text-[var(--color-title)]"
+                  lineColor="text-[var(--color-title)]"
+                  baseColor="#2b7fff"
+                  intensity={1}
+                  shineSize={10}
+                  shineFade={40}
+                  thickness={1}
+                  speed={0.35}
+                  followMouse
+                  proximity={250}
+                  autoAnimate={false}
+                >
+                  Ver demostración
+                </SpecularButton>
+              )}
             </a>
           </motion.div>
         </div>
@@ -290,7 +346,7 @@ function Home() {
               </div>
             </motion.div>
 
-            {/* MOCKUP */}
+            {/* VIDEO DEMO */}
 
             <motion.div
               initial={{ opacity: 0, x: 30 }}
@@ -302,74 +358,15 @@ function Home() {
               <div className="absolute -inset-10 -z-10 rounded-full bg-primary/15 blur-[100px]" />
 
               <div className="overflow-hidden rounded-[28px] border border-border bg-card shadow-2xl">
-                {/* Barra superior */}
-
-                <div className="flex items-center gap-2 border-b border-border px-5 py-4">
-                  <div className="h-3 w-3 rounded-full bg-muted-foreground/30" />
-                  <div className="h-3 w-3 rounded-full bg-muted-foreground/30" />
-                  <div className="h-3 w-3 rounded-full bg-muted-foreground/30" />
-
-                  <div className="ml-4 h-7 flex-1 rounded-lg bg-secondary" />
-                </div>
-
-                {/* Dashboard */}
-
-                <div className="grid min-h-[430px] grid-cols-[90px_1fr]">
-                  <div className="border-r border-border bg-secondary/30 p-4">
-                    <div className="mb-8 h-9 rounded-lg bg-primary/20" />
-
-                    <div className="space-y-4">
-                      <div className="h-8 rounded-lg bg-primary/10" />
-                      <div className="h-8 rounded-lg bg-secondary" />
-                      <div className="h-8 rounded-lg bg-secondary" />
-                      <div className="h-8 rounded-lg bg-secondary" />
-                    </div>
-                  </div>
-
-                  <div className="p-6">
-                    <div className="mb-6 flex items-center justify-between">
-                      <div>
-                        <div className="h-5 w-32 rounded bg-foreground/80" />
-                        <div className="mt-2 h-3 w-44 rounded bg-muted-foreground/20" />
-                      </div>
-
-                      <div className="h-9 w-24 rounded-xl bg-primary" />
-                    </div>
-
-                    <div className="grid gap-3 sm:grid-cols-3">
-                      {[1, 2, 3].map((item) => (
-                        <div
-                          key={item}
-                          className="rounded-xl border border-border bg-background p-4"
-                        >
-                          <div className="h-3 w-16 rounded bg-muted-foreground/20" />
-                          <div className="mt-4 h-7 w-20 rounded bg-foreground/70" />
-                        </div>
-                      ))}
-                    </div>
-
-                    <div className="mt-5 rounded-xl border border-border bg-background p-5">
-                      <div className="mb-5 h-4 w-32 rounded bg-foreground/70" />
-
-                      <div className="space-y-3">
-                        {[70, 45, 85, 60, 75].map((width, index) => (
-                          <div key={index} className="flex items-center gap-3">
-                            <div className="h-3 w-12 rounded bg-muted-foreground/20" />
-
-                            <div className="h-8 flex-1 overflow-hidden rounded-lg bg-secondary">
-                              <div
-                                className="h-full rounded-lg bg-primary/60"
-                                style={{
-                                  width: `${width}%`,
-                                }}
-                              />
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                <video
+                  className="block w-full"
+                  src="/vvvv.mp4"
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                  preload="auto"
+                />
               </div>
             </motion.div>
           </div>
@@ -437,7 +434,10 @@ function Home() {
       </section>
 
       {/* PLANES */}
-      <section id="planes" className="relative overflow-hidden border-t border-border/60 py-32">
+      <section
+        id="planes"
+        className="relative overflow-hidden border-t border-border/60 py-32"
+      >
         <div className="absolute inset-0 -z-10 bg-gradient-to-b from-background via-secondary/10 to-background" />
 
         <div className="mx-auto max-w-7xl px-6">
@@ -538,7 +538,9 @@ function Home() {
                 </span>
               </div>
 
-              <p className="mt-2 font-medium text-primary">$165.000 por los 3 meses</p>
+              <p className="mt-2 font-medium text-primary">
+                $165.000 por los 3 meses
+              </p>
 
               <p className="mt-3 min-h-[48px] text-muted-foreground">
                 Pagá 3 meses y disfrutá el 4.º mes gratis.
@@ -760,7 +762,7 @@ function Home() {
         </div>
       </section>
 
-            {/* CTA FINAL */}
+      {/* CTA FINAL */}
 
       <section className="relative overflow-hidden border-t border-border/60 py-32">
         <div className="absolute inset-0 bg-background" />
@@ -793,9 +795,9 @@ function Home() {
                 </h2>
 
                 <p className="mt-8 max-w-xl text-lg leading-8 text-muted-foreground">
-                  Probá Maneja Tu Cancha gratis durante 1 semana y descubrí
-                  una forma más simple de administrar tus reservas, clientes
-                  y horarios.
+                  Probá Maneja Tu Cancha gratis durante 1 semana y descubrí una
+                  forma más simple de administrar tus reservas, clientes y
+                  horarios.
                 </p>
 
                 <div className="mt-12 flex flex-col gap-4 sm:flex-row">

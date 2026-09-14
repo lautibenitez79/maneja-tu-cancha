@@ -9,7 +9,7 @@ export default function DashboardHeader() {
 
     <PageHeader
 
-      title="Dashboard"
+      title="Administrador de complejo"
 
       subtitle="Resumen general del complejo."
 

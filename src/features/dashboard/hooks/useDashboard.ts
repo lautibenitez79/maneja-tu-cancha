@@ -12,14 +12,16 @@ import type {
   DashboardStats,
 } from "../types/dashboard.types";
 
-import { dashboardService } from "../services/dashboard.service";
-
-import type {
-  DashboardAnalytics,
-  DashboardPeriod,
-} from "../types/dashboard.types";
-
 import type { Resource } from "@/features/resources/types/resource.types";
+
+interface DashboardCache {
+  clubId: string;
+  stats: DashboardStats;
+  todayReservations: DashboardReservation[];
+  timezone: string;
+}
+
+let dashboardCache: DashboardCache | null = null;
 
 function getTodayInTimezone(timezone: string): string {
   const formatter = new Intl.DateTimeFormat("en-CA", {
@@ -35,29 +37,42 @@ function getTodayInTimezone(timezone: string): string {
 export function useDashboard() {
   const { profile } = useAuth();
 
-  const [stats, setStats] = useState<DashboardStats>({
-    resources: 0,
-    hasWorkingHours: false,
-    reservations: 0,
-    income: 0,
-    pendingPayments: 0,
-    employees: 0,
+  const [stats, setStats] = useState<DashboardStats>(() => {
+    if (dashboardCache && dashboardCache.clubId === profile?.club_id) {
+      return dashboardCache.stats;
+    }
+
+    return {
+      resources: 0,
+      hasWorkingHours: false,
+      reservations: 0,
+      income: 0,
+      pendingPayments: 0,
+      employees: 0,
+    };
   });
 
-  const [analytics, setAnalytics] = useState<DashboardAnalytics | null>(null);
+  const [timezone, setTimezone] = useState(() => {
+    if (dashboardCache && dashboardCache.clubId === profile?.club_id) {
+      return dashboardCache.timezone;
+    }
 
-  const [analyticsPeriod, setAnalyticsPeriod] =
-    useState<DashboardPeriod>("week");
-
-  const [analyticsLoading, setAnalyticsLoading] = useState(false);
-
-  const [timezone, setTimezone] = useState("America/Argentina/Buenos_Aires");
+    return "America/Argentina/Buenos_Aires";
+  });
 
   const [todayReservations, setTodayReservations] = useState<
     DashboardReservation[]
-  >([]);
+  >(() => {
+    if (dashboardCache && dashboardCache.clubId === profile?.club_id) {
+      return dashboardCache.todayReservations;
+    }
 
-  const [loading, setLoading] = useState(true);
+    return [];
+  });
+
+  const [loading, setLoading] = useState(() => {
+    return !(dashboardCache && dashboardCache.clubId === profile?.club_id);
+  });
 
   useEffect(() => {
     async function load() {
@@ -66,10 +81,15 @@ export function useDashboard() {
         return;
       }
 
+      const clubId = profile.club_id;
+
+      if (dashboardCache && dashboardCache.clubId === clubId) {
+        return;
+      }
+
       try {
         setLoading(true);
 
-        // -----------------------------------------
         // CLUB
         // -----------------------------------------
 
@@ -176,19 +196,24 @@ export function useDashboard() {
         // ESTADÍSTICAS
         // -----------------------------------------
 
-        setStats({
+        const newStats: DashboardStats = {
           resources: resources.length,
-
           hasWorkingHours,
-
           reservations: activeReservations.length,
-
           income,
-
           pendingPayments: pendingPayments.length,
-
           employees: 0,
-        });
+        };
+
+        setTodayReservations(dashboardReservations);
+        setStats(newStats);
+
+        dashboardCache = {
+          clubId,
+          stats: newStats,
+          todayReservations: dashboardReservations,
+          timezone: club.timezone,
+        };
       } catch (error) {
         console.error("Error cargando dashboard:", error);
       } finally {
@@ -199,40 +224,10 @@ export function useDashboard() {
     load();
   }, [profile]);
 
-  useEffect(() => {
-    async function loadAnalytics() {
-      if (!profile?.club_id) {
-        setAnalytics(null);
-        return;
-      }
-
-      try {
-        setAnalyticsLoading(true);
-
-        const data = await dashboardService.getAnalytics(
-          profile.club_id,
-          analyticsPeriod,
-        );
-
-        setAnalytics(data);
-      } catch (error) {
-        console.error("Error cargando métricas:", error);
-      } finally {
-        setAnalyticsLoading(false);
-      }
-    }
-
-    loadAnalytics();
-  }, [profile, analyticsPeriod]);
-
   return {
     stats,
     todayReservations,
     loading,
     timezone,
-    analytics,
-    analyticsPeriod,
-    setAnalyticsPeriod,
-    analyticsLoading,
   };
 }

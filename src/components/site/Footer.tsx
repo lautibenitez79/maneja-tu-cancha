@@ -5,10 +5,21 @@ import {
   SortDescIcon,
   MapPin,
 } from "lucide-react";
+import { useEffect, useState } from "react";
 
 import { Link } from "react-router-dom";
 
 export function Footer() {
+  const [theme, setTheme] = useState<"light" | "dark">("light");
+  
+    useEffect(() => {
+      const savedTheme = localStorage.getItem("theme");
+  
+      if (savedTheme === "dark" || savedTheme === "light") {
+        setTheme(savedTheme);
+      }
+    }, []);
+
   return (
     <footer className="relative overflow-hidden border-t border-border bg-background">
 
@@ -98,27 +109,26 @@ export function Footer() {
 
             <div className="flex items-center gap-3">
 
-              <div className="flex h-12 w-12 items-center justify-center rounded-[var(--radius-card)] bg-gradient-to-br from-primary to-blue-500 text-xl font-bold text-white">
+              <Link
+                to="/"
+                className="flex h-16 items-center gap-3"
+              >
 
-                M
+                {theme === "dark" ? (
+                  <img
+                    src="/MANEJA-TU-CANCHA-DARK.png"
+                    alt="Maneja Tu Cancha"
+                    className="h-15 w-auto"
+                  />
+                ) : (
+                  <img
+                    src="/MANEJA-TU-CANCHA-LIGHT-SIN-FONDO.png"
+                    alt="Maneja Tu Cancha"
+                    className="h-15 w-auto"
+                  />
+                )}
 
-              </div>
-
-              <div>
-
-                <p className="text-lg font-bold">
-
-                  Maneja Tu Cancha
-
-                </p>
-
-                <p className="text-sm text-muted-foreground">
-
-                  Administración deportiva
-
-                </p>
-
-              </div>
+              </Link>
 
             </div>
 
