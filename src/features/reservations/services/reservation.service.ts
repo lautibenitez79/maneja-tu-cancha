@@ -1,5 +1,9 @@
 import { supabase } from "@/lib/supabase";
 import { fromZonedTime, formatInTimeZone } from "date-fns-tz";
+import {
+  addDays,
+  format,
+} from "date-fns";
 import type {
   Reservation,
   CreateReservationForm,
@@ -78,6 +82,188 @@ class ReservationService {
 
     return data as Reservation;
   }
+
+  async createRecurring(
+  clubId: string,
+  form: CreateReservationForm,
+  timezone: string,
+) {
+  if (!form.recurring) {
+    throw new Error(
+      "No se configuró la reserva recurrente.",
+    );
+  }
+
+  const {
+    days_of_week,
+    starts_on,
+    ends_on,
+  } = form.recurring;
+
+  if (days_of_week.length === 0) {
+    throw new Error(
+      "Seleccioná al menos un día de la semana.",
+    );
+  }
+
+  if (starts_on > ends_on) {
+    throw new Error(
+      "La fecha inicial no puede ser posterior a la fecha final.",
+    );
+  }
+
+  const localStart = formatInTimeZone(
+    form.starts_at,
+    timezone,
+    "HH:mm",
+  );
+
+  const localEnd = formatInTimeZone(
+    form.ends_at,
+    timezone,
+    "HH:mm",
+  );
+
+  const occurrences: Array<{
+    date: string;
+    starts_at: string;
+    ends_at: string;
+  }> = [];
+
+  let currentDate = new Date(
+    `${starts_on}T00:00:00`,
+  );
+
+  const finalDate = new Date(
+    `${ends_on}T00:00:00`,
+  );
+
+  while (currentDate <= finalDate) {
+    const dayOfWeek = currentDate.getDay();
+
+    if (days_of_week.includes(dayOfWeek)) {
+      const date = format(
+        currentDate,
+        "yyyy-MM-dd",
+      );
+
+      const localStartDateTime =
+        `${date}T${localStart}:00`;
+
+      const localEndDateTime =
+        `${date}T${localEnd}:00`;
+
+      occurrences.push({
+        date,
+        starts_at: fromZonedTime(
+          localStartDateTime,
+          timezone,
+        ).toISOString(),
+        ends_at: fromZonedTime(
+          localEndDateTime,
+          timezone,
+        ).toISOString(),
+      });
+    }
+
+    currentDate = addDays(currentDate, 1);
+  }
+
+  if (occurrences.length === 0) {
+    throw new Error(
+      "No hay fechas que coincidan con los días seleccionados.",
+    );
+  }
+
+  /*
+   * Primero verificamos TODAS las fechas.
+   * No se crea ninguna reserva hasta terminar
+   * esta comprobación.
+   */
+  for (const occurrence of occurrences) {
+    const existing =
+      await this.listByClubAndDate(
+        clubId,
+        occurrence.starts_at,
+        occurrence.ends_at,
+      );
+
+    const conflict = existing.find(
+      (reservation) =>
+        reservation.resource_id ===
+          form.resource_id &&
+        reservation.status !== "cancelled" &&
+        new Date(
+          reservation.starts_at,
+        ) <
+          new Date(occurrence.ends_at) &&
+        new Date(
+          reservation.ends_at,
+        ) >
+          new Date(occurrence.starts_at),
+    );
+
+    if (conflict) {
+      const conflictDate = formatInTimeZone(
+        conflict.starts_at,
+        timezone,
+        "dd/MM/yyyy",
+      );
+
+      const conflictStart = formatInTimeZone(
+        conflict.starts_at,
+        timezone,
+        "HH:mm",
+      );
+
+      const conflictEnd = formatInTimeZone(
+        conflict.ends_at,
+        timezone,
+        "HH:mm",
+      );
+
+      throw new Error(
+        `Existe un conflicto el ${conflictDate} de ${conflictStart} a ${conflictEnd}. No se creó ninguna reserva.`,
+      );
+    }
+  }
+
+  /*
+   * Si todas las fechas están libres,
+   * recién ahora creamos las reservas.
+   */
+  const created: Reservation[] = [];
+
+  try {
+    for (const occurrence of occurrences) {
+      const reservation =
+        await this.create(clubId, {
+          ...form,
+          recurring: undefined,
+          starts_at: occurrence.starts_at,
+          ends_at: occurrence.ends_at,
+        });
+
+      created.push(reservation);
+    }
+  } catch (error) {
+    /*
+     * Si una creación falla después de haber
+     * creado anteriores, intentamos revertirlas.
+     */
+    for (const reservation of created) {
+      try {
+        await this.remove(reservation.id);
+      } catch {
+        // No reemplazamos el error original.
+      }
+    }
+
+    throw error;
+  }
+
+  return created;
+}
 
   async createPublic(form: CreateReservationForm) {
     validateReservation(form);

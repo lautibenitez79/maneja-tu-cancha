@@ -106,15 +106,37 @@ export default function CalendarPage() {
         values.ends_at,
       );
 
-      await reservationService.create(profile.club_id, {
-        ...values,
+      if (values.recurring) {
+  const created =
+    await reservationService.createRecurring(
+      profile.club_id,
+      values,
+      club.timezone,
+    );
 
-        starts_at: localDateTimeToUtc(values.starts_at, club.timezone),
+  toast.success(
+    `${created.length} reservas creadas correctamente.`,
+  );
+} else {
+  await reservationService.create(
+    profile.club_id,
+    {
+      ...values,
+      starts_at: localDateTimeToUtc(
+        values.starts_at,
+        club.timezone,
+      ),
+      ends_at: localDateTimeToUtc(
+        normalizedEndsAt,
+        club.timezone,
+      ),
+    },
+  );
 
-        ends_at: localDateTimeToUtc(normalizedEndsAt, club.timezone),
-      });
-
-      toast.success("Reserva creada correctamente.");
+  toast.success(
+    "Reserva creada correctamente.",
+  );
+}
 
       setSelectedCell(null);
 

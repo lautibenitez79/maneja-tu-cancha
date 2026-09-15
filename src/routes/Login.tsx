@@ -14,6 +14,15 @@ function LoginPage() {
   const { user } = useAuth();
 
   const [mode, setMode] = useState<Mode>("signin");
+  const [theme, setTheme] = useState<"light" | "dark">("light");
+
+  useEffect(() => {
+    const savedTheme = localStorage.getItem("theme");
+
+    if (savedTheme === "dark" || savedTheme === "light") {
+      setTheme(savedTheme);
+    }
+  }, []);
 
   useEffect(() => {
     if (user) {
@@ -51,14 +60,27 @@ function LoginPage() {
           className="rounded-[var(--radius-card)] border border-border/70 bg-card p-7 shadow-[var(--shadow-soft)]"
         >
           {/* Branding */}
-          <div className="mb-6 flex items-center gap-2">
-            <span className="grid h-9 w-9 place-items-center rounded-lg bg-primary text-primary-foreground">
-              <span className="text-sm font-bold">M</span>
-            </span>
+          <div className="mb-6 flex items-center justify-center gap-2">
+            <Link
+              to="/"
+              className="flex h-16 items-center gap-3"
+            >
 
-            <span className="text-base font-semibold tracking-tight">
-              Maneja Tu Cancha
-            </span>
+              {theme === "dark" ? (
+                <img
+                  src="/MANEJA-TU-CANCHA-DARK.png"
+                  alt="Maneja Tu Cancha"
+                  className="h-20 w-auto"
+                />
+              ) : (
+                <img
+                  src="/MANEJA-TU-CANCHA-LIGHT-SIN-FONDO.png"
+                  alt="Maneja Tu Cancha"
+                  className="h-20 w-auto"
+                />
+              )}
+
+            </Link>
           </div>
 
           <AnimatePresence mode="wait">
@@ -195,7 +217,7 @@ function SigninView({ onSignup }: { onSignup: () => void }) {
           ¿No tenés cuenta?
         </p>
 
-        <div className="flex flex-row gap-4">
+        <div className="flex flex-row flex-wrap gap-4">
           <Button
             type="button"
             onClick={onSignup}
@@ -371,7 +393,7 @@ function GoogleSignupButton() {
       type="button"
       onClick={google}
       disabled={loading}
-      className="flex h-11 w-full items-center justify-center gap-3 rounded-full border border-border bg-background text-sm font-medium transition-colors hover:bg-secondary disabled:opacity-60"
+      className="mt-3 flex h-11 w-full items-center justify-center gap-3 rounded-full border border-border bg-background text-sm font-medium transition-colors hover:bg-secondary disabled:opacity-60"
     >
       <GoogleIcon />
 

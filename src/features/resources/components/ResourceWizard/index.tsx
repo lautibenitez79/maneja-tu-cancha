@@ -69,7 +69,7 @@ export default function ResourceWizard({ mode = "create", resourceId }: Props) {
           name: resource.name,
           type: resource.type,
           capacity: resource.capacity,
-          reservation_duration: getReservationDuration(resource.type),
+          reservation_duration: resource.reservation_duration,
           price: resource.price ?? 0,
           deposit_amount: resource.deposit_amount ?? 0,
         });
@@ -96,9 +96,12 @@ export default function ResourceWizard({ mode = "create", resourceId }: Props) {
       };
 
       if (key === "type") {
-        next.reservation_duration = getReservationDuration(
-          value as CreateResourceForm["type"],
-        );
+        const newType = value as CreateResourceForm["type"];
+
+        next.reservation_duration =
+          newType === "gym"
+            ? 60
+            : getReservationDuration(newType);
       }
 
       return next;
@@ -123,7 +126,6 @@ export default function ResourceWizard({ mode = "create", resourceId }: Props) {
 
   async function handleSubmit() {
     const workingHours = weekToWorkingHours(week);
-    const reservationDuration = getReservationDuration(form.type);
 
     if (!profile?.club_id) return;
 
@@ -141,7 +143,7 @@ export default function ResourceWizard({ mode = "create", resourceId }: Props) {
       if (mode === "create") {
         const resource = await resourceService.create(profile.club_id, {
           ...form,
-          reservation_duration: reservationDuration,
+          reservation_duration: form.reservation_duration,
           capacity: form.type === "gym" ? form.capacity : 1,
         });
 
@@ -149,7 +151,7 @@ export default function ResourceWizard({ mode = "create", resourceId }: Props) {
       } else {
         await resourceService.update(resourceId!, {
           ...form,
-          reservation_duration: reservationDuration,
+          reservation_duration: form.reservation_duration,
           capacity: form.type === "gym" ? form.capacity : 1,
         });
       }
@@ -206,9 +208,13 @@ export default function ResourceWizard({ mode = "create", resourceId }: Props) {
           price={form.price}
           depositAmount={form.deposit_amount}
           loading={loading}
+          reservationDuration={form.reservation_duration}
           onCapacityChange={(value) => updateForm("capacity", value)}
           onPriceChange={(value) => updateForm("price", value)}
           onDepositAmountChange={(value) => updateForm("deposit_amount", value)}
+          onReservationDurationChange={(value) =>
+            updateForm("reservation_duration", value)
+          }
           onBack={previousStep}
           onSubmit={handleSubmit}
           mode={mode}

@@ -6,13 +6,23 @@ import Sidebar from "./Sidebar";
 
 export default function DashboardLayout() {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
 
   return (
     <div className="min-h-screen bg-[var(--color-background)]">
       {/* DESKTOP */}
       <div className="hidden min-h-screen lg:flex">
-        <aside className="w-72 shrink-0 border-r bg-[var(--color-card)]">
-          <Sidebar />
+        <aside
+          className={`sticky top-0 h-screen shrink-0 border-r bg-[var(--color-card)] transition-[width] duration-300 ${
+            sidebarCollapsed ? "w-16" : "w-72"
+          }`}
+        >
+          <Sidebar
+            collapsed={sidebarCollapsed}
+            onToggle={() =>
+              setSidebarCollapsed((value) => !value)
+            }
+          />
         </aside>
 
         <main className="min-w-0 flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
@@ -27,7 +37,11 @@ export default function DashboardLayout() {
             type="button"
             onClick={() => setMobileOpen((value) => !value)}
             className="rounded-lg p-2 hover:bg-[var(--color-hover)]"
-            aria-label={mobileOpen ? "Cerrar menú" : "Abrir menú"}
+            aria-label={
+              mobileOpen
+                ? "Cerrar menú"
+                : "Abrir menú"
+            }
           >
             {mobileOpen ? (
               <X className="h-5 w-5" />

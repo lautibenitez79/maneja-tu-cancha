@@ -27,7 +27,7 @@ import {
 
 interface Props {
   open: boolean;
-  cell: CalendarCell | null;
+  cell: CalendarCell;
   resourceId: string;
   onClose(): void;
   onSubmit(values: CreateReservationForm): Promise<void>;
@@ -69,60 +69,76 @@ export default function ReservationModal({
   const [endsAt, setEndsAt] = useState("");
 
   useEffect(() => {
-  if (forceCreate || !cell || !cell.reservationId) {
+  if (!cell) {
     setReservation(null);
     return;
   }
 
-    const reservationId = cell.reservationId;
+  async function loadReservationContext() {
+    try {
+      setLoadingReservation(true);
 
-    async function loadReservation() {
-      try {
-        setLoadingReservation(true);
+      const resource = await resourceService.getById(resourceId);
+      const club = await clubService.getClub(resource.club_id);
 
-        const resource = await resourceService.getById(resourceId);
+      const reservationTimezone =
+        club?.timezone ??
+        "America/Argentina/Buenos_Aires";
 
-        const club = await clubService.getClub(resource.club_id);
+      setTimezone(reservationTimezone);
 
-        const data = await reservationService.getById(reservationId);
-
-        const reservationTimezone =
-          club?.timezone ?? "America/Argentina/Buenos_Aires";
-
-        if (club?.timezone) {
-          setTimezone(club.timezone);
-        }
-
-        setReservation(data);
-
-        setCustomerName(data.customer_name);
-
-        setCustomerPhone(data.customer_phone);
-
-        setCustomerEmail(data.customer_email);
-
-        setTimezone(reservationTimezone);
-
-        setStartsAt(utcToLocalDateTime(data.starts_at, reservationTimezone));
-
-        setEndsAt(utcToLocalDateTime(data.ends_at, reservationTimezone));
-
-        setAmountPaid(String(data.amount_paid));
-
-        setStatus(data.status);
-      } catch (error) {
-        if (error instanceof Error) {
-          toast.error(error.message);
-        } else {
-          toast.error("No se pudo cargar la reserva.");
-        }
-      } finally {
-        setLoadingReservation(false);
+      if (forceCreate || !cell.reservationId) {
+        setReservation(null);
+        return;
       }
-    }
 
-    loadReservation();
-  }, [cell, forceCreate]);
+      const reservationId = cell.reservationId;
+
+      const data =
+        await reservationService.getById(
+          reservationId,
+        );
+
+      setReservation(data);
+
+      setCustomerName(data.customer_name);
+      setCustomerPhone(data.customer_phone);
+      setCustomerEmail(data.customer_email);
+
+      setStartsAt(
+        utcToLocalDateTime(
+          data.starts_at,
+          reservationTimezone,
+        ),
+      );
+
+      setEndsAt(
+        utcToLocalDateTime(
+          data.ends_at,
+          reservationTimezone,
+        ),
+      );
+
+      setAmountPaid(
+        String(data.amount_paid),
+      );
+
+      setStatus(data.status);
+    } catch (error) {
+      if (error instanceof Error) {
+        toast.error(error.message);
+      } else {
+        toast.error(
+          "No se pudo cargar la reserva.",
+        );
+      }
+    } finally {
+      setLoadingReservation(false);
+    }
+  }
+
+  loadReservationContext();
+}, [cell, forceCreate, resourceId]);
 
   async function handleSave() {
     const amount = Number(amountPaid);
@@ -247,6 +263,7 @@ export default function ReservationModal({
           resourceId={resourceId}
           startsAt={cell.starts_at}
           endsAt={cell.ends_at}
+          timezone={timezone}
           onSubmit={onSubmit}
         />
       ) : loadingReservation ? (

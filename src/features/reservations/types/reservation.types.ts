@@ -64,6 +64,8 @@ export interface CreateReservationForm {
 
   notes: string;
 
+  recurring?: RecurringReservationOptions;
+
 }
 
 export interface UpdateReservationForm {
@@ -82,4 +84,10 @@ export interface UpdateReservationForm {
 
   status?: ReservationStatus;
 
+}
+
+export interface RecurringReservationOptions {
+  days_of_week: number[];
+  starts_on: string;
+  ends_on: string;
 }

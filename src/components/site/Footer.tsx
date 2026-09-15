@@ -1,13 +1,18 @@
 import {
   ArrowRight,
   Mail,
-  Phone,
   SortDescIcon,
-  MapPin,
+  MessageSquare,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { Link } from "react-router-dom";
+
+const CONTACT = {
+  whatsapp: "5491158820265",
+  instagram: "manejatucancha",
+  email: "manejatucancha@gmail.com",
+};
 
 export function Footer() {
   const [theme, setTheme] = useState<"light" | "dark">("light");
@@ -172,33 +177,58 @@ export function Footer() {
 
             </h4>
 
-            <div className="mt-6 space-y-5 text-muted-foreground">
+            <div className="space-y-2">
+                    <Link
+                      to={`https://wa.me/${CONTACT.whatsapp}?text=${encodeURIComponent(
+                        "Hola, estoy interesado en Maneja Tu Cancha y quisiera hacer una consulta.",
+                      )}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-3 rounded-xl border border-border bg-background p-3 transition hover:border-primary hover:bg-primary/5"
+                    >
+                      <div className="grid h-10 w-10  text-primary">
+                        <img height="32" width="32" src="https://cdn.simpleicons.org/whatsapp" />
+                      </div>
 
-              <div className="flex items-center gap-3">
+                      <div>
+                        <p className="text-sm text-[var(--color-title)] font-medium">
+                          WhatsApp
+                        </p>
+                      </div>
+                    </Link>
 
-                <Mail className="h-4 w-4" />
+                    <Link
+                      to={`https://instagram.com/${CONTACT.instagram}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-3 rounded-xl border border-border bg-background p-3 transition hover:border-primary hover:bg-primary/5"
+                    >
+                      <div className="grid h-10 w-10 place-items-center rounded-full bg-primary/10 text-primary">
+                        <img height="32" width="32" src="https://cdn.simpleicons.org/instagram" />
+                      </div>
 
-                hola@manejatucancha.com.ar
+                      <div>
+                        <p className="text-sm font-medium text-[var(--color-title)]">
+                          Instagram
+                        </p>
+                      </div>
+                    </Link>
 
-              </div>
+                    <Link
+                      to={`mailto:${CONTACT.email}`}
+                      className="flex items-center gap-3 rounded-xl border border-border bg-background p-3 transition hover:border-primary hover:bg-primary/5"
+                    >
+                      <div className="grid h-10 w-10 place-items-center rounded-full bg-primary/10 text-primary">
+                        <Mail className="h-5 w-5" />
+                      </div>
 
-              <div className="flex items-center gap-3">
-
-                <Phone className="h-4 w-4" />
-
-                +54 9 11 0000-0000
-
-              </div>
-
-              <div className="flex items-center gap-3">
-
-                <MapPin className="h-4 w-4" />
-
-                Buenos Aires, Argentina
-
-              </div>
-
-            </div>
+                      <div>
+                        <p className="text-sm font-medium text-[var(--color-title)]">
+                          Email
+                        </p>
+                      </div>
+                    </Link>
+                  </div>
 
           </div>
 

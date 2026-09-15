@@ -21,17 +21,17 @@ const steps = [
   {
     icon: UserPlus,
     title: "Creá tu cuenta",
-    text: "Registro simple en menos de un minuto.",
+    text: "Podes registrarte completando el formulario o podes hacerlo con Google.",
   },
   {
     icon: Settings,
     title: "Configurá tu cancha",
-    text: "Cargá horarios, precios y disciplinas.",
+    text: "Cargá tu complejo, horarios y precios y listo!",
   },
   {
     icon: CalendarCheck,
     title: "Empezá a recibir reservas",
-    text: "Tus clientes reservan online 24/7.",
+    text: "Tus clientes reservan y pagan de manera segura con Mercado Pago.",
   },
 ];
 
@@ -218,73 +218,6 @@ function Home() {
         </div>
       </section>
 
-      {/* COMO FUNCIONA */}
-
-      <section
-        id="como-funciona"
-        className="relative overflow-hidden border-t border-border/60 py-28"
-      >
-        <div className="absolute inset-0 -z-10 bg-gradient-to-b from-background via-background to-secondary/20" />
-
-        <div className="mx-auto max-w-7xl px-6">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="mx-auto max-w-3xl text-center"
-          >
-            <span className="rounded-full border border-primary/20 bg-primary/10 px-4 py-2 text-sm font-medium text-primary">
-              Cómo funciona
-            </span>
-
-            <h2 className="mt-8 text-4xl font-black tracking-tight md:text-6xl">
-              Empezá en menos
-              <br />
-              de cinco minutos.
-            </h2>
-
-            <p className="mx-auto mt-6 max-w-2xl text-lg leading-8 text-muted-foreground">
-              Diseñamos la plataforma para que cualquier club pueda comenzar sin
-              conocimientos técnicos.
-            </p>
-          </motion.div>
-
-          <div className="mt-24 grid gap-8 lg:grid-cols-3">
-            {steps.map((step, index) => (
-              <motion.div
-                key={step.title}
-                initial={{ opacity: 0, y: 40 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{
-                  delay: index * 0.15,
-                  duration: 0.45,
-                }}
-                className="group relative overflow-hidden rounded-3xl border border-border bg-card p-8 transition-all duration-300 hover:-translate-y-3 hover:border-primary/40 hover:shadow-[0_20px_80px_rgba(59,130,246,.18)]"
-              >
-                <div className="absolute right-0 top-0 h-36 w-36 rounded-full bg-primary/10 blur-3xl transition-all duration-500 group-hover:bg-primary/20" />
-
-                <div className="relative">
-                  <div className="mb-10 flex h-16 w-16 items-center justify-center rounded-[var(--radius-card)] bg-primary/10 text-primary">
-                    <step.icon className="h-8 w-8" />
-                  </div>
-
-                  <span className="text-sm font-semibold text-primary">
-                    Paso {index + 1}
-                  </span>
-
-                  <h3 className="mt-4 text-2xl font-bold">{step.title}</h3>
-
-                  <p className="mt-4 leading-7 text-muted-foreground">
-                    {step.text}
-                  </p>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* PRODUCTO */}
 
       <section className="relative overflow-hidden border-t border-border/60 py-28">
@@ -299,14 +232,11 @@ function Home() {
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
             >
-              <span className="rounded-full border border-primary/20 bg-primary/10 px-4 py-2 text-sm font-medium text-primary">
-                Una sola plataforma
-              </span>
 
-              <h2 className="mt-8 text-4xl font-black tracking-tight md:text-6xl">
-                Todo tu complejo
+              <h2 className="mt-8 text-3xl font-black tracking-tight md:text-5xl">
+                Tu complejo, tu lugar.
                 <br />
-                en un solo lugar.
+                En una sola plataforma.
               </h2>
 
               <p className="mt-6 max-w-xl text-lg leading-8 text-muted-foreground">
@@ -324,13 +254,13 @@ function Home() {
                   },
                   {
                     icon: Users,
-                    title: "Clientes",
-                    text: "Centralizá la información de tus clientes.",
+                    title: "Usuarios",
+                    text: "Podras administrar y dar roles a tus empleados.",
                   },
                   {
                     icon: CreditCard,
                     title: "Pagos",
-                    text: "Recibí señas y pagos online.",
+                    text: "Recibí señas y pagos se manera segura con Mercado pago.",
                   },
                   {
                     icon: BarChart3,
@@ -381,6 +311,70 @@ function Home() {
                 />
               </div>
             </motion.div>
+          </div>
+        </div>
+      </section>
+
+      {/* COMO FUNCIONA */}
+
+      <section
+        id="como-funciona"
+        className="relative overflow-hidden border-t border-border/60 py-28"
+      >
+        <div className="absolute inset-0 -z-10 bg-gradient-to-b from-background via-background to-secondary/20" />
+
+        <div className="mx-auto max-w-7xl px-6">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="mx-auto max-w-3xl text-center"
+          >
+
+            <h2 className="mt-8 text-4xl font-black tracking-tight md:text-6xl">
+              Empezar
+              <br />
+              nunca fue tan facil.
+            </h2>
+
+            <p className="mx-auto mt-6 max-w-2xl text-lg leading-8 text-muted-foreground">
+              Diseñamos la plataforma para que cualquier club pueda comenzar sin
+              conocimientos técnicos. En 5 simples pasos comenzas a trabajar de manera optima!
+            </p>
+          </motion.div>
+
+          <div className="mt-24 grid gap-8 lg:grid-cols-3">
+            {steps.map((step, index) => (
+              <motion.div
+                key={step.title}
+                initial={{ opacity: 0, y: 40 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{
+                  delay: index * 0.15,
+                  duration: 0.45,
+                }}
+                className="group relative overflow-hidden rounded-3xl border border-border bg-card p-8 transition-all duration-300 hover:-translate-y-3 hover:border-primary/40 hover:shadow-[0_20px_80px_rgba(59,130,246,.18)]"
+              >
+                <div className="absolute right-0 top-0 h-36 w-36 rounded-full bg-primary/10 blur-3xl transition-all duration-500 group-hover:bg-primary/20" />
+
+                <div className="relative">
+                  <div className="mb-10 flex h-16 w-16 items-center justify-center rounded-[var(--radius-card)] bg-primary/10 text-primary">
+                    <step.icon className="h-8 w-8" />
+                  </div>
+
+                  <span className="text-sm font-semibold text-primary">
+                    Paso {index + 1}
+                  </span>
+
+                  <h3 className="mt-4 text-2xl font-bold">{step.title}</h3>
+
+                  <p className="mt-4 leading-7 text-muted-foreground">
+                    {step.text}
+                  </p>
+                </div>
+              </motion.div>
+            ))}
           </div>
         </div>
       </section>
@@ -773,107 +767,7 @@ function Home() {
           </div>
         </div>
       </section>
-
-      {/* CTA FINAL */}
-
-      <section className="relative overflow-hidden border-t border-border/60 py-32">
-        <div className="absolute inset-0 bg-background" />
-
-        <div className="absolute left-1/2 top-0 h-[600px] w-[600px] -translate-x-1/2 rounded-full bg-primary/15 blur-[170px]" />
-
-        <div className="relative mx-auto max-w-7xl px-6">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="overflow-hidden rounded-[40px] border border-border bg-card"
-          >
-            <div className="grid lg:grid-cols-2">
-              {/* IZQUIERDA */}
-
-              <div className="p-10 md:p-16">
-                <span className="inline-flex rounded-full border border-primary/20 bg-primary/10 px-4 py-2 text-sm font-medium text-primary">
-                  Empezá hoy
-                </span>
-
-                <h2 className="mt-8 text-4xl font-black leading-tight md:text-6xl">
-                  Administrá tu
-                  <br />
-                  complejo de forma
-                  <br />
-                  <span className="bg-gradient-to-r from-primary to-success bg-clip-text text-transparent">
-                    profesional.
-                  </span>
-                </h2>
-
-                <p className="mt-8 max-w-xl text-lg leading-8 text-muted-foreground">
-                  Probá Maneja Tu Cancha gratis durante 1 semana y descubrí una
-                  forma más simple de administrar tus reservas, clientes y
-                  horarios.
-                </p>
-
-                <div className="mt-12 flex flex-col gap-4 sm:flex-row">
-                  <Link
-                    to="/login"
-                    className="rounded-full bg-primary px-8 py-4 text-center text-base font-semibold text-primary-foreground shadow-[0_0_40px_rgba(59,130,246,.35)] transition hover:scale-105"
-                  >
-                    Comenzar prueba gratis
-                  </Link>
-
-                  <Link
-                    to="/contacto"
-                    className="rounded-full border border-border bg-background px-8 py-4 text-center text-base font-semibold transition hover:bg-secondary"
-                  >
-                    Hablar con un asesor
-                  </Link>
-                </div>
-              </div>
-
-              {/* DERECHA */}
-
-              <div className="flex items-center p-10 md:p-16">
-                <div className="grid w-full gap-5">
-                  {[
-                    {
-                      title: "7 días gratis",
-                      text: "Probá la plataforma antes de contratar.",
-                    },
-                    {
-                      title: "Reservas online",
-                      text: "Tus clientes pueden reservar todos los días.",
-                    },
-                    {
-                      title: "Sin instalaciones",
-                      text: "Accedé desde cualquier dispositivo.",
-                    },
-                    {
-                      title: "Soporte personalizado",
-                      text: "Estamos para ayudarte a poner todo en marcha.",
-                    },
-                  ].map((item) => (
-                    <div
-                      key={item.title}
-                      className="flex items-center gap-4 rounded-[var(--radius-card)] border border-border bg-background/70 p-5 backdrop-blur-xl"
-                    >
-                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10">
-                        <Check className="h-6 w-6 text-primary" />
-                      </div>
-
-                      <div>
-                        <p className="font-semibold">{item.title}</p>
-
-                        <p className="mt-1 text-sm text-muted-foreground">
-                          {item.text}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </motion.div>
-        </div>
-      </section>
+      
     </SiteLayout>
   );
 }

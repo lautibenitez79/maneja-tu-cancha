@@ -12,6 +12,8 @@ interface Props {
 
   loading: boolean;
 
+  reservationDuration: number;
+
   mode: "create" | "edit";
 
   onCapacityChange(value: number): void;
@@ -19,6 +21,8 @@ interface Props {
   onPriceChange(value: number): void;
 
   onDepositAmountChange(value: number): void;
+
+  onReservationDurationChange(value: number): void;
 
   onBack(): void;
 
@@ -31,10 +35,12 @@ export default function StepCapacity({
   price,
   depositAmount,
   loading,
+  reservationDuration,
   mode,
   onCapacityChange,
   onPriceChange,
   onDepositAmountChange,
+  onReservationDurationChange,
   onBack,
   onSubmit,
 }: Props) {
@@ -56,19 +62,45 @@ export default function StepCapacity({
 
       {/* CAPACIDAD */}
       {isGym ? (
-        <div>
-          <label className="mb-2 block font-medium">
-            Cantidad máxima de personas por turno
-          </label>
+        <div className="space-y-6">
+          <div>
+            <label className="mb-2 block font-medium">
+              Cantidad máxima de personas por turno
+            </label>
 
-          <input
-            type="number"
-            min={1}
-            value={capacity}
-            onChange={(e) => onCapacityChange(Number(e.target.value))}
-            className="w-full rounded-lg border p-3"
-          />
+            <input
+              type="number"
+              min={1}
+              value={capacity}
+              onChange={(e) => onCapacityChange(Number(e.target.value))}
+              className="w-full rounded-lg border p-3"
+            />
+          </div>
+          <div>
+            <label className="mb-2 block font-medium">
+              Duración de la clase
+            </label>
+
+            <select
+              value={reservationDuration}
+              onChange={(e) =>
+                onReservationDurationChange(Number(e.target.value))
+              }
+              className="w-full rounded-lg border p-3"
+            >
+              <option value={30}>30 minutos</option>
+              <option value={45}>45 minutos</option>
+              <option value={60}>60 minutos</option>
+              <option value={90}>90 minutos</option>
+              <option value={120}>120 minutos</option>
+            </select>
+
+            <p className="mt-2 text-sm text-gray-500">
+              Esta duración se utilizará para generar los horarios disponibles y las reservas del gimnasio.
+            </p>
+          </div>
         </div>
+        
       ) : (
         <div className="rounded-xl border p-5">
           <p className="font-medium">

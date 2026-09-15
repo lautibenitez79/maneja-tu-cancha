@@ -98,9 +98,9 @@ export default function MercadoPagoConnectionCard({ clubId }: Props) {
             Mercado Pago conectado correctamente.
           </div>
 
-          <div className="text-sm">
-            <strong>Cuenta conectada:</strong> {connection.mp_user_id}
-          </div>
+            {/* <div className="text-sm">
+              <strong>Cuenta conectada:</strong> {connection.mp_user_id}
+            </div> */}
 
           {connection.expires_at && (
             <div className="text-sm opacity-70">
