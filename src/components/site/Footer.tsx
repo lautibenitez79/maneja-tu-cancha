@@ -2,7 +2,6 @@ import {
   ArrowRight,
   Mail,
   SortDescIcon,
-  MessageSquare,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 
