@@ -258,14 +258,15 @@ export default function ReservationModal({
 
   return (
     <Modal open={open} onClose={onClose} title="Reserva">
-      {cell.status === "available" ? (
-        <ReservationForm
-          resourceId={resourceId}
-          startsAt={cell.starts_at}
-          endsAt={cell.ends_at}
-          timezone={timezone}
-          onSubmit={onSubmit}
-        />
+      <div className="max-h-[75vh] overflow-y-auto pr-2 sm:max-h-[78vh] lg:max-h-none">
+        {cell.status === "available" ? (
+          <ReservationForm
+            resourceId={resourceId}
+            startsAt={cell.starts_at}
+            endsAt={cell.ends_at}
+            timezone={timezone}
+            onSubmit={onSubmit}
+          />
       ) : loadingReservation ? (
         <div className="py-6 text-center">Cargando reserva...</div>
       ) : reservation ? (
@@ -406,6 +407,7 @@ export default function ReservationModal({
           </div>
         </div>
       )}
+      </div>
     </Modal>
   );
 }
