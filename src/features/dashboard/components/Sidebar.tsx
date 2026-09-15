@@ -1,8 +1,9 @@
-import { NavLink, useNavigate } from "react-router-dom";
+import { Link, NavLink, useNavigate } from "react-router-dom";
 import { LogOut } from "lucide-react";
 import { toast } from "sonner";
 
 import { useAuth } from "@/hooks/useAuth";
+import { useEffect, useState } from "react";
 
 const items = [
   {
@@ -44,6 +45,16 @@ export default function Sidebar({ onNavigate }: Props) {
     profile,
   } = useAuth();
 
+  const [theme, setTheme] = useState<"light" | "dark">("light");
+  
+    useEffect(() => {
+      const savedTheme = localStorage.getItem("theme");
+  
+      if (savedTheme === "dark" || savedTheme === "light") {
+        setTheme(savedTheme);
+      }
+    }, []);
+
   async function handleLogout() {
     try {
       await logout();
@@ -74,9 +85,26 @@ export default function Sidebar({ onNavigate }: Props) {
     <div className="flex h-full min-h-screen flex-col">
       {/* Logo */}
       <div className="border-b border-[var(--color-border)] p-5 sm:p-6">
-        <h1 className="text-xl font-bold text-[var(--color-primary)] sm:text-2xl">
-          Maneja Tu Cancha
-        </h1>
+        <Link
+          to="/dashboard"
+          className="flex h-16 items-center gap-3"
+        >
+
+          {theme === "dark" ? (
+            <img
+              src="/MANEJA-TU-CANCHA-DARK.png"
+              alt="Maneja Tu Cancha"
+              className="h-20 w-auto"
+            />
+          ) : (
+            <img
+              src="/MANEJA-TU-CANCHA-LIGHT-SIN-FONDO.png"
+              alt="Maneja Tu Cancha"
+              className="h-20 w-auto"
+            />
+          )}
+
+        </Link>
       </div>
 
       {/* Navegación */}

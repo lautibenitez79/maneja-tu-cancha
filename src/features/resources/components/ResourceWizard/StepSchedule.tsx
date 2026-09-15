@@ -36,7 +36,7 @@ export default function StepSchedule({
 
       <div>
 
-        <h1 className="text-3xl font-bold">
+        <h1 className="text-3xl font-semibold">
 
           Horarios
 

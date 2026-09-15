@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import {
   UserPlus,
@@ -14,7 +15,7 @@ import { SiteLayout } from "../components/site/SiteLayout";
 import { Typewriter } from "../components/site/Typewriter";
 import WarpText from "@/components/ui/WarpText/WarpText";
 import SpecularButton from "@/components/ui/SpecularButton/SpecularButton";
-import { useEffect, useState } from "react";
+import InteractiveFootballField from "@/components/ui/Background/InteractiveFootballField";
 
 const steps = [
   {
@@ -58,24 +59,35 @@ function Home() {
       {/* HERO */}
 
       <section className="relative flex min-h-[92vh] items-center overflow-hidden">
-        {/* Background */}
+        {/* CANCHA INTERACTIVA */}
+
+        <div className="absolute inset-0 z-0">
+          <InteractiveFootballField
+            desktopImageSrc="/cancha.jpg"
+            mobileImageSrc="/cancha-mobile.jpg"
+            className="h-full min-h-[92vh] w-full"
+          />
+        </div>
+
+        {/* OVERLAY PARA QUE EL TEXTO SE LEA */}
+        <div className="absolute inset-0 z-[1] bg-background/65" />
 
         {/* Grid */}
         <div
-          className="absolute inset-0 -z-10 opacity-[0.05]"
+          className="absolute inset-0 z-[2] opacity-[0.05]"
           style={{
             backgroundImage: `
-      linear-gradient(to right, currentColor 1px, transparent 1px),
-      linear-gradient(to bottom, currentColor 1px, transparent 1px)
-    `,
+        linear-gradient(to right, currentColor 1px, transparent 1px),
+        linear-gradient(to bottom, currentColor 1px, transparent 1px)
+      `,
             backgroundSize: "48px 48px",
           }}
         />
 
         {/* Glow */}
-        <div className="absolute left-1/2 top-24 -z-10 h-[550px] w-[550px] -translate-x-1/2 rounded-full bg-primary/20 blur-[140px]" />
+        <div className="absolute left-1/2 top-24 z-[2] -z-0 h-[550px] w-[550px] -translate-x-1/2 rounded-full bg-primary/20 blur-[140px]" />
 
-        <div className="mx-auto flex w-full max-w-7xl flex-col items-center px-6 text-center mt-14 mb-4 md:mt-2 mb-2">
+        <div className="relative z-10 mx-auto flex w-full max-w-7xl flex-col items-center px-6 text-center mt-14 mb-4 md:mt-2 mb-2">
           <WarpText
             text="Administrá tu cancha"
             warpStrength={0.08}

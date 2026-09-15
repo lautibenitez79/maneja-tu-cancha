@@ -9,7 +9,7 @@ export default function PaymentSuccessPage() {
             ✓
           </div>
 
-          <h1 className="mt-6 text-2xl font-bold text-[var(--color-title)]">
+          <h1 className="mt-6 text-2xl font-semibold text-[var(--color-title)]">
             ¡Pago realizado!
           </h1>
 

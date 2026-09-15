@@ -48,7 +48,7 @@ export default function CreateClubWizard() {
 
   return (
     <div className="mx-auto mt-20 max-w-md">
-      <h1 className="text-2xl font-bold">
+      <h1 className="text-2xl font-semibold">
         Bienvenido 👋
       </h1>
 

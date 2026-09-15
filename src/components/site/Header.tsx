@@ -75,13 +75,13 @@ export function Header() {
             <img
               src="/MANEJA-TU-CANCHA-DARK.png"
               alt="Maneja Tu Cancha"
-              className="h-15 w-auto"
+              className="h-20 w-auto"
             />
           ) : (
             <img
               src="/MANEJA-TU-CANCHA-LIGHT-SIN-FONDO.png"
               alt="Maneja Tu Cancha"
-              className="h-15 w-auto"
+              className="h-20 w-auto"
             />
           )}
 

@@ -618,7 +618,7 @@ export default function PublicBookingPage() {
             />
           )}
 
-          <h1 className="text-3xl font-bold text-[var(--color-title)] sm:text-4xl">
+          <h1 className="text-3xl font-semibold text-[var(--color-title)] sm:text-4xl">
             {club.name}
           </h1>
 

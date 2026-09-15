@@ -44,7 +44,7 @@ function Contacto() {
         Contacto
       </span>
 
-      <h1 className="mt-8 text-5xl font-black tracking-tight md:text-7xl">
+      <h1 className="mt-8 text-5xl font-semibold font-black tracking-tight md:text-7xl">
 
         Hablemos de
         <br />

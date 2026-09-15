@@ -223,7 +223,7 @@ export default function PaymentPendingPage() {
               !
             </div>
 
-            <h1 className="mt-6 text-2xl font-bold text-[var(--color-title)]">
+            <h1 className="mt-6 text-2xl font-semibold text-[var(--color-title)]">
               No pudimos consultar la reserva
             </h1>
 
@@ -258,7 +258,7 @@ export default function PaymentPendingPage() {
               ×
             </div>
 
-            <h1 className="mt-6 text-2xl font-bold text-[var(--color-title)]">
+            <h1 className="mt-6 text-2xl font-semibold text-[var(--color-title)]">
               Reserva cancelada
             </h1>
 
@@ -304,7 +304,7 @@ export default function PaymentPendingPage() {
             ⏳
           </div>
 
-          <h1 className="mt-6 text-2xl font-bold text-[var(--color-title)]">
+          <h1 className="mt-6 text-2xl font-semibold text-[var(--color-title)]">
             Pago pendiente
           </h1>
 

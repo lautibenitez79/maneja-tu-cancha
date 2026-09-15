@@ -29,7 +29,7 @@ export default function StepLocation({
     <div className="space-y-8">
 
       <div>
-        <h1 className="text-3xl font-bold text-black">
+        <h1 className="text-3xl font-semibold text-black">
           📍 Ubicación
         </h1>
 

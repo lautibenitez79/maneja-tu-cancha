@@ -249,7 +249,7 @@ export default function SubscriptionPage() {
     <div className="space-y-8">
       {/* Encabezado */}
       <div>
-        <h1 className="text-2xl font-bold">
+        <h1 className="text-2xl font-semibold">
           Suscripción
         </h1>
 
