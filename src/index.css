@@ -1,5 +1,15 @@
 @import "tailwindcss";
 
+:root {
+  font-family: "Google Sans Flex", sans-serif;
+  font-optical-sizing: auto;
+  font-variation-settings:
+    "slnt" 0,
+    "wdth" 100,
+    "GRAD" 0,
+    "ROND" 0;
+}
+
 @theme {
   --color-background: #f8fafc;
   --color-foreground: #0f172a;
@@ -31,7 +41,13 @@
 
   body{
     @apply bg-background text-foreground;
-    font-family: Inter, system-ui, sans-serif;
+    font-family: "Google Sans Flex", sans-serif;
+    font-optical-sizing: auto;
+    font-variation-settings:
+    "slnt" 0,
+    "wdth" 100,
+    "GRAD" 0,
+    "ROND" 0;
     margin:0;
     overflow-x:hidden;
     background:
