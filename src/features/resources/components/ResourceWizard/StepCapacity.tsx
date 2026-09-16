@@ -1,3 +1,4 @@
+import { useState } from "react";
 import Button from "@/components/ui/Button/index";
 import type { ResourceType } from "../../types/resource.types";
 
@@ -46,12 +47,38 @@ export default function StepCapacity({
 }: Props) {
   const isGym = type === "gym";
 
+  const [priceInput, setPriceInput] = useState(
+    price > 0 ? String(price) : "",
+  );
+
+  const [depositInput, setDepositInput] = useState(
+    depositAmount > 0 ? String(depositAmount) : "",
+  );
+
   const depositExceedsPrice = depositAmount > price;
+
+  function handlePriceChange(value: string) {
+    setPriceInput(value);
+
+    onPriceChange(
+      value === "" ? 0 : Number(value),
+    );
+  }
+
+  function handleDepositChange(value: string) {
+    setDepositInput(value);
+
+    onDepositAmountChange(
+      value === "" ? 0 : Number(value),
+    );
+  }
 
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-3xl font-semibold">Configuración</h1>
+        <h1 className="text-3xl font-semibold">
+          Configuración
+        </h1>
 
         <p className="mt-2 text-[var(--color-muted)]">
           {mode === "create"
@@ -72,10 +99,15 @@ export default function StepCapacity({
               type="number"
               min={1}
               value={capacity}
-              onChange={(e) => onCapacityChange(Number(e.target.value))}
+              onChange={(e) =>
+                onCapacityChange(
+                  Number(e.target.value),
+                )
+              }
               className="w-full rounded-lg border p-3"
             />
           </div>
+
           <div>
             <label className="mb-2 block font-medium">
               Duración de la clase
@@ -84,23 +116,40 @@ export default function StepCapacity({
             <select
               value={reservationDuration}
               onChange={(e) =>
-                onReservationDurationChange(Number(e.target.value))
+                onReservationDurationChange(
+                  Number(e.target.value),
+                )
               }
               className="w-full rounded-lg border p-3"
             >
-              <option value={30}>30 minutos</option>
-              <option value={45}>45 minutos</option>
-              <option value={60}>60 minutos</option>
-              <option value={90}>90 minutos</option>
-              <option value={120}>120 minutos</option>
+              <option value={30}>
+                30 minutos
+              </option>
+
+              <option value={45}>
+                45 minutos
+              </option>
+
+              <option value={60}>
+                60 minutos
+              </option>
+
+              <option value={90}>
+                90 minutos
+              </option>
+
+              <option value={120}>
+                120 minutos
+              </option>
             </select>
 
             <p className="mt-2 text-sm text-gray-500">
-              Esta duración se utilizará para generar los horarios disponibles y las reservas del gimnasio.
+              Esta duración se utilizará para generar
+              los horarios disponibles y las reservas
+              del gimnasio.
             </p>
           </div>
         </div>
-        
       ) : (
         <div className="rounded-xl border p-5">
           <p className="font-medium">
@@ -112,40 +161,49 @@ export default function StepCapacity({
       {/* PRECIO */}
       <div className="space-y-5">
         <div>
-          <label className="mb-2 block font-medium">Precio por reserva</label>
+          <label className="mb-2 block font-medium">
+            Precio total
+          </label>
 
           <input
             type="number"
             min={0}
             step={100}
-            value={price}
-            onChange={(e) => onPriceChange(Number(e.target.value))}
+            value={priceInput}
+            onChange={(e) =>
+              handlePriceChange(e.target.value)
+            }
             className="w-full rounded-lg border p-3"
             placeholder="20000"
           />
 
           <p className="mt-1 text-sm text-slate-500">
-            Es el precio total que deberá pagar el cliente por la reserva.
+            Es el precio total que deberá pagar el cliente
+            por la reserva.
           </p>
         </div>
 
         {/* SEÑA */}
         <div>
-          <label className="mb-2 block font-medium">Seña para reservar</label>
+          <label className="mb-2 block font-medium">
+            Seña para reservar
+          </label>
 
           <input
             type="number"
             min={0}
             step={100}
-            value={depositAmount}
-            onChange={(e) => onDepositAmountChange(Number(e.target.value))}
+            value={depositInput}
+            onChange={(e) =>
+              handleDepositChange(e.target.value)
+            }
             className="w-full rounded-lg border p-3"
             placeholder="5000"
           />
 
           <p className="mt-1 text-sm text-slate-500">
-            Este será el importe que el cliente pagará mediante Mercado Pago
-            para confirmar la reserva.
+            Este será el importe que el cliente pagará
+            mediante Mercado Pago para confirmar la reserva.
           </p>
 
           {depositExceedsPrice && (
@@ -157,11 +215,15 @@ export default function StepCapacity({
 
         {/* RESUMEN */}
         <div className="rounded-xl border p-5">
-          <h3 className="mb-3 font-semibold">Valores de la reserva</h3>
+          <h3 className="mb-3 font-semibold">
+            Valores de la reserva
+          </h3>
 
           <div className="space-y-3 text-sm">
             <div className="flex justify-between">
-              <span className="text-slate-500">Precio total de la cancha</span>
+              <span className="text-slate-500">
+                Precio total de la cancha
+              </span>
 
               <span className="font-semibold">
                 ${price.toLocaleString("es-AR")}
@@ -169,7 +231,9 @@ export default function StepCapacity({
             </div>
 
             <div className="flex justify-between">
-              <span className="text-slate-500">Valor para reservar</span>
+              <span className="text-slate-500">
+                Valor para reservar
+              </span>
 
               <span className="font-semibold">
                 ${depositAmount.toLocaleString("es-AR")}
@@ -181,13 +245,19 @@ export default function StepCapacity({
 
       {/* BOTONES */}
       <div className="flex gap-4">
-        <Button onClick={onBack} className="w-full rounded-lg border py-3">
+        <Button
+          onClick={onBack}
+          className="w-full rounded-lg border py-3"
+        >
           Atrás
         </Button>
 
         <Button
           disabled={
-            loading || price < 0 || depositAmount < 0 || depositExceedsPrice
+            loading ||
+            price < 0 ||
+            depositAmount < 0 ||
+            depositExceedsPrice
           }
           onClick={onSubmit}
           className="w-full rounded-lg bg-[var(--color-primary)] py-3 text-white disabled:opacity-50"
