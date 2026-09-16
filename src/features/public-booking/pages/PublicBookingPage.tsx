@@ -609,30 +609,56 @@ export default function PublicBookingPage() {
       <div className="mx-auto max-w-5xl">
         {/* ENCABEZADO */}
 
-        <header className="mb-8 text-center sm:mb-10">
-          {club.logo_url && (
+        <header className="relative mb-8 min-h-[300px] overflow-hidden rounded-3xl border shadow-sm sm:mb-10 sm:min-h-[360px] lg:min-h-[420px]">
+          {/* BANNER DE FONDO */}
+          {club.banner_url ? (
             <img
-              src={club.logo_url}
-              alt={club.name}
-              className="mx-auto mb-4 h-20 w-20 rounded-2xl object-cover"
+              src={club.banner_url}
+              alt={`Banner de ${club.name}`}
+              className="absolute inset-0 h-full w-full object-cover object-center"
             />
+          ) : (
+            <div className="absolute inset-0 bg-[var(--color-card)]" />
           )}
 
-          <h1 className="text-3xl font-semibold text-[var(--color-title)] sm:text-4xl">
-            {club.name}
-          </h1>
+          {/* OVERLAY */}
+          <div className="absolute inset-0 bg-black/45" />
 
-          {club.description && (
-            <p className="mx-auto mt-3 max-w-2xl text-sm text-[var(--color-text)] sm:text-base">
-              {club.description}
-            </p>
-          )}
+          {/* DEGRADADO INFERIOR */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/25 to-black/10" />
 
-          {(club.city || club.province) && (
-            <p className="mt-2 text-sm text-slate-500">
-              {[club.city, club.province].filter(Boolean).join(", ")}
-            </p>
-          )}
+          {/* CONTENIDO */}
+          <div className="relative flex min-h-[300px] flex-col items-center justify-center px-5 py-10 text-center sm:min-h-[360px] sm:px-8 sm:py-12 lg:min-h-[420px]">
+            {club.logo_url && (
+              <div className="mb-5 rounded-2xl bg-white/95 p-1.5 shadow-xl backdrop-blur-sm">
+                <img
+                  src={club.logo_url}
+                  alt={`Logo de ${club.name}`}
+                  className="h-20 w-20 rounded-xl object-cover sm:h-24 sm:w-24"
+                />
+              </div>
+            )}
+
+            <h1 className="text-3xl font-bold tracking-tight text-white drop-shadow-md sm:text-4xl lg:text-5xl">
+              {club.name}
+            </h1>
+
+            {club.description && (
+              <p className="mx-auto mt-3 max-w-2xl text-sm leading-relaxed text-white/90 drop-shadow sm:text-base">
+                {club.description}
+              </p>
+            )}
+
+            {(club.city || club.province) && (
+              <p className="mt-4 text-sm font-medium text-white/85">
+                {[club.city, club.province].filter(Boolean).join(", ")}
+              </p>
+            )}
+
+            {club.address && (
+              <p className="mt-1 text-sm text-white/75">{club.address}</p>
+            )}
+          </div>
         </header>
 
         {/* CANCHAS */}
@@ -747,7 +773,11 @@ export default function PublicBookingPage() {
                 className="mt-3 w-full rounded-xl border p-3"
               >
                 {gymEnabledDays.map((_, index) => (
-                  <option key={index + 1} value={index + 1} className="bg-[var(--color-card)]">
+                  <option
+                    key={index + 1}
+                    value={index + 1}
+                    className="bg-[var(--color-card)]"
+                  >
                     {index + 1} {index === 0 ? "día" : "días"} por semana
                   </option>
                 ))}
@@ -831,10 +861,16 @@ export default function PublicBookingPage() {
                   }}
                   className="mt-3 w-full rounded-xl border p-3"
                 >
-                  <option value="" className="bg-[var(--color-card)]">Seleccioná un horario</option>
+                  <option value="" className="bg-[var(--color-card)]">
+                    Seleccioná un horario
+                  </option>
 
                   {getGymTimeOptionsForSelectedDays().map((time) => (
-                    <option key={time} value={time} className="bg-[var(--color-card)]" >
+                    <option
+                      key={time}
+                      value={time}
+                      className="bg-[var(--color-card)]"
+                    >
                       {time}
                     </option>
                   ))}

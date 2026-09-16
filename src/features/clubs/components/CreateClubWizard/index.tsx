@@ -21,10 +21,7 @@ import {
   validateStep4,
 } from "../../utils/wizard.validation";
 
-import {
-  TOTAL_STEPS,
-  WIZARD_STEPS,
-} from "../../utils/wizard.steps";
+import { TOTAL_STEPS, WIZARD_STEPS } from "../../utils/wizard.steps";
 
 const initialForm: CreateClubForm = {
   name: "",
@@ -44,6 +41,8 @@ const initialForm: CreateClubForm = {
   timezone: "America/Argentina/Buenos_Aires",
 
   currency: "ARS",
+
+  logo_file: null,
 };
 
 export default function CreateClubWizard() {
@@ -53,14 +52,11 @@ export default function CreateClubWizard() {
 
   const [loading, setLoading] = useState(false);
 
-  const [form, setForm] =
-    useState<CreateClubForm>(initialForm);
+  const [form, setForm] = useState<CreateClubForm>(initialForm);
 
-  const updateForm = <
-    K extends keyof CreateClubForm
-  >(
+  const updateForm = <K extends keyof CreateClubForm>(
     key: K,
-    value: CreateClubForm[K]
+    value: CreateClubForm[K],
   ) => {
     setForm((prev) => ({
       ...prev,
@@ -68,48 +64,37 @@ export default function CreateClubWizard() {
     }));
   };
 
-  const nextStep = () =>
-    setStep((prev) => prev + 1);
+  const nextStep = () => setStep((prev) => prev + 1);
 
-  const previousStep = () =>
-    setStep((prev) => prev - 1);
+  const previousStep = () => setStep((prev) => prev - 1);
 
   const handleSubmit = async () => {
-  if (!validateStep4(form)) return;
+    if (!validateStep4(form)) return;
 
-  try {
-    setLoading(true);
+    try {
+      setLoading(true);
 
-    await clubService.createFirstClub(form);
+      await clubService.createFirstClub(form);
 
-    await refreshProfile();
-  } catch (error) {
-    console.error(error);
-    toast.error(
-      "No se pudo crear tu recurso."
-    );
-  } finally {
-    setLoading(false);
-  }
-};
+      await refreshProfile();
+    } catch (error) {
+      console.error(error);
+      toast.error("No se pudo crear tu complejo.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="mx-auto max-w-xl space-y-10 rounded-[var(--radius-card)] border bg-white p-8 shadow-[var(--shadow-card)]">
-
-      <ProgressBar
-        step={step}
-        total={TOTAL_STEPS}
-      />
+      <ProgressBar step={step} total={TOTAL_STEPS} />
 
       {step === WIZARD_STEPS.NAME && (
         <StepName
           value={form.name}
-          onChange={(value) =>
-            updateForm("name", value)
-          }
+          onChange={(value) => updateForm("name", value)}
           onNext={() => {
-            if (!validateStep1(form))
-              return;
+            if (!validateStep1(form)) return;
 
             nextStep();
           }}
@@ -120,16 +105,11 @@ export default function CreateClubWizard() {
         <StepContact
           phone={form.phone}
           email={form.email}
-          onPhoneChange={(value) =>
-            updateForm("phone", value)
-          }
-          onEmailChange={(value) =>
-            updateForm("email", value)
-          }
+          onPhoneChange={(value) => updateForm("phone", value)}
+          onEmailChange={(value) => updateForm("email", value)}
           onBack={previousStep}
           onNext={() => {
-            if (!validateStep2(form))
-              return;
+            if (!validateStep2(form)) return;
 
             nextStep();
           }}
@@ -142,25 +122,15 @@ export default function CreateClubWizard() {
           city={form.city}
           province={form.province}
           country={form.country}
-          onAddressChange={(value) =>
-            updateForm("address", value)
-          }
-          onCityChange={(value) =>
-            updateForm("city", value)
-          }
-          onProvinceChange={(value) =>
-            updateForm(
-              "province",
-              value
-            )
-          }
-          onCountryChange={(value) =>
-            updateForm("country", value)
-          }
+          logoFile={form.logo_file ?? null}
+          onAddressChange={(value) => updateForm("address", value)}
+          onCityChange={(value) => updateForm("city", value)}
+          onProvinceChange={(value) => updateForm("province", value)}
+          onCountryChange={(value) => updateForm("country", value)}
+          onLogoChange={(file) => updateForm("logo_file", file)}
           onBack={previousStep}
           onNext={() => {
-            if (!validateStep3(form))
-              return;
+            if (!validateStep3(form)) return;
 
             nextStep();
           }}
@@ -172,18 +142,8 @@ export default function CreateClubWizard() {
           timezone={form.timezone}
           currency={form.currency}
           loading={loading}
-          onTimezoneChange={(value) =>
-            updateForm(
-              "timezone",
-              value
-            )
-          }
-          onCurrencyChange={(value) =>
-            updateForm(
-              "currency",
-              value
-            )
-          }
+          onTimezoneChange={(value) => updateForm("timezone", value)}
+          onCurrencyChange={(value) => updateForm("currency", value)}
           onBack={previousStep}
           onSubmit={handleSubmit}
         />

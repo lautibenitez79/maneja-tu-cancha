@@ -3,6 +3,7 @@ import {
   LogOut,
   PanelLeftClose,
   PanelLeftOpen,
+  UserRound,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -29,6 +30,11 @@ const items = [
     label: "Usuarios",
     href: "/dashboard/users",
     roles: ["admin"],
+  },
+  {
+    label: "Reservas",
+    href: "/dashboard/reservations",
+    roles: ["admin", "user"],
   },
   {
     label: "Suscripción",
@@ -223,6 +229,27 @@ export default function Sidebar({
             <span>Cerrar sesión</span>
           )}
         </button>
+
+        {/* User */}
+        {profile?.role === "admin" && (
+          <button
+            type="button"
+            onClick={() => {
+              navigate("/dashboard/club");
+              onNavigate?.();
+            }}
+            title={collapsed ? "Mi club" : undefined}
+            className={`flex rounded-xl text-left text-sm transition hover:bg-[var(--color-hover)] ${
+              collapsed
+                ? "h-11 w-11 items-center justify-center"
+                : "w-full items-center gap-3 px-4 py-3"
+            }`}
+          >
+            <UserRound className="h-5 w-5 shrink-0" />
+
+            {!collapsed && <span>Mi club</span>}
+          </button>
+)}
       </div>
     </div>
   );

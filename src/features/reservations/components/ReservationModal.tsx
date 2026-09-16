@@ -102,8 +102,8 @@ export default function ReservationModal({
       setReservation(data);
 
       setCustomerName(data.customer_name);
-      setCustomerPhone(data.customer_phone);
-      setCustomerEmail(data.customer_email);
+      setCustomerPhone(data.customer_phone ?? "");
+      setCustomerEmail(data.customer_email ?? "");
 
       setStartsAt(
         utcToLocalDateTime(

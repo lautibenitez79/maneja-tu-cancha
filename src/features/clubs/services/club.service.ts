@@ -3,6 +3,17 @@ import { supabase } from "../../../lib/supabase";
 import type { Club } from "../types/club.types";
 import type { CreateClubForm } from "../types/create-club-form.types";
 
+interface UpdateClubData {
+  name: string;
+  phone: string;
+  email: string;
+  description: string;
+  address: string;
+  city: string;
+  province: string;
+  country: string;
+}
+
 class ClubService {
   private generateSlug(name: string) {
     return name
@@ -83,10 +94,20 @@ class ClubService {
       throw new Error("El complejo fue creado pero no pudo recuperarse.");
     }
 
-    return club;
+    if (form.logo_file) {
+      await this.uploadClubAsset(club.id, form.logo_file, "logo");
+    }
+
+    const updatedClub = await this.getClub(club.id);
+
+    if (!updatedClub) {
+      throw new Error("El complejo fue creado pero no pudo recuperarse.");
+    }
+
+    return updatedClub;
   }
 
-  async getClub(id: string) {
+  async getClub(id: string): Promise<Club | null> {
     const { data, error } = await supabase
       .from("clubs")
       .select("*")
@@ -110,6 +131,73 @@ class ClubService {
 
     return data;
   }
+
+  async updateClub(clubId: string, values: UpdateClubData): Promise<Club> {
+    const { data, error } = await supabase
+      .from("clubs")
+      .update({
+        name: values.name.trim(),
+        phone: values.phone.trim(),
+        email: values.email.trim(),
+        description: values.description.trim() || null,
+        address: values.address.trim(),
+        city: values.city.trim(),
+        province: values.province.trim(),
+        country: values.country.trim(),
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", clubId)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    return data;
+  }
+
+  async uploadClubAsset(
+  clubId: string,
+  file: File,
+  type: "logo" | "banner",
+): Promise<string> {
+  const path = `${clubId}/${type}`;
+
+  const { error: uploadError } = await supabase.storage
+    .from("club-assets")
+    .upload(path, file, {
+      cacheControl: "3600",
+      upsert: true,
+      contentType: file.type,
+    });
+
+  if (uploadError) {
+    throw uploadError;
+  }
+
+  const { data } = supabase.storage
+    .from("club-assets")
+    .getPublicUrl(path);
+
+  const url = data.publicUrl;
+
+  const column = type === "logo"
+    ? "logo_url"
+    : "banner_url";
+
+  const { error: updateError } = await supabase
+    .from("clubs")
+    .update({
+      [column]: url,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", clubId);
+
+  if (updateError) {
+    throw updateError;
+  }
+
+  return url;
+}
 }
 
 export const clubService = new ClubService();

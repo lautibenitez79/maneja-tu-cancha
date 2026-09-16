@@ -16,4 +16,6 @@ export interface CreateClubForm {
   timezone: string;
 
   currency: string;
+
+  logo_file?: File | null;
 }

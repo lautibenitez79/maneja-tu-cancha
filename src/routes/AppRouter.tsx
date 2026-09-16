@@ -22,6 +22,8 @@ import PaymentPendingPage from "@/features/public-booking/pages/PaymentPendingPa
 import ForgotPassword from "./ForgotPassword";
 import ResetPassword from "./ResetPassword";
 import SubscriptionPage from "@/features/subscription/pages/SubscriptionPage";
+import ClubSettingsPage from "@/features/clubs/pages/ClubSettingsPage";
+import ReservationsPage from "@/features/reservations/pages/ReservationsPage";
 
 export function AppRouter() {
   return (
@@ -99,10 +101,28 @@ export function AppRouter() {
         />
 
         <Route
+          path="club"
+          element={
+            <RoleRoute allowedRoles={["admin"]}>
+              <ClubSettingsPage />
+            </RoleRoute>
+          }
+        />
+
+        <Route
           path="resources"
           element={
             <RoleRoute allowedRoles={["admin"]}>
               <ResourcesPage />
+            </RoleRoute>
+          }
+        />
+
+        <Route
+          path="reservations"
+          element={
+            <RoleRoute allowedRoles={["admin", "user"]}>
+              <ReservationsPage />
             </RoleRoute>
           }
         />
