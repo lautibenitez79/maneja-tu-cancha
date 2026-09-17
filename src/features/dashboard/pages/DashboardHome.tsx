@@ -19,6 +19,7 @@ import { useDashboard } from "../hooks/useDashboard";
 import MercadoPagoConnectionCard from "@/features/mercadopago/components/MercadoPagoConnectionCard";
 
 import { clubService } from "@/features/clubs/services/club.service";
+import { mercadoPagoService } from "@/features/mercadopago/services/mercadopago.service";
 
 import type { DashboardPeriod } from "../types/dashboard.types";
 import type { Club } from "@/features/clubs/types/club.types";
@@ -38,21 +39,30 @@ export default function DashboardHome() {
 
   const [club, setClub] = useState<Club | null>(null);
 
-  useEffect(() => {
-    async function loadClub() {
-      if (!profile?.club_id) {
-        setClub(null);
-        return;
-      }
+  const [mpConnected, setMpConnected] = useState(false);
+  const [hasPublicLink, setHasPublicLink] = useState(false);
 
-      try {
-        const data = await clubService.getClub(profile.club_id);
-        setClub(data);
-      } catch (error) {
-        console.error("No se pudo cargar el complejo:", error);
-        setClub(null);
-      }
+  useEffect(() => {
+  async function loadClub() {
+    if (!profile?.club_id) {
+      setClub(null);
+      return;
     }
+
+    try {
+      const [clubData, mp] = await Promise.all([
+        clubService.getClub(profile.club_id),
+        mercadoPagoService.getConnection(profile.club_id),
+      ]);
+
+      setClub(clubData);
+
+      setMpConnected(Boolean(mp?.active));
+      setHasPublicLink(Boolean(clubData?.slug));
+    } catch (error) {
+      console.error(error);
+    }
+  }
 
     loadClub();
   }, [profile?.club_id]);
@@ -134,7 +144,9 @@ export default function DashboardHome() {
         <WelcomeCard />
 
         {profile.role === "admin" && (
-          <MercadoPagoConnectionCard clubId={profile.club_id} />
+          <div id="mercado-pago-connection">
+            <MercadoPagoConnectionCard clubId={profile.club_id} />
+          </div>
         )}
       </div>
 
@@ -181,6 +193,9 @@ export default function DashboardHome() {
       <SetupChecklist
         hasResources={stats.resources > 0}
         hasWorkingHours={stats.hasWorkingHours}
+        hasMercadoPago={mpConnected}
+        hasPublicLink={hasPublicLink}
+        hasReservations={todayReservations.length > 0}
       />
     </Page>
   );

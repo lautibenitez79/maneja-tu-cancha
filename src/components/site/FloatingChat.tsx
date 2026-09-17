@@ -191,8 +191,8 @@ export function FloatingChat() {
                       }}
                       className={
                         message.type === "support"
-                          ? "max-w-[85%] rounded-[var(--radius-card)] text-[var(--color-text)] rounded-tl-sm bg-secondary px-3 py-2 text-foreground"
-                          : "ml-auto max-w-[85%] rounded-[var(--radius-card)] text-[var(--color-text)] rounded-tr-sm bg-primary px-3 py-2 text-primary-foreground"
+                          ? "max-w-[85%] rounded-[var(--radius-card)] text-[var(--color-title)] rounded-tl-sm bg-secondary px-3 py-2 text-foreground"
+                          : "ml-auto max-w-[85%] rounded-[var(--radius-card)] text-[var(--color-title)] rounded-tr-sm bg-primary px-3 py-2 text-primary-foreground"
                       }
                     >
                       {message.text}
@@ -209,7 +209,7 @@ export function FloatingChat() {
                       onClick={() =>
                         handleQuickQuestion(question)
                       }
-                      className="w-full rounded-xl border border-border bg-background px-3 py-2 text-left text-xs text-foreground transition hover:border-primary hover:text-primary"
+                      className="w-full rounded-xl border border-border bg-background px-3 py-2 text-left text-xs text-[var(--color-title)] transition hover:border-primary hover:text-primary"
                     >
                       {question}
                     </button>

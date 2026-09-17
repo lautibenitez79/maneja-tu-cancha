@@ -267,7 +267,7 @@ export default function StepCapacity({
               ? "Creando..."
               : "Guardando..."
             : mode === "create"
-              ? "Crear recurso"
+              ? "Crear cancha"
               : "Guardar cambios"}
         </Button>
       </div>

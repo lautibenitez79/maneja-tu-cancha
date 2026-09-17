@@ -964,7 +964,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
 
         payment = mpData;
-        sellerAccount = account;
 
         break;
       } catch (error) {
@@ -1007,32 +1006,32 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
      * ---------------------------------------------------------
      */
 
-    if (!sellerAccount) {
-      console.error("No se pudo determinar el vendedor.");
+    // if (!sellerAccount) {
+    //   console.error("No se pudo determinar el vendedor.");
 
-      return res.status(200).json({
-        ok: false,
-        payment_found: true,
-        error: "No se pudo determinar el vendedor",
-      });
-    }
+    //   return res.status(200).json({
+    //     ok: false,
+    //     payment_found: true,
+    //     error: "No se pudo determinar el vendedor",
+    //   });
+    // }
 
-    if (
-      payment.collector_id &&
-      String(payment.collector_id) !== String(sellerAccount.mp_user_id)
-    ) {
-      console.error("INCONSISTENCIA DE VENDEDOR:", {
-        payment_collector_id: payment.collector_id,
-        account_mp_user_id: sellerAccount.mp_user_id,
-        club_id: sellerAccount.club_id,
-      });
+    // if (
+    //   payment.collector_id &&
+    //   String(payment.collector_id) !== String(sellerAccount.mp_user_id)
+    // ) {
+    //   console.error("INCONSISTENCIA DE VENDEDOR:", {
+    //     payment_collector_id: payment.collector_id,
+    //     account_mp_user_id: sellerAccount.mp_user_id,
+    //     club_id: sellerAccount.club_id,
+    //   });
 
-      return res.status(200).json({
-        ok: false,
-        payment_found: true,
-        error: "El vendedor del pago no coincide con la cuenta conectada",
-      });
-    }
+    //   return res.status(200).json({
+    //     ok: false,
+    //     payment_found: true,
+    //     error: "El vendedor del pago no coincide con la cuenta conectada",
+    //   });
+    // }
 
     /*
      * ---------------------------------------------------------
@@ -1136,6 +1135,78 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
        * 7.2 Validar club
        * ---------------------------------------------------------
        */
+
+      const { data: feeSellerAccount, error: feeSellerAccountError } =
+        await supabaseAdmin
+          .from("club_marketplace_accounts")
+          .select(
+            `
+            club_id,
+            mp_user_id,
+            access_token,
+            refresh_token,
+            token_type,
+            scope,
+            expires_at,
+            active
+            `,
+          )
+          .eq("club_id", fee.club_id)
+          .eq("provider", "mercadopago")
+          .eq("active", true)
+          .maybeSingle();
+
+      if (feeSellerAccountError) {
+        console.error(
+          "Error buscando cuenta Mercado Pago de la cuota:",
+          feeSellerAccountError,
+        );
+
+        return res.status(200).json({
+          ok: false,
+          payment_found: true,
+          fee_found: true,
+          error: "Error buscando cuenta Mercado Pago del club",
+        });
+      }
+
+      if (!feeSellerAccount) {
+        console.error("El club de la cuota no tiene Mercado Pago conectado:", {
+          club_id: fee.club_id,
+          fee_id: fee.id,
+          payment_id: payment.id,
+        });
+
+        return res.status(200).json({
+          ok: false,
+          payment_found: true,
+          fee_found: true,
+          error: "El club de la cuota no tiene una cuenta de Mercado Pago conectada",
+        });
+      }
+
+      sellerAccount = feeSellerAccount;
+
+      if (
+        payment.collector_id &&
+        String(payment.collector_id) !== String(sellerAccount.mp_user_id)
+      ) {
+        console.error("INCONSISTENCIA DE VENDEDOR EN CUOTA:", {
+          payment_collector_id: payment.collector_id,
+          account_mp_user_id: sellerAccount.mp_user_id,
+          club_id: sellerAccount.club_id,
+          fee_id: fee.id,
+          payment_id: payment.id,
+        });
+
+        return res.status(200).json({
+          ok: false,
+          payment_found: true,
+          fee_found: true,
+          error:
+            "El vendedor del pago no coincide con la cuenta Mercado Pago de la cuota",
+        });
+      }
 
       if (fee.club_id !== sellerAccount.club_id) {
         console.error("INCONSISTENCIA DE CLUB EN CUOTA:", {
@@ -1482,6 +1553,83 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         external_reference: externalReference,
       });
     }
+
+    const { 
+      data: reservationSellerAccount, 
+      error: reservationSellerAccountError 
+    } = await supabaseAdmin
+          .from("club_marketplace_accounts")
+          .select(
+            `
+            club_id,
+            mp_user_id,
+            access_token,
+            refresh_token,
+            token_type,
+            scope,
+            expires_at,
+            active
+            `,
+          )
+          .eq("club_id", reservation.club_id)
+          .eq("provider", "mercadopago")
+          .eq("active", true)
+          .maybeSingle();
+
+  if (reservationSellerAccountError) {
+    console.error(
+      "Error buscando cuenta Mercado Pago de la reserva:",
+      reservationSellerAccountError,
+    );
+
+    return res.status(200).json({
+      ok: false,
+      payment_found: true,
+      reservation_found: true,
+      error: "Error buscando cuenta Mercado Pago del club",
+    });
+  }
+
+  if (!reservationSellerAccount) {
+    console.error(
+      "La reserva pertenece a un club sin cuenta Mercado Pago conectada:",
+      {
+        club_id: reservation.club_id,
+        reservation_id: reservation.id,
+        payment_id: payment.id,
+      },
+    );
+
+    return res.status(200).json({
+      ok: false,
+      payment_found: true,
+      reservation_found: true,
+      error: "El club de la reserva no tiene una cuenta de Mercado Pago conectada",
+    });
+  }
+
+  sellerAccount = reservationSellerAccount;
+
+  if (
+    payment.collector_id &&
+    String(payment.collector_id) !== String(sellerAccount.mp_user_id)
+  ) {
+    console.error("INCONSISTENCIA DE VENDEDOR EN RESERVA:", {
+      payment_collector_id: payment.collector_id,
+      account_mp_user_id: sellerAccount.mp_user_id,
+      club_id: sellerAccount.club_id, 
+      reservation_id: reservation.id,
+      payment_id: payment.id,
+    });
+
+    return res.status(200).json({
+      ok: false,
+      payment_found: true,
+      reservation_found: true,
+      error:
+        "El vendedor del pago no coincide con la cuenta Mercado Pago de la reserva",
+    });
+  }
 
     /*
      * ---------------------------------------------------------
