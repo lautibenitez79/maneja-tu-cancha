@@ -1101,7 +1101,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           customer_email,
           total_visits,
           total_amount,
-          deposit_amount,
           start_time,
           end_time,
           starts_on,
