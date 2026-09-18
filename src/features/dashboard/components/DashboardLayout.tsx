@@ -32,7 +32,7 @@ export default function DashboardLayout() {
 
       {/* MOBILE / TABLET */}
       <div className="flex min-h-screen flex-col lg:hidden">
-        <header className="sticky top-0 z-40 flex h-16 items-center justify-between border-b bg-[var(--color-card)] px-4">
+        <header className="sticky top-0 z-40 flex h-16 items-center justify-between px-4">
           <button
             type="button"
             onClick={() => setMobileOpen((value) => !value)}
@@ -44,15 +44,11 @@ export default function DashboardLayout() {
             }
           >
             {mobileOpen ? (
-              <X className="h-5 w-5" />
+              <X className="h-5 w-5 " />
             ) : (
               <Menu className="h-5 w-5" />
             )}
           </button>
-
-          <span className="text-base font-bold text-[var(--color-primary)]">
-            Maneja Tu Cancha
-          </span>
 
           <div className="w-9" />
         </header>

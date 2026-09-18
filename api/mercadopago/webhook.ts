@@ -1096,14 +1096,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           `
           id,
           club_id,
+          resource_id,
           customer_name,
           customer_email,
           total_visits,
           total_amount,
+          deposit_amount,
+          start_time,
+          end_time,
+          starts_on,
+          ends_on,
           payment_status,
           payment_id,
           status
-          `,
+        `,
         )
         .eq("id", feeId)
         .maybeSingle();
@@ -1181,7 +1187,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           ok: false,
           payment_found: true,
           fee_found: true,
-          error: "El club de la cuota no tiene una cuenta de Mercado Pago conectada",
+          error:
+            "El club de la cuota no tiene una cuenta de Mercado Pago conectada",
         });
       }
 
@@ -1379,6 +1386,113 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           payment_id: payment.id,
         });
 
+        /*
+         * ---------------------------------------------------------
+         * Email de confirmación de cuota
+         * ---------------------------------------------------------
+         */
+
+        if (payment.status === "approved" && fee.customer_email) {
+          try {
+            const [{ data: club }, { data: resource }] = await Promise.all([
+              supabaseAdmin
+                .from("clubs")
+                .select("name, timezone")
+                .eq("id", fee.club_id)
+                .maybeSingle(),
+
+              supabaseAdmin
+                .from("resources")
+                .select("name")
+                .eq("id", fee.resource_id)
+                .maybeSingle(),
+            ]);
+
+            if (!club) {
+              console.error(
+                "No se pudo obtener el club para el email de cuota.",
+                fee.club_id,
+              );
+            } else if (!resource) {
+              console.error(
+                "No se pudo obtener el recurso para el email de cuota.",
+                fee.resource_id,
+              );
+            } else {
+              /*
+               * Usamos la primera fecha de la cuota
+               * y el horario configurado para sus turnos.
+               */
+
+              const firstDate = new Date(`${fee.starts_on}T${fee.start_time}`);
+
+              const date = firstDate.toLocaleDateString("es-AR", {
+                day: "2-digit",
+                month: "2-digit",
+                year: "numeric",
+                timeZone: club.timezone,
+              });
+
+              const startTime = fee.start_time?.slice(0, 5);
+              const endTime = fee.end_time?.slice(0, 5);
+
+              const email = reservationConfirmedTemplate({
+                customerName: fee.customer_name,
+                clubName: club.name,
+                resourceName: resource.name,
+                date,
+                startTime,
+                endTime,
+                amount: Number(fee.total_amount ?? 0),
+                depositAmount: Number(fee.total_amount ?? 0),
+              });
+
+              const appUrl = process.env.PUBLIC_APP_URL?.replace(/\/+$/, "");
+
+              if (!appUrl) {
+                console.error(
+                  "Falta PUBLIC_APP_URL. No se puede enviar el email de cuota.",
+                );
+              } else {
+                const emailResponse = await fetch(
+                  `${appUrl}/api/notifications/send-email`,
+                  {
+                    method: "POST",
+                    headers: {
+                      "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                      to: fee.customer_email,
+                      subject: email.subject,
+                      html: email.html,
+                    }),
+                  },
+                );
+
+                const emailData = await emailResponse.json();
+
+                if (!emailResponse.ok) {
+                  console.error(
+                    "No se pudo enviar el email de cuota:",
+                    emailData,
+                  );
+                } else {
+                  console.log("Email de confirmación de cuota enviado:", {
+                    fee_id: fee.id,
+                    email: fee.customer_email,
+                    email_id: emailData?.id,
+                  });
+                }
+              }
+            }
+          } catch (emailError) {
+            console.error(
+              "Error enviando email de confirmación de cuota:",
+              emailError,
+            );
+          }
+        }
+
         return res.status(200).json({
           ok: true,
           payment_found: true,
@@ -1554,13 +1668,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
     }
 
-    const { 
-      data: reservationSellerAccount, 
-      error: reservationSellerAccountError 
+    const {
+      data: reservationSellerAccount,
+      error: reservationSellerAccountError,
     } = await supabaseAdmin
-          .from("club_marketplace_accounts")
-          .select(
-            `
+      .from("club_marketplace_accounts")
+      .select(
+        `
             club_id,
             mp_user_id,
             access_token,
@@ -1570,66 +1684,67 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             expires_at,
             active
             `,
-          )
-          .eq("club_id", reservation.club_id)
-          .eq("provider", "mercadopago")
-          .eq("active", true)
-          .maybeSingle();
+      )
+      .eq("club_id", reservation.club_id)
+      .eq("provider", "mercadopago")
+      .eq("active", true)
+      .maybeSingle();
 
-  if (reservationSellerAccountError) {
-    console.error(
-      "Error buscando cuenta Mercado Pago de la reserva:",
-      reservationSellerAccountError,
-    );
+    if (reservationSellerAccountError) {
+      console.error(
+        "Error buscando cuenta Mercado Pago de la reserva:",
+        reservationSellerAccountError,
+      );
 
-    return res.status(200).json({
-      ok: false,
-      payment_found: true,
-      reservation_found: true,
-      error: "Error buscando cuenta Mercado Pago del club",
-    });
-  }
+      return res.status(200).json({
+        ok: false,
+        payment_found: true,
+        reservation_found: true,
+        error: "Error buscando cuenta Mercado Pago del club",
+      });
+    }
 
-  if (!reservationSellerAccount) {
-    console.error(
-      "La reserva pertenece a un club sin cuenta Mercado Pago conectada:",
-      {
-        club_id: reservation.club_id,
+    if (!reservationSellerAccount) {
+      console.error(
+        "La reserva pertenece a un club sin cuenta Mercado Pago conectada:",
+        {
+          club_id: reservation.club_id,
+          reservation_id: reservation.id,
+          payment_id: payment.id,
+        },
+      );
+
+      return res.status(200).json({
+        ok: false,
+        payment_found: true,
+        reservation_found: true,
+        error:
+          "El club de la reserva no tiene una cuenta de Mercado Pago conectada",
+      });
+    }
+
+    sellerAccount = reservationSellerAccount;
+
+    if (
+      payment.collector_id &&
+      String(payment.collector_id) !== String(sellerAccount.mp_user_id)
+    ) {
+      console.error("INCONSISTENCIA DE VENDEDOR EN RESERVA:", {
+        payment_collector_id: payment.collector_id,
+        account_mp_user_id: sellerAccount.mp_user_id,
+        club_id: sellerAccount.club_id,
         reservation_id: reservation.id,
         payment_id: payment.id,
-      },
-    );
+      });
 
-    return res.status(200).json({
-      ok: false,
-      payment_found: true,
-      reservation_found: true,
-      error: "El club de la reserva no tiene una cuenta de Mercado Pago conectada",
-    });
-  }
-
-  sellerAccount = reservationSellerAccount;
-
-  if (
-    payment.collector_id &&
-    String(payment.collector_id) !== String(sellerAccount.mp_user_id)
-  ) {
-    console.error("INCONSISTENCIA DE VENDEDOR EN RESERVA:", {
-      payment_collector_id: payment.collector_id,
-      account_mp_user_id: sellerAccount.mp_user_id,
-      club_id: sellerAccount.club_id, 
-      reservation_id: reservation.id,
-      payment_id: payment.id,
-    });
-
-    return res.status(200).json({
-      ok: false,
-      payment_found: true,
-      reservation_found: true,
-      error:
-        "El vendedor del pago no coincide con la cuenta Mercado Pago de la reserva",
-    });
-  }
+      return res.status(200).json({
+        ok: false,
+        payment_found: true,
+        reservation_found: true,
+        error:
+          "El vendedor del pago no coincide con la cuenta Mercado Pago de la reserva",
+      });
+    }
 
     /*
      * ---------------------------------------------------------
