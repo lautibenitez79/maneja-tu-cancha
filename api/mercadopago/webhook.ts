@@ -1392,6 +1392,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
          * ---------------------------------------------------------
          */
 
+        console.log("Datos de email de cuota:", {
+          fee_id: fee.id,
+          customer_email: fee.customer_email,
+          customer_name: fee.customer_name,
+        });
+
         if (payment.status === "approved" && fee.customer_email) {
           try {
             const [{ data: club }, { data: resource }] = await Promise.all([
