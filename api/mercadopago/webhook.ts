@@ -1101,6 +1101,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           customer_email,
           total_visits,
           total_amount,
+          visit_days,
+          confirmation_email_sent_at,
           start_time,
           end_time,
           starts_on,
@@ -1399,94 +1401,124 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
         if (payment.status === "approved" && fee.customer_email) {
           try {
-            const [{ data: club }, { data: resource }] = await Promise.all([
-              supabaseAdmin
-                .from("clubs")
-                .select("name, timezone")
-                .eq("id", fee.club_id)
-                .maybeSingle(),
+            const { data: emailClaim, error: emailClaimError } =
+              await supabaseAdmin
+                .from("gym_monthly_fees")
+                .update({
+                  confirmation_email_sent_at: new Date().toISOString(),
+                })
+                .eq("id", fee.id)
+                .is("confirmation_email_sent_at", null)
+                .select("id")
+                .maybeSingle();
 
-              supabaseAdmin
-                .from("resources")
-                .select("name")
-                .eq("id", fee.resource_id)
-                .maybeSingle(),
-            ]);
-
-            if (!club) {
+            if (emailClaimError) {
               console.error(
-                "No se pudo obtener el club para el email de cuota.",
-                fee.club_id,
+                "Error reclamando email de confirmación de cuota:",
+                emailClaimError,
               );
-            } else if (!resource) {
-              console.error(
-                "No se pudo obtener el recurso para el email de cuota.",
-                fee.resource_id,
-              );
+            } else if (!emailClaim) {
+              console.log("Email de cuota ya enviado:", {
+                fee_id: fee.id,
+              });
             } else {
-              /*
-               * Usamos la primera fecha de la cuota
-               * y el horario configurado para sus turnos.
-               */
+              const [{ data: club }, { data: resource }] = await Promise.all([
+                supabaseAdmin
+                  .from("clubs")
+                  .select("name")
+                  .eq("id", fee.club_id)
+                  .maybeSingle(),
 
-              const firstDate = new Date(`${fee.starts_on}T${fee.start_time}`);
+                supabaseAdmin
+                  .from("resources")
+                  .select("name")
+                  .eq("id", fee.resource_id)
+                  .maybeSingle(),
+              ]);
 
-              const date = firstDate.toLocaleDateString("es-AR", {
-                day: "2-digit",
-                month: "2-digit",
-                year: "numeric",
-                timeZone: club.timezone,
-              });
-
-              const startTime = fee.start_time?.slice(0, 5);
-              const endTime = fee.end_time?.slice(0, 5);
-
-              const email = reservationConfirmedTemplate({
-                customerName: fee.customer_name,
-                clubName: club.name,
-                resourceName: resource.name,
-                date,
-                startTime,
-                endTime,
-                amount: Number(fee.total_amount ?? 0),
-                depositAmount: Number(fee.total_amount ?? 0),
-              });
-
-              const appUrl = process.env.PUBLIC_APP_URL?.replace(/\/+$/, "");
-
-              if (!appUrl) {
+              if (!club) {
                 console.error(
-                  "Falta PUBLIC_APP_URL. No se puede enviar el email de cuota.",
+                  "No se pudo obtener el club para el email de cuota.",
+                  fee.club_id,
+                );
+              } else if (!resource) {
+                console.error(
+                  "No se pudo obtener el recurso para el email de cuota.",
+                  fee.resource_id,
                 );
               } else {
-                const emailResponse = await fetch(
-                  `${appUrl}/api/notifications/send-email`,
-                  {
-                    method: "POST",
-                    headers: {
-                      "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify({
-                      to: fee.customer_email,
-                      subject: email.subject,
-                      html: email.html,
-                    }),
-                  },
-                );
+                const dayNames = [
+                  "Domingo",
+                  "Lunes",
+                  "Martes",
+                  "Miércoles",
+                  "Jueves",
+                  "Viernes",
+                  "Sábado",
+                ];
 
-                const emailData = await emailResponse.json();
+                const reservedDays = (fee.visit_days ?? [])
+                  .map((day: number) => dayNames[day])
+                  .filter(Boolean);
 
-                if (!emailResponse.ok) {
+                const startTime = fee.start_time?.slice(0, 5) ?? "";
+                const endTime = fee.end_time?.slice(0, 5) ?? "";
+
+                const email = reservationConfirmedTemplate({
+                  customerName: fee.customer_name,
+                  clubName: club.name,
+                  resourceName: resource.name,
+                  date: `${fee.starts_on} al ${fee.ends_on}`,
+                  startTime,
+                  endTime,
+                  amount: Number(fee.total_amount ?? 0),
+                  depositAmount: Number(fee.total_amount ?? 0),
+                  days: reservedDays,
+                });
+
+                const appUrl = process.env.PUBLIC_APP_URL?.replace(/\/+$/, "");
+
+                if (!appUrl) {
                   console.error(
-                    "No se pudo enviar el email de cuota:",
-                    emailData,
+                    "Falta PUBLIC_APP_URL. No se puede enviar el email de cuota.",
                   );
                 } else {
-                  console.log("Email de confirmación de cuota enviado:", {
-                    fee_id: fee.id,
-                    email: fee.customer_email,
-                    email_id: emailData?.id,
-                  });
+                  const emailResponse = await fetch(
+                    `${appUrl}/api/notifications/send-email`,
+                    {
+                      method: "POST",
+                      headers: {
+                        "Content-Type": "application/json",
+                      },
+                      body: JSON.stringify({
+                        to: fee.customer_email,
+                        subject: email.subject,
+                        html: email.html,
+                      }),
+                    },
+                  );
+
+                  const emailData = await emailResponse.json();
+
+                  if (!emailResponse.ok) {
+                    console.error(
+                      "No se pudo enviar el email de cuota:",
+                      emailData,
+                    );
+
+                    await supabaseAdmin
+                      .from("gym_monthly_fees")
+                      .update({
+                        confirmation_email_sent_at: null,
+                      })
+                      .eq("id", fee.id);
+                  } else {
+                    console.log("Email de confirmación de cuota enviado:", {
+                      fee_id: fee.id,
+                      email: fee.customer_email,
+                      email_id: emailData?.id,
+                    });
+                  }
                 }
               }
             }
@@ -2000,10 +2032,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             const emailData = await emailResponse.json();
 
             if (!emailResponse.ok) {
-              console.error(
-                "No se pudo enviar el email de reserva confirmada:",
-                emailData,
-              );
+              console.error("No se pudo enviar el email de cuota:", emailData);
             } else {
               console.log("Email de reserva confirmada enviado:", {
                 reservation_id: reservation.id,
@@ -2015,7 +2044,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
       } catch (emailError) {
         console.error(
-          "Error enviando email de reserva confirmada:",
+          "Error enviando email de confirmación de cuota:",
           emailError,
         );
       }

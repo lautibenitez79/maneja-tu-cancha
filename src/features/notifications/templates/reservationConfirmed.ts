@@ -7,6 +7,7 @@ interface ReservationConfirmedTemplateData {
   endTime: string;
   amount: number;
   depositAmount: number;
+  days?: string[];
 }
 
 function formatCurrency(value: number): string {
@@ -122,10 +123,26 @@ export function reservationConfirmedTemplate(
                   ${data.resourceName}
                 </p>
 
-                <p style="margin: 0 0 12px;">
-                  <strong>Fecha:</strong>
-                  ${data.date}
-                </p>
+                ${
+                  data.days && data.days.length > 0
+                    ? `
+                      <p style="margin: 0 0 12px;">
+                        <strong>Días reservados:</strong>
+                        ${data.days.join(" y ")}
+                      </p>
+
+                      <p style="margin: 0 0 12px;">
+                        <strong>Período:</strong>
+                        ${data.date}
+                      </p>
+                    `
+                    : `
+                      <p style="margin: 0 0 12px;">
+                        <strong>Fecha:</strong>
+                        ${data.date}
+                      </p>
+                    `
+                }
 
                 <p style="margin: 0 0 12px;">
                   <strong>Horario:</strong>
