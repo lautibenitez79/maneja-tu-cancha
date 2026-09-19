@@ -57,11 +57,11 @@ class PublicBookingService {
       .eq("active", true)
       .order("created_at");
 
-      console.log("PUBLIC RESOURCES", {
-        clubId,
-        data,
-        error,
-      });
+      // console.log("PUBLIC RESOURCES", {
+      //   clubId,
+      //   data,
+      //   error,
+      // });
 
     if (error) {
       throw error;

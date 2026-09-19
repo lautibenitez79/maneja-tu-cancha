@@ -103,6 +103,8 @@ export default function PublicBookingPage() {
 
         setClub(clubData);
         setResources(resourceData);
+
+        console.log("STATE RESOURCES", resourceData);
       } catch (error) {
         console.error(error);
 
