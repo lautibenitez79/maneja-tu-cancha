@@ -191,8 +191,8 @@ export function FloatingChat() {
                       }}
                       className={
                         message.type === "support"
-                          ? "max-w-[85%] rounded-[var(--radius-card)] text-[var(--color-title)] rounded-tl-sm bg-secondary px-3 py-2 text-foreground"
-                          : "ml-auto max-w-[85%] rounded-[var(--radius-card)] text-[var(--color-title)] rounded-tr-sm bg-primary px-3 py-2 text-primary-foreground"
+                          ? "max-w-[85%] rounded-[var(--radius-card)] text-[var(--color-title)] rounded-tl-sm bg-secondary px-3 py-2"
+                          : "ml-auto max-w-[85%] rounded-[var(--radius-card)] text-[var(--color-title)] rounded-tr-sm bg-primary px-3 py-2"
                       }
                     >
                       {message.text}
