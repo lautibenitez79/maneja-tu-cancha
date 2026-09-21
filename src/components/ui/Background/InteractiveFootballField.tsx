@@ -14,7 +14,6 @@ export default function InteractiveFootballField({
   className = "",
 }: InteractiveFootballFieldProps) {
   const fieldRef = useRef<HTMLDivElement | null>(null);
-  const draggingRef = useRef(false);
   const goalLockedRef = useRef(false);
 
   const [score, setScore] = useState({
@@ -34,7 +33,13 @@ export default function InteractiveFootballField({
 
     if (!field) return;
 
-    function handlePointerDown(event: PointerEvent) {
+    function handlePointerMove(event: PointerEvent) {
+      // Solo queremos interacción con mouse en desktop.
+      if (event.pointerType !== "mouse") return;
+
+      // No ejecutar nada en mobile.
+      if (window.matchMedia("(max-width: 767px)").matches) return;
+
       const rect = field!.getBoundingClientRect();
 
       if (!rect.width || !rect.height) return;
@@ -46,44 +51,6 @@ export default function InteractiveFootballField({
         event.clientY <= rect.bottom;
 
       if (!isInside) return;
-
-      // Mouse: ya funciona de forma libre.
-      // Touch/pen: comienza el arrastre.
-      if (event.pointerType !== "mouse") {
-        draggingRef.current = true;
-      }
-    }
-
-    function handlePointerUp() {
-      draggingRef.current = false;
-    }
-
-    function handlePointerMove(event: PointerEvent) {
-      const rect = field!.getBoundingClientRect();
-
-      if (!rect.width || !rect.height) return;
-
-      const isInside =
-        event.clientX >= rect.left &&
-        event.clientX <= rect.right &&
-        event.clientY >= rect.top &&
-        event.clientY <= rect.bottom;
-
-      /*
-       * En desktop:
-       * la pelota sigue al mouse mientras está sobre la cancha.
-       *
-       * En mobile:
-       * la pelota solamente se mueve mientras mantenemos
-       * el dedo presionado y arrastramos.
-       */
-      if (event.pointerType !== "mouse" && !draggingRef.current) {
-        return;
-      }
-
-      if (!isInside) {
-        return;
-      }
 
       const x = ((event.clientX - rect.left) / rect.width) * 100;
       const y = ((event.clientY - rect.top) / rect.height) * 100;
@@ -97,74 +64,10 @@ export default function InteractiveFootballField({
       });
 
       /*
-       * DETECCIÓN DE GOLES
+       * DETECCIÓN DE GOLES DESKTOP
        *
-       * Desktop:
-       *   arco izquierdo  -> visitante
-       *   arco derecho    -> local
-       *
-       * Mobile:
-       *   arco superior   -> visitante
-       *   arco inferior   -> local
-       */
-
-      const isMobile = window.matchMedia("(max-width: 767px)").matches;
-
-      if (isMobile) {
-        /*
-         * CANCHA VERTICAL
-         *
-         * El arco superior ocupa aproximadamente
-         * el 0-10% de la altura.
-         *
-         * El arco inferior ocupa aproximadamente
-         * el 90-100% de la altura.
-         *
-         * Limitamos el ancho al centro de la cancha.
-         */
-
-        const insideGoalX = normalizedX >= 38 && normalizedX <= 62;
-
-        const topGoal = normalizedY <= 7 && insideGoalX;
-        const bottomGoal = normalizedY >= 93 && insideGoalX;
-
-        if (!topGoal && !bottomGoal) {
-          goalLockedRef.current = false;
-          setLastGoal(null);
-          return;
-        }
-
-        if (goalLockedRef.current) {
-          return;
-        }
-
-        goalLockedRef.current = true;
-
-        if (topGoal) {
-          // Gol para el visitante
-          setScore((current) => ({
-            ...current,
-            visitante: current.visitante + 1,
-          }));
-
-          setLastGoal("visitante");
-        }
-
-        if (bottomGoal) {
-          // Gol para el local
-          setScore((current) => ({
-            ...current,
-            local: current.local + 1,
-          }));
-
-          setLastGoal("local");
-        }
-
-        return;
-      }
-
-      /*
-       * CANCHA HORIZONTAL / DESKTOP
+       * Arco izquierdo -> visitante
+       * Arco derecho   -> local
        */
 
       const insideGoalY = normalizedY >= 34 && normalizedY <= 66;
@@ -185,7 +88,6 @@ export default function InteractiveFootballField({
       goalLockedRef.current = true;
 
       if (leftGoal) {
-        // Gol para el visitante
         setScore((current) => ({
           ...current,
           visitante: current.visitante + 1,
@@ -195,7 +97,6 @@ export default function InteractiveFootballField({
       }
 
       if (rightGoal) {
-        // Gol para el local
         setScore((current) => ({
           ...current,
           local: current.local + 1,
@@ -205,38 +106,27 @@ export default function InteractiveFootballField({
       }
     }
 
-    window.addEventListener("pointerdown", handlePointerDown);
     window.addEventListener("pointermove", handlePointerMove);
-    window.addEventListener("pointerup", handlePointerUp);
-    window.addEventListener("pointercancel", handlePointerUp);
 
     return () => {
-      window.removeEventListener("pointerdown", handlePointerDown);
       window.removeEventListener("pointermove", handlePointerMove);
-      window.removeEventListener("pointerup", handlePointerUp);
-      window.removeEventListener("pointercancel", handlePointerUp);
     };
   }, []);
-
-  const isMobile =
-    typeof window !== "undefined" &&
-    window.matchMedia("(max-width: 767px)").matches;
 
   return (
     <div
       ref={fieldRef}
       className={`relative isolate h-full w-full overflow-hidden bg-black ${className}`}
-      style={{
-        touchAction: isMobile ? "none" : "auto",
-      }}
     >
       {/* CANCHA */}
       <picture className="absolute inset-0 block h-full w-full">
+        {/* MOBILE */}
         <source
           media="(max-width: 767px)"
           srcSet={mobileImageSrc}
         />
 
+        {/* DESKTOP */}
         <img
           src={desktopImageSrc}
           alt=""
@@ -248,12 +138,11 @@ export default function InteractiveFootballField({
       {/* CAPA BLANCO Y NEGRO */}
       <div className="pointer-events-none absolute inset-0 bg-black/20 mix-blend-multiply" />
 
-      {/* MARCADOR */}
-      <div className="pointer-events-none absolute left-1/2 top-5 z-20 -translate-x-1/2">
-        
-      </div>
+      {/* ====================================================== */}
+      {/* TODO LO SIGUIENTE ES EXCLUSIVO DE DESKTOP             */}
+      {/* ====================================================== */}
 
-      {/* ZONAS DE GOL DESKTOP */}
+      {/* ZONA DE GOL IZQUIERDA */}
       <div
         className={`pointer-events-none absolute left-0 top-[34%] z-10 hidden h-[32%] w-[7%] border-y border-r transition md:block ${
           lastGoal === "visitante"
@@ -262,6 +151,7 @@ export default function InteractiveFootballField({
         }`}
       />
 
+      {/* ZONA DE GOL DERECHA */}
       <div
         className={`pointer-events-none absolute right-0 top-[34%] z-10 hidden h-[32%] w-[7%] border-y border-l transition md:block ${
           lastGoal === "local"
@@ -270,26 +160,9 @@ export default function InteractiveFootballField({
         }`}
       />
 
-      {/* ZONAS DE GOL MOBILE */}
-      <div
-        className={`pointer-events-none absolute left-[38%] top-0 z-10 block h-[7%] w-[24%] border-x border-b transition md:hidden ${
-          lastGoal === "visitante"
-            ? "border-white bg-white/20"
-            : "border-transparent"
-        }`}
-      />
-
-      <div
-        className={`pointer-events-none absolute bottom-0 left-[38%] z-10 block h-[7%] w-[24%] border-x border-t transition md:hidden ${
-          lastGoal === "local"
-            ? "border-white bg-white/20"
-            : "border-transparent"
-        }`}
-      />
-
       {/* PELOTA */}
       <div
-        className="pointer-events-none absolute z-30 -translate-x-1/2 -translate-y-1/2"
+        className="pointer-events-none absolute z-30 hidden -translate-x-1/2 -translate-y-1/2 md:block"
         style={{
           left: `${ballPosition.x}%`,
           top: `${ballPosition.y}%`,
@@ -305,8 +178,8 @@ export default function InteractiveFootballField({
         </div>
       </div>
 
-      {/* TEXTO DE AYUDA */}
-      <div className="pointer-events-none absolute bottom-5 left-1/2 z-20 -translate-x-1/2">
+      {/* MARCADOR */}
+      <div className="pointer-events-none absolute bottom-5 left-1/2 z-20 hidden -translate-x-1/2 md:block">
         <div className="flex items-center gap-4 rounded-full border border-white/30 bg-black/75 px-5 py-2.5 text-white backdrop-blur-md">
           <span className="text-xs font-medium uppercase tracking-[0.18em]">
             Local

@@ -88,6 +88,14 @@ class PublicBookingService {
       .eq("resource_id", resourceId)
       .order("day_of_week");
 
+  //     console.log("SUPABASE AUTH STATE", await supabase.auth.getSession());
+
+  // console.log("WORKING HOURS RAW", {
+  //   resourceId,
+  //   data,
+  //   error,
+  // });
+
     if (error) {
       throw error;
     }

@@ -104,7 +104,7 @@ export default function PublicBookingPage() {
         setClub(clubData);
         setResources(resourceData);
 
-        console.log("STATE RESOURCES", resourceData);
+        // console.log("STATE RESOURCES", resourceData);
       } catch (error) {
         console.error(error);
 
@@ -161,6 +161,12 @@ export default function PublicBookingPage() {
         const data = await publicBookingService.getWorkingHours(
           selectedResource.id,
         );
+
+        // console.log("PUBLIC WORKING HOURS", {
+        //   resourceId: selectedResource.id,
+        //   data,
+        //   error: null,
+        // });
 
         setWorkingHours(data);
 
@@ -513,7 +519,7 @@ export default function PublicBookingPage() {
 
     const duration = selectedResource?.reservation_duration ?? 60;
 
-    const availableByDay = selectedGymWorkingHours.map((day) => {
+    const rangesByDay = selectedGymWorkingHours.map((day) => {
       const ranges: Array<[number, number]> = [];
 
       function addRange(startValue: string | null, endValue: string | null) {
@@ -522,14 +528,20 @@ export default function PublicBookingPage() {
         }
 
         const open = timeToMinutes(startValue);
-
         let close = timeToMinutes(endValue);
 
-        if (close === 0 && open > 0) {
+        // 00:00 → 00:00 = jornada completa
+        if (open === 0 && close === 0) {
           close = 1440;
         }
 
-        if (open === 0 && close === 0) {
+        // Ej: 01:00 → 01:00 = jornada completa
+        if (close === open && open > 0) {
+          close = 1440;
+        }
+
+        // Horario que cruza medianoche
+        if (close < open) {
           close = 1440;
         }
 
@@ -538,35 +550,61 @@ export default function PublicBookingPage() {
         }
       }
 
-      // Primer bloque: 09:00 → 13:00
       addRange(day.opens_at, day.closes_at);
-
-      // Segundo bloque: 16:00 → 21:00
       addRange(day.reopens_at, day.final_closes_at);
 
-      const result = new Set<string>();
-
-      for (const [open, close] of ranges) {
-        for (
-          let minutes = open;
-          minutes + duration <= close;
-          minutes += duration
-        ) {
-          result.add(minutesToTime(minutes));
-        }
-      }
-
-      return result;
+      return ranges;
     });
 
-    if (availableByDay.length === 0) {
+    if (rangesByDay.length === 0) {
       return [];
     }
 
-    // Solo mostramos horarios que existen en TODOS los días seleccionados.
-    return Array.from(availableByDay[0]).filter((time) =>
-      availableByDay.every((times) => times.has(time)),
-    );
+    /*
+     * Encontramos las ventanas que existen simultáneamente
+     * en todos los días seleccionados.
+     */
+    let commonRanges = rangesByDay[0];
+
+    for (let dayIndex = 1; dayIndex < rangesByDay.length; dayIndex++) {
+      const nextRanges = rangesByDay[dayIndex];
+
+      const intersections: Array<[number, number]> = [];
+
+      for (const [startA, endA] of commonRanges) {
+        for (const [startB, endB] of nextRanges) {
+          const start = Math.max(startA, startB);
+          const end = Math.min(endA, endB);
+
+          if (end > start) {
+            intersections.push([start, end]);
+          }
+        }
+      }
+
+      commonRanges = intersections;
+
+      if (commonRanges.length === 0) {
+        return [];
+      }
+    }
+
+    /*
+     * Generamos los turnos dentro de las ventanas comunes.
+     */
+    const result = new Set<string>();
+
+    for (const [open, close] of commonRanges) {
+      for (
+        let minutes = open;
+        minutes + duration <= close;
+        minutes += duration
+      ) {
+        result.add(minutesToTime(minutes));
+      }
+    }
+
+    return Array.from(result).sort();
   }
 
   useEffect(() => {
