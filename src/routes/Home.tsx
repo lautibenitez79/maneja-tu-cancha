@@ -46,6 +46,7 @@ const benefits = [
 
 function Home() {
   const [theme, setTheme] = useState<"light" | "dark">("light");
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     const savedTheme = localStorage.getItem("theme");
@@ -53,6 +54,22 @@ function Home() {
     if (savedTheme === "dark" || savedTheme === "light") {
       setTheme(savedTheme);
     }
+  }, []);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(max-width: 767px)");
+
+    const updateMobile = () => {
+      setIsMobile(mediaQuery.matches);
+    };
+
+    updateMobile();
+
+    mediaQuery.addEventListener("change", updateMobile);
+
+    return () => {
+      mediaQuery.removeEventListener("change", updateMobile);
+    };
   }, []);
   return (
     <SiteLayout>
@@ -88,33 +105,43 @@ function Home() {
         <div className="absolute left-1/2 top-24 z-[2] -z-0 h-[550px] w-[550px] -translate-x-1/2 rounded-full bg-primary/20 blur-[140px]" />
 
         <div className="relative z-10 mx-auto flex w-full max-w-7xl flex-col items-center px-6 text-center mt-14 mb-4 md:mt-2 mb-2">
-          <WarpText
-            text="Administrá tu cancha"
-            warpStrength={0.08}
-            warpScale={1.7}
-            speed={1.05}
-            pointerInfluence={0.42}
-            pointerStrength={0.38}
-            refraction={0.018}
-            ripple
-            fontSize={82}
-            fontWeight={600}
-            style={{ color: "text-[var(--color-title)]" }}
-            fontFamily="inherit"
-            letterSpacing={0}
-            lineHeight={0.9}
-          />
+          {isMobile ? (
+            <h1 className="text-5xl font-semibold leading-[0.95] tracking-tight text-[var(--color-title)]">
+              Administrá tu cancha
+            </h1>
+          ) : (
+            <WarpText
+              text="Administrá tu cancha"
+              warpStrength={0.08}
+              warpScale={1.7}
+              speed={1.05}
+              pointerInfluence={0.42}
+              pointerStrength={0.38}
+              refraction={0.018}
+              ripple
+              fontSize={82}
+              fontWeight={600}
+              style={{ color: "text-[var(--color-title)]" }}
+              fontFamily="inherit"
+              letterSpacing={0}
+              lineHeight={0.9}
+            />
+          )}
 
           <div className="mt-6 h-10 text-base font-semibold md:text-2xl md:mt-10">
-            <Typewriter
-              words={[
-                "Reservas online.",
-                "Clientes.",
-                "Pagos.",
-                "Estadísticas.",
-                "Administración completa desde cualquier dispositivo.",
-              ]}
-            />
+            {!isMobile && (
+              <div className="mt-6 h-10 text-base font-semibold md:text-2xl md:mt-10">
+                <Typewriter
+                  words={[
+                    "Reservas online.",
+                    "Clientes.",
+                    "Pagos.",
+                    "Estadísticas.",
+                    "Administración completa desde cualquier dispositivo.",
+                  ]}
+                />
+              </div>
+            )}
           </div>
 
           <motion.div
