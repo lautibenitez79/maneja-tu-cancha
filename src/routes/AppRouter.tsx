@@ -4,6 +4,7 @@ import Home from "./Home";
 import Login from "./Login";
 import Contacto from "./Contacto";
 import QuienesSomos from "./QuienesSomos";
+import Funcionabilidades from "./Funcionabilidades";
 import ProtectedRoute from "../features/auth/components/ProtectedRoute";
 import RoleRoute from "../features/auth/components/RoleRoute";
 import DashboardGate from "@/features/dashboard/components/DashboardGate";
@@ -25,6 +26,7 @@ import SubscriptionPage from "@/features/subscription/pages/SubscriptionPage";
 import ClubSettingsPage from "@/features/clubs/pages/ClubSettingsPage";
 import ReservationsPage from "@/features/reservations/pages/ReservationsPage";
 
+
 export function AppRouter() {
   return (
     <Routes>
@@ -42,6 +44,11 @@ export function AppRouter() {
       <Route
         path="/quienes-somos"
         element={<QuienesSomos />}
+      />
+
+      <Route
+        path="/funcionabilidades"
+        element={<Funcionabilidades />}
       />
 
       <Route

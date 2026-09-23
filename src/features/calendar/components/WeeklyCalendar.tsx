@@ -6,6 +6,7 @@ import type {
   CalendarCell as CalendarCellType,
   CalendarWeek,
 } from "../types/calendar.types";
+
 import React, { Fragment } from "react";
 
 interface Props {
@@ -23,7 +24,36 @@ function WeeklyCalendar({
     return null;
   }
 
-  const rows = week.days[0].cells.length;
+  /*
+   * Obtenemos todos los horarios que existen
+   * durante la semana.
+   */
+  const hours = Array.from(
+    new Set(
+      week.days.flatMap((day) =>
+        day.cells.map((cell) => cell.hour),
+      ),
+    ),
+  );
+
+  /*
+   * Ordenamos los horarios cronológicamente.
+   */
+  hours.sort((a, b) => {
+    const [aHour, aMinute] = a
+      .split(":")
+      .map(Number);
+
+    const [bHour, bMinute] = b
+      .split(":")
+      .map(Number);
+
+    return (
+      aHour * 60 +
+      aMinute -
+      (bHour * 60 + bMinute)
+    );
+  });
 
   return (
     <div className="w-full overflow-x-auto rounded-xl border">
@@ -36,27 +66,89 @@ function WeeklyCalendar({
       >
         <CalendarHeader days={week.days} />
 
-        {Array.from({ length: rows }).map(
-          (_, row) => (
-            <Fragment key={row}>
-              <CalendarHour
-                hour={
-                  week.days[0]
-                    .cells[row].hour
-                }
-              />
+        {hours.map((hour) => {
+          /*
+           * Buscamos una celda real de cualquier día
+           * para conocer el horario de finalización.
+           *
+           * Por ejemplo:
+           * 13:00 -> 14:00
+           */
+          const referenceCell =
+            week.days
+              .flatMap((day) => day.cells)
+              .find(
+                (cell) =>
+                  cell.hour === hour,
+              );
 
-              {week.days.map((day) => (
-                <CalendarCell
-                  key={`${day.date}-${row}`}
-                  cell={day.cells[row]}
-                  onClick={onCellClick}
-                  isGym={isGym}
-                />
-              ))}
+          return (
+            <Fragment key={hour}>
+              <CalendarHour hour={hour} />
+
+              {week.days.map((day) => {
+                const cell = day.cells.find(
+                  (dayCell) =>
+                    dayCell.hour === hour,
+                );
+
+                /*
+                 * Si el día tiene ese horario,
+                 * usamos la celda real.
+                 *
+                 * Esto conserva todos los estados
+                 * originales:
+                 * Disponible
+                 * Reservado
+                 * Pendiente
+                 * Bloqueado
+                 */
+                if (cell) {
+                  return (
+                    <CalendarCell
+                      key={`${day.date}-${hour}`}
+                      cell={cell}
+                      onClick={onCellClick}
+                      isGym={isGym}
+                    />
+                  );
+                }
+
+                /*
+                 * Si el día NO tiene ese horario,
+                 * mostramos una celda CERRADA.
+                 *
+                 * NO usamos un div gris.
+                 * Usamos exactamente la misma estructura
+                 * visual que CalendarCell.
+                 */
+                return (
+                  <button
+                    key={`${day.date}-${hour}`}
+                    type="button"
+                    disabled
+                    className="h-16 w-full border-b border-r bg-[var(--color-card)] px-2 transition flex flex-col items-center justify-center gap-1 text-slate-400 cursor-not-allowed opacity-70"
+                  >
+                    <span className="text-xs font-medium opacity-70">
+                      {hour}
+                      {" → "}
+                      {referenceCell
+                        ? referenceCell.ends_at.substring(
+                            11,
+                            16,
+                          )
+                        : ""}
+                    </span>
+
+                    <span className="text-sm">
+                      Cerrado
+                    </span>
+                  </button>
+                );
+              })}
             </Fragment>
-          ),
-        )}
+          );
+        })}
       </div>
     </div>
   );

@@ -36,12 +36,16 @@ const steps = [
 ];
 
 const benefits = [
-  "Reservas online",
-  "Gestión de clientes",
-  "Control de horarios",
-  "Pagos online",
-  "Estadísticas en tiempo real",
-  "Acceso desde cualquier dispositivo",
+  "Sistema de gestión de turnos",
+  "Gestión de caja y stock",
+  "Reportes estadísticos",
+  "Multiusuario",
+  "Multiplataforma (celular, pc, tablet)",
+  "Información de las canchas",
+  "Automatización de reservas",
+  "Soporte 24/7",
+  "Asesoramiento para optimizar tu club",
+
 ];
 
 function Home() {
@@ -408,7 +412,7 @@ function Home() {
 
       {/* BENEFICIOS */}
 
-      <section className="relative overflow-hidden border-t border-border/60 py-32">
+      <section className="relative overflow-hidden border-t border-border/60 py-28">
         <div className="absolute inset-0 -z-10 bg-gradient-to-b from-secondary/20 via-background to-background" />
 
         <div className="mx-auto max-w-7xl px-6">
@@ -418,9 +422,6 @@ function Home() {
             viewport={{ once: true }}
             className="mx-auto max-w-3xl text-center"
           >
-            <span className="rounded-full border border-primary/20 bg-primary/10 px-4 py-2 text-sm font-medium text-primary">
-              Todo incluido
-            </span>
 
             <h2 className="mt-8 text-4xl font-black tracking-tight md:text-6xl">
               Todo lo que necesitás
@@ -434,7 +435,7 @@ function Home() {
             </p>
           </motion.div>
 
-          <div className="mt-20 grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+          <div className="mt-20 grid gap-6 md:grid-cols-2 xl:grid-cols-5">
             {benefits.map((benefit, index) => (
               <motion.div
                 key={benefit}
@@ -446,22 +447,64 @@ function Home() {
                 }}
                 className="group relative overflow-hidden rounded-3xl border border-border bg-card p-7 transition-all duration-300 hover:-translate-y-2 hover:border-primary/40 hover:shadow-[0_20px_80px_rgba(59,130,246,.15)]"
               >
-                <div className="absolute right-0 top-0 h-28 w-28 rounded-full bg-primary/10 blur-3xl transition-all duration-500 group-hover:bg-primary/20" />
+                <div className="absolute right-0 top-0 h-25 w-25 rounded-full bg-primary/10 blur-3xl transition-all duration-500 group-hover:bg-primary/20" />
 
-                <div className="relative">
+                <div className="relative text-center flex flex-col items-center">
                   <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-[var(--radius-card)] bg-primary/10">
                     <Check className="h-7 w-7 text-primary" />
                   </div>
 
                   <h3 className="text-xl font-semibold">{benefit}</h3>
-
-                  <p className="mt-4 text-sm leading-7 text-muted-foreground">
-                    Todo lo que necesitás para administrar tu complejo de forma
-                    simple y profesional.
-                  </p>
                 </div>
               </motion.div>
             ))}
+          </div>
+          <div className="mx-auto mt-20 max-w-3xl text-center">
+            <Link to="/funcionabilidades">
+                {theme === "dark" ? (
+                  <SpecularButton
+                    size="lg"
+                    radius={18}
+                    tint="#ffffff"
+                    tintOpacity={0}
+                    blur={0}
+                    textColor="#ffffff"
+                    lineColor="#ffffff"
+                    baseColor="#2b7fff"
+                    intensity={1}
+                    shineSize={10}
+                    shineFade={40}
+                    thickness={1}
+                    speed={0.35}
+                    followMouse
+                    proximity={250}
+                    autoAnimate={false}
+                  >
+                    Ver funcionabilidades
+                  </SpecularButton>
+                ) : (
+                  <SpecularButton
+                    size="lg"
+                    radius={18}
+                    tint="#ffffff"
+                    tintOpacity={0}
+                    blur={0}
+                    textColor="text-[var(--color-title)]"
+                    lineColor="text-[var(--color-title)]"
+                    baseColor="#2b7fff"
+                    intensity={1}
+                    shineSize={10}
+                    shineFade={40}
+                    thickness={1}
+                    speed={0.35}
+                    followMouse
+                    proximity={250}
+                    autoAnimate={false}
+                  >
+                    Ver funcionabilidades
+                  </SpecularButton>
+                )}
+            </Link>
           </div>
         </div>
       </section>
