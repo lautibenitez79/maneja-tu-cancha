@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 
 import { useAuth } from "@/hooks/useAuth";
@@ -12,65 +12,80 @@ interface Props {
   children: ReactNode;
 }
 
-interface SaasSubscription {
-  status: "trialing" | "active" | "past_due" | "cancelled" | "expired";
-  trial_ends_at: string | null;
-  current_period_end: string | null;
-  access_type: "paid" | "complimentary";
-  access_until: string | null;
-}
-
-function hasSubscriptionAccess(
-  subscription: SaasSubscription | null,
-): boolean {
-  if (!subscription) {
-    return false;
-  }
-
-  const now = Date.now();
-
-  if (subscription.access_type === "complimentary") {
-    if (!subscription.access_until) {
-      return subscription.status === "active";
-    }
-
-    return (
-      subscription.status === "active" &&
-      new Date(subscription.access_until).getTime() > now
-    );
-  }
-
-  if (subscription.status === "trialing") {
-    if (!subscription.trial_ends_at) {
-      return false;
-    }
-
-    return new Date(subscription.trial_ends_at).getTime() > now;
-  }
-
-  if (subscription.status === "active") {
-    if (!subscription.current_period_end) {
-      return false;
-    }
-
-    return new Date(subscription.current_period_end).getTime() > now;
-  }
-
-  return false;
-}
-
 export default function DashboardGate({
   children,
 }: Props) {
   const { loading, profile } = useAuth();
-
   const location = useLocation();
 
-  const [subscriptionLoading, setSubscriptionLoading] = useState(true);
+  const [subscriptionLoading, setSubscriptionLoading] =
+    useState(true);
   const [hasAccess, setHasAccess] = useState(false);
 
-  const checkedClubIdRef = useRef<string | null>(null);
+  const isSubscriptionPage =
+    location.pathname === "/dashboard/subscription";
 
+  const checkSubscriptionAccess = useCallback(
+    async (showLoading = false) => {
+      if (!profile?.club_id || isSubscriptionPage) {
+        if (showLoading) {
+          setSubscriptionLoading(false);
+        }
+
+        return;
+      }
+
+      if (showLoading) {
+        setSubscriptionLoading(true);
+      }
+
+      try {
+        /*
+         * La base de datos es la fuente de verdad.
+         *
+         * Supabase evalúa nuevamente:
+         * - trial_ends_at
+         * - current_period_end
+         * - access_until
+         * - status
+         * - access_type
+         *
+         * usando now() en el servidor.
+         */
+        const { data, error } = await supabase.rpc(
+          "has_subscription_access",
+        );
+
+        if (error) {
+          throw error;
+        }
+
+        setHasAccess(data === true);
+      } catch (error) {
+        console.error(
+          "Error verificando acceso a la suscripción:",
+          error,
+        );
+
+        /*
+         * Fail closed:
+         * si no podemos comprobar el acceso,
+         * no damos acceso al dashboard.
+         */
+        setHasAccess(false);
+      } finally {
+        if (showLoading) {
+          setSubscriptionLoading(false);
+        }
+      }
+    },
+    [profile?.club_id, isSubscriptionPage],
+  );
+
+  /*
+   * Primera comprobación y comprobación cada vez
+   * que cambia la sección del dashboard.
+   */
   useEffect(() => {
     if (loading) {
       return;
@@ -78,67 +93,93 @@ export default function DashboardGate({
 
     if (!profile?.club_id) {
       setSubscriptionLoading(false);
-      checkedClubIdRef.current = null;
+      setHasAccess(false);
       return;
     }
 
-    const clubId = profile.club_id;
+    if (isSubscriptionPage) {
+      setSubscriptionLoading(false);
+      setHasAccess(true);
+      return;
+    }
 
-    async function checkSubscription() {
-      const isFirstCheckForClub =
-        checkedClubIdRef.current !== clubId;
+    checkSubscriptionAccess(true);
+  }, [
+    loading,
+    profile?.club_id,
+    isSubscriptionPage,
+    checkSubscriptionAccess,
+  ]);
 
-      if (isFirstCheckForClub) {
-        setSubscriptionLoading(true);
-      }
+  /*
+   * Comprobación periódica.
+   *
+   * Esto permite detectar que el trial venció aunque
+   * el usuario deje la aplicación abierta durante días.
+   */
+  useEffect(() => {
+    if (
+      loading ||
+      !profile?.club_id ||
+      isSubscriptionPage
+    ) {
+      return;
+    }
 
-      try {
-        const { data, error } = await supabase
-          .from("saas_subscriptions")
-          .select(`
-            status,
-            trial_ends_at,
-            current_period_end,
-            access_type,
-            access_until
-          `)
-          .eq("club_id", clubId)
-          .maybeSingle();
+    const interval = window.setInterval(() => {
+      checkSubscriptionAccess(false);
+    }, 10 * 60_000);
 
-        if (error) {
-          throw error;
-        }
+    return () => {
+      window.clearInterval(interval);
+    };
+  }, [
+    loading,
+    profile?.club_id,
+    isSubscriptionPage,
+    checkSubscriptionAccess,
+  ]);
 
-        setHasAccess(
-          hasSubscriptionAccess(
-            data as SaasSubscription | null,
-          ),
-        );
+  /*
+   * Cuando el usuario vuelve a la pestaña,
+   * comprobamos inmediatamente el acceso.
+   *
+   * Ejemplo:
+   * dejó la pestaña abierta durante 2 horas,
+   * volvió y el trial había vencido.
+   */
+  useEffect(() => {
+    if (
+      loading ||
+      !profile?.club_id ||
+      isSubscriptionPage
+    ) {
+      return;
+    }
 
-        checkedClubIdRef.current = clubId;
-      } catch (error) {
-        console.error(
-          "Error verificando suscripción:",
-          error,
-        );
-
-        /*
-         * Si ya teníamos una verificación anterior,
-         * mantenemos el acceso actual y no bloqueamos
-         * visualmente el dashboard por un error temporal.
-         */
-        if (isFirstCheckForClub) {
-          setHasAccess(false);
-        }
-      } finally {
-        if (isFirstCheckForClub) {
-          setSubscriptionLoading(false);
-        }
+    function handleVisibilityChange() {
+      if (document.visibilityState === "visible") {
+        checkSubscriptionAccess(false);
       }
     }
 
-    checkSubscription();
-  }, [loading, profile?.club_id]);
+    document.addEventListener(
+      "visibilitychange",
+      handleVisibilityChange,
+    );
+
+    return () => {
+      document.removeEventListener(
+        "visibilitychange",
+        handleVisibilityChange,
+      );
+    };
+  }, [
+    loading,
+    profile?.club_id,
+    isSubscriptionPage,
+    checkSubscriptionAccess,
+  ]);
 
   if (loading || subscriptionLoading) {
     return <Loading />;
@@ -148,10 +189,18 @@ export default function DashboardGate({
     return <CreateClubWizard />;
   }
 
-  if (
-    !hasAccess &&
-    location.pathname !== "/dashboard/subscription"
-  ) {
+  /*
+   * La página de suscripción siempre queda accesible.
+   */
+  if (isSubscriptionPage) {
+    return <>{children}</>;
+  }
+
+  /*
+   * Si la base de datos indica que no tiene acceso,
+   * lo enviamos a la página de suscripción.
+   */
+  if (!hasAccess) {
     return (
       <Navigate
         to="/dashboard/subscription"
