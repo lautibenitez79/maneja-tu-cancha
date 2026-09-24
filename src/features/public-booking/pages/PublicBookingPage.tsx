@@ -50,6 +50,11 @@ export default function PublicBookingPage() {
   const [selectedSlot, setSelectedSlot] = useState<PublicAvailableSlot | null>(
     null,
   );
+  
+  const resourceTypeLabels: Record<string, string> = {
+  football: "Fútbol",
+  gym: "Gimnasio",
+};
 
   const [workingHours, setWorkingHours] = useState<PublicWorkingHour[]>([]);
 
@@ -746,8 +751,8 @@ export default function PublicBookingPage() {
                           {resource.name}
                         </h3>
 
-                        <p className="mt-1 text-sm capitalize text-slate-500">
-                          {resource.type}
+                        <p className="mt-1 text-sm text-slate-500">
+                          {resourceTypeLabels[resource.type] ?? resource.type}
                         </p>
                       </div>
 
