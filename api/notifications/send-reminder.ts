@@ -1,5 +1,6 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { createClient } from "@supabase/supabase-js";
+import { requireAdmin } from "../_lib/auth";
 
 import { reservationReminderTemplate } from "../../src/features/notifications/templates/reservationReminder.js";
 
@@ -10,38 +11,39 @@ if (!supabaseUrl || !supabaseServiceRoleKey) {
   throw new Error("Faltan SUPABASE_URL o SUPABASE_SERVICE_ROLE_KEY");
 }
 
-const supabaseAdmin = createClient(
-  supabaseUrl,
-  supabaseServiceRoleKey
-);
+const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey);
 
-const RESEND_FROM =
-  "Maneja Tu Cancha <notificaciones@manejatucancha.com.ar>";
+const RESEND_FROM = "Maneja Tu Cancha <notificaciones@manejatucancha.com.ar>";
 
-async function sendReminder(reservationId: string) {
+async function sendReminder(reservationId: string, expectedClubId?: string) {
   // Buscar reserva
+  const reservationQuery = supabaseAdmin
+    .from("reservations")
+    .select(
+      `
+    id,
+    club_id,
+    resource_id,
+    customer_name,
+    customer_email,
+    starts_at,
+    ends_at,
+    status,
+    payment_status,
+    reminder_sent_at
+  `,
+    )
+    .eq("id", reservationId);
+
+  if (expectedClubId) {
+    reservationQuery.eq("club_id", expectedClubId);
+  }
+
   const { data: reservation, error: reservationError } =
-    await supabaseAdmin
-      .from("reservations")
-      .select(`
-        id,
-        club_id,
-        resource_id,
-        customer_name,
-        customer_email,
-        starts_at,
-        ends_at,
-        status,
-        payment_status,
-        reminder_sent_at
-      `)
-      .eq("id", reservationId)
-      .maybeSingle();
+    await reservationQuery.maybeSingle();
 
   if (reservationError) {
-    throw new Error(
-      `Error buscando reserva: ${reservationError.message}`
-    );
+    throw new Error(`Error buscando reserva: ${reservationError.message}`);
   }
 
   if (!reservation) {
@@ -54,7 +56,7 @@ async function sendReminder(reservationId: string) {
     reservation.payment_status !== "approved"
   ) {
     throw new Error(
-      `La reserva no está confirmada y pagada. status=${reservation.status}, payment_status=${reservation.payment_status}`
+      `La reserva no está confirmada y pagada. status=${reservation.status}, payment_status=${reservation.payment_status}`,
     );
   }
 
@@ -62,26 +64,26 @@ async function sendReminder(reservationId: string) {
     throw new Error("La reserva no tiene email del cliente.");
   }
 
-// Reclamar el recordatorio de forma atómica
-const { data: claimedReservationId, error: claimError } =
-  await supabaseAdmin.rpc("claim_reservation_reminder", {
-    p_reservation_id: reservation.id,
-  });
+  // Reclamar el recordatorio de forma atómica
+  const { data: claimedReservationId, error: claimError } =
+    await supabaseAdmin.rpc("claim_reservation_reminder", {
+      p_reservation_id: reservation.id,
+    });
 
-if (claimError) {
-  throw new Error(
-    `No se pudo reclamar el recordatorio: ${claimError.message}`
-  );
-}
+  if (claimError) {
+    throw new Error(
+      `No se pudo reclamar el recordatorio: ${claimError.message}`,
+    );
+  }
 
-if (!claimedReservationId) {
-  return {
-    skipped: true,
-    reason: "already_sent",
-    reservation_id: reservation.id,
-    email: reservation.customer_email,
-  };
-}
+  if (!claimedReservationId) {
+    return {
+      skipped: true,
+      reason: "already_sent",
+      reservation_id: reservation.id,
+      email: reservation.customer_email,
+    };
+  }
 
   // Buscar club
   const { data: club, error: clubError } = await supabaseAdmin
@@ -91,9 +93,7 @@ if (!claimedReservationId) {
     .maybeSingle();
 
   if (clubError) {
-    throw new Error(
-      `Error buscando club: ${clubError.message}`
-    );
+    throw new Error(`Error buscando club: ${clubError.message}`);
   }
 
   if (!club) {
@@ -101,17 +101,14 @@ if (!claimedReservationId) {
   }
 
   // Buscar recurso
-  const { data: resource, error: resourceError } =
-    await supabaseAdmin
-      .from("resources")
-      .select("name")
-      .eq("id", reservation.resource_id)
-      .maybeSingle();
+  const { data: resource, error: resourceError } = await supabaseAdmin
+    .from("resources")
+    .select("name")
+    .eq("id", reservation.resource_id)
+    .maybeSingle();
 
   if (resourceError) {
-    throw new Error(
-      `Error buscando recurso: ${resourceError.message}`
-    );
+    throw new Error(`Error buscando recurso: ${resourceError.message}`);
   }
 
   if (!resource) {
@@ -154,34 +151,27 @@ if (!claimedReservationId) {
   const apiKey = process.env.RESEND_API_KEY;
 
   if (!apiKey) {
-    throw new Error(
-      "Resend no está configurado correctamente."
-    );
+    throw new Error("Resend no está configurado correctamente.");
   }
 
-  const resendResponse = await fetch(
-    "https://api.resend.com/emails",
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        from: RESEND_FROM,
-        to: [reservation.customer_email],
-        subject: email.subject,
-        html: email.html,
-      }),
-    }
-  );
+  const resendResponse = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      from: RESEND_FROM,
+      to: [reservation.customer_email],
+      subject: email.subject,
+      html: email.html,
+    }),
+  });
 
   const resendData = await resendResponse.json();
 
   if (!resendResponse.ok) {
-    throw new Error(
-      `Resend rechazó el email: ${JSON.stringify(resendData)}`
-    );
+    throw new Error(`Resend rechazó el email: ${JSON.stringify(resendData)}`);
   }
 
   return {
@@ -193,10 +183,7 @@ if (!claimedReservationId) {
   };
 }
 
-export default async function handler(
-  req: VercelRequest,
-  res: VercelResponse
-) {
+export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== "POST") {
     return res.status(405).json({
       error: "Method not allowed",
@@ -206,35 +193,36 @@ export default async function handler(
   try {
     const { reservation_id } = req.body ?? {};
 
+    // ------------------------------------------
+    // MODO MANUAL
+    // ------------------------------------------
+    if (reservation_id) {
+      const admin = await requireAdmin(req);
 
-// ------------------------------------------
-// MODO MANUAL
-// ------------------------------------------
-if (reservation_id) {
-  const result = await sendReminder(reservation_id);
+      const result = await sendReminder(reservation_id, admin.clubId);
 
-  return res.status(200).json(result);
-}
+      return res.status(200).json(result);
+    }
 
-// ------------------------------------------
-// MODO AUTOMÁTICO
-// ------------------------------------------
+    // ------------------------------------------
+    // MODO AUTOMÁTICO
+    // ------------------------------------------
 
-const cronSecret = process.env.CRON_SECRET;
+    const cronSecret = process.env.CRON_SECRET;
 
-if (!cronSecret) {
-  return res.status(500).json({
-    error: "CRON_SECRET no está configurado.",
-  });
-}
+    if (!cronSecret) {
+      return res.status(500).json({
+        error: "CRON_SECRET no está configurado.",
+      });
+    }
 
-const authorization = req.headers.authorization;
+    const authorization = req.headers.authorization;
 
-if (authorization !== `Bearer ${cronSecret}`) {
-  return res.status(401).json({
-    error: "No autorizado.",
-  });
-}
+    if (authorization !== `Bearer ${cronSecret}`) {
+      return res.status(401).json({
+        error: "No autorizado.",
+      });
+    }
 
     // ------------------------------------------
     // MODO AUTOMÁTICO
@@ -247,13 +235,9 @@ if (authorization !== `Bearer ${cronSecret}`) {
     //
     // Esto permite que el proceso automático
     // encuentre reservas cercanas a las 24 horas.
-    const from = new Date(
-    now.getTime() + 24 * 60 * 60 * 1000
-    );
+    const from = new Date(now.getTime() + 24 * 60 * 60 * 1000);
 
-    const to = new Date(
-    now.getTime() + 48 * 60 * 60 * 1000
-    );
+    const to = new Date(now.getTime() + 48 * 60 * 60 * 1000);
 
     const { data: reservations, error } = await supabaseAdmin
       .from("reservations")
@@ -286,10 +270,7 @@ if (authorization !== `Bearer ${cronSecret}`) {
         results.push({
           success: false,
           reservation_id: reservation.id,
-          error:
-            error instanceof Error
-              ? error.message
-              : "Error desconocido",
+          error: error instanceof Error ? error.message : "Error desconocido",
         });
       }
     }
@@ -301,6 +282,30 @@ if (authorization !== `Bearer ${cronSecret}`) {
     });
   } catch (error) {
     console.error("Error en send-reminder:", error);
+
+    if (error instanceof Error) {
+      switch (error.message) {
+        case "AUTH_MISSING":
+          return res.status(401).json({
+            error: "Falta el token de autenticación.",
+          });
+
+        case "AUTH_INVALID":
+          return res.status(401).json({
+            error: "Sesión inválida o expirada.",
+          });
+
+        case "ADMIN_REQUIRED":
+          return res.status(403).json({
+            error: "Necesitás permisos de administrador.",
+          });
+
+        case "PROFILE_ERROR":
+          return res.status(500).json({
+            error: "No se pudo validar el perfil.",
+          });
+      }
+    }
 
     return res.status(500).json({
       error:

@@ -6,6 +6,17 @@ export type ResourceType =
   | "gym"
   | "room";
 
+export type ResourceSurface =
+  | "synthetic"
+  | "floor";
+
+export type FootballFormat =
+  | "5"
+  | "7"
+  | "8"
+  | "9"
+  | "11";
+
 export interface Resource {
   id: string;
 
@@ -24,6 +35,13 @@ export interface Resource {
   price: number;
   
   deposit_amount: number;
+
+  // Características
+  covered: boolean | null;
+  surface: ResourceSurface | null;
+  football_format: FootballFormat | null;
+  lighting: boolean | null;
+  beelup: boolean | null;
 
   active: boolean;
 
@@ -44,4 +62,11 @@ export interface CreateResourceForm {
   price: number;
 
   deposit_amount: number;
+
+  // Características
+  covered: boolean | null;
+  surface: ResourceSurface | null;
+  football_format: FootballFormat | null;
+  lighting: boolean | null;
+  beelup: boolean | null;
 }

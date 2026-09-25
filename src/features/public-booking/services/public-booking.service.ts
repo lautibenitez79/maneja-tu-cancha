@@ -49,6 +49,20 @@ class PublicBookingService {
     return data;
   }
 
+  async getClubServices(clubId: string): Promise<string[]> {
+    const { data, error } = await supabase
+      .from("club_services")
+      .select("service")
+      .eq("club_id", clubId)
+      .order("service");
+
+    if (error) {
+      throw error;
+    }
+
+    return (data ?? []).map((item) => item.service);
+  }
+
   async getResources(clubId: string): Promise<Resource[]> {
     const { data, error } = await supabase
       .from("resources")
@@ -57,11 +71,11 @@ class PublicBookingService {
       .eq("active", true)
       .order("created_at");
 
-      // console.log("PUBLIC RESOURCES", {
-      //   clubId,
-      //   data,
-      //   error,
-      // });
+    // console.log("PUBLIC RESOURCES", {
+    //   clubId,
+    //   data,
+    //   error,
+    // });
 
     if (error) {
       throw error;
@@ -88,13 +102,13 @@ class PublicBookingService {
       .eq("resource_id", resourceId)
       .order("day_of_week");
 
-  //     console.log("SUPABASE AUTH STATE", await supabase.auth.getSession());
+    //     console.log("SUPABASE AUTH STATE", await supabase.auth.getSession());
 
-  // console.log("WORKING HOURS RAW", {
-  //   resourceId,
-  //   data,
-  //   error,
-  // });
+    // console.log("WORKING HOURS RAW", {
+    //   resourceId,
+    //   data,
+    //   error,
+    // });
 
     if (error) {
       throw error;
@@ -151,19 +165,19 @@ class PublicBookingService {
   }
 
   async createGymMonthlyFee({
-  clubId,
-  resourceId,
-  customerName,
-  customerPhone,
-  customerEmail,
-  startsOn,
-  endsOn,
-  visitsPerWeek,
-  visitDays,
-  startTime,
-  endTime,
-  totalAmount,
-}: CreateGymMonthlyFeeInput) {
+    clubId,
+    resourceId,
+    customerName,
+    customerPhone,
+    customerEmail,
+    startsOn,
+    endsOn,
+    visitsPerWeek,
+    visitDays,
+    startTime,
+    endTime,
+    totalAmount,
+  }: CreateGymMonthlyFeeInput) {
     const { data, error } = await supabase.rpc("create_gym_monthly_fee", {
       p_club_id: clubId,
       p_resource_id: resourceId,

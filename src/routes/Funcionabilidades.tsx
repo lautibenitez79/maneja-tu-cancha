@@ -1,4 +1,5 @@
 import { Header } from "@/components/site/Header";
+import { Footer } from "@/components/site/Footer";
 import {
   BarChart3,
   CalendarDays,
@@ -416,6 +417,7 @@ export default function Funcionalidades() {
           </a>
         </section>
       </main>
+      <Footer></Footer>
     </div>
   );
 }

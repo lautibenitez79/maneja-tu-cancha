@@ -5,6 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 
 import ProgressBar from "./ProgressBar";
 import StepInfo from "./StepInfo";
+import StepCharacteristics from "./StepCharacteristics";
 import StepSchedule from "./StepSchedule";
 import StepCapacity from "./StepCapacity";
 
@@ -17,12 +18,11 @@ import {
   RESOURCE_STEPS,
   TOTAL_RESOURCE_STEPS,
 } from "../../utils/resource.steps";
+
 import { toast } from "sonner";
 import { createEmptyWeek } from "../../utils/createEmptyWeek";
 import { workingHoursToSchedule } from "../../utils/workingHoursToSchedule";
-
 import { weekToWorkingHours } from "../../utils/weekToWorkingHours";
-
 import { getReservationDuration } from "../../utils/getReservationDuration";
 
 interface Props {
@@ -30,7 +30,10 @@ interface Props {
   resourceId?: string;
 }
 
-export default function ResourceWizard({ mode = "create", resourceId }: Props) {
+export default function ResourceWizard({
+  mode = "create",
+  resourceId,
+}: Props) {
   const navigate = useNavigate();
 
   const { profile } = useAuth();
@@ -46,6 +49,12 @@ export default function ResourceWizard({ mode = "create", resourceId }: Props) {
     reservation_duration: 60,
     price: 0,
     deposit_amount: 0,
+
+    covered: null,
+    surface: null,
+    football_format: null,
+    lighting: null,
+    beelup: null,
   });
 
   const [week, setWeek] = useState(createEmptyWeek());
@@ -72,11 +81,19 @@ export default function ResourceWizard({ mode = "create", resourceId }: Props) {
           reservation_duration: resource.reservation_duration,
           price: resource.price ?? 0,
           deposit_amount: resource.deposit_amount ?? 0,
+
+          covered: resource.covered ?? null,
+          surface: resource.surface ?? null,
+          football_format: resource.football_format ?? null,
+          lighting: resource.lighting ?? null,
+          beelup: resource.beelup ?? null,
         });
 
         setWeek(workingHoursToSchedule(hours));
       } catch (error) {
         console.error(error);
+
+        toast.error("No se pudo cargar el recurso.");
       } finally {
         setLoading(false);
       }
@@ -102,6 +119,33 @@ export default function ResourceWizard({ mode = "create", resourceId }: Props) {
           newType === "gym"
             ? 60
             : getReservationDuration(newType);
+
+        /*
+         * Limpiamos las características que no corresponden
+         * al nuevo tipo de recurso.
+         */
+
+        if (
+          newType !== "football" &&
+          newType !== "padel" &&
+          newType !== "tennis" &&
+          newType !== "gym"
+        ) {
+          next.covered = null;
+        }
+
+        if (
+          newType !== "football" &&
+          newType !== "padel"
+        ) {
+          next.surface = null;
+        }
+
+        if (newType !== "football") {
+          next.football_format = null;
+          next.lighting = null;
+          next.beelup = null;
+        }
       }
 
       return next;
@@ -141,22 +185,36 @@ export default function ResourceWizard({ mode = "create", resourceId }: Props) {
       let resourceIdToSave = resourceId;
 
       if (mode === "create") {
-        const resource = await resourceService.create(profile.club_id, {
-          ...form,
-          reservation_duration: form.reservation_duration,
-          capacity: form.type === "gym" ? form.capacity : 1,
-        });
+        const resource = await resourceService.create(
+          profile.club_id,
+          {
+            ...form,
+            reservation_duration:
+              form.reservation_duration,
+            capacity:
+              form.type === "gym"
+                ? form.capacity
+                : 1,
+          },
+        );
 
         resourceIdToSave = resource.id;
       } else {
         await resourceService.update(resourceId!, {
           ...form,
-          reservation_duration: form.reservation_duration,
-          capacity: form.type === "gym" ? form.capacity : 1,
+          reservation_duration:
+            form.reservation_duration,
+          capacity:
+            form.type === "gym"
+              ? form.capacity
+              : 1,
         });
       }
 
-      await workingHoursService.save(resourceIdToSave!, workingHours);
+      await workingHoursService.save(
+        resourceIdToSave!,
+        workingHours,
+      );
 
       toast.success(
         mode === "create"
@@ -171,7 +229,11 @@ export default function ResourceWizard({ mode = "create", resourceId }: Props) {
       if (error instanceof Error) {
         toast.error(error.message);
       } else {
-        toast.error("No se pudo crear el recurso.");
+        toast.error(
+          mode === "create"
+            ? "No se pudo crear el recurso."
+            : "No se pudieron guardar los cambios.",
+        );
       }
     } finally {
       setLoading(false);
@@ -180,14 +242,49 @@ export default function ResourceWizard({ mode = "create", resourceId }: Props) {
 
   return (
     <div className="mx-auto w-full max-w-6xl rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-card)] p-4 shadow-[var(--shadow-card)] sm:p-6 lg:p-8">
-      <ProgressBar step={step} total={TOTAL_RESOURCE_STEPS} />
+      <ProgressBar
+        step={step}
+        total={TOTAL_RESOURCE_STEPS}
+      />
 
       {step === RESOURCE_STEPS.INFO && (
         <StepInfo
           name={form.name}
           type={form.type}
-          onNameChange={(value) => updateForm("name", value)}
-          onTypeChange={(value) => updateForm("type", value)}
+          onNameChange={(value) =>
+            updateForm("name", value)
+          }
+          onTypeChange={(value) =>
+            updateForm("type", value)
+          }
+          onNext={nextStep}
+        />
+      )}
+
+      {step === RESOURCE_STEPS.CHARACTERISTICS && (
+        <StepCharacteristics
+          type={form.type}
+          covered={form.covered}
+          surface={form.surface}
+          footballFormat={form.football_format}
+          lighting={form.lighting}
+          beelup={form.beelup}
+          onCoveredChange={(value) =>
+            updateForm("covered", value)
+          }
+          onSurfaceChange={(value) =>
+            updateForm("surface", value)
+          }
+          onFootballFormatChange={(value) =>
+            updateForm("football_format", value)
+          }
+          onLightingChange={(value) =>
+            updateForm("lighting", value)
+          }
+          onBeelupChange={(value) =>
+            updateForm("beelup", value)
+          }
+          onBack={previousStep}
           onNext={nextStep}
         />
       )}
@@ -208,12 +305,23 @@ export default function ResourceWizard({ mode = "create", resourceId }: Props) {
           price={form.price}
           depositAmount={form.deposit_amount}
           loading={loading}
-          reservationDuration={form.reservation_duration}
-          onCapacityChange={(value) => updateForm("capacity", value)}
-          onPriceChange={(value) => updateForm("price", value)}
-          onDepositAmountChange={(value) => updateForm("deposit_amount", value)}
+          reservationDuration={
+            form.reservation_duration
+          }
+          onCapacityChange={(value) =>
+            updateForm("capacity", value)
+          }
+          onPriceChange={(value) =>
+            updateForm("price", value)
+          }
+          onDepositAmountChange={(value) =>
+            updateForm("deposit_amount", value)
+          }
           onReservationDurationChange={(value) =>
-            updateForm("reservation_duration", value)
+            updateForm(
+              "reservation_duration",
+              value,
+            )
           }
           onBack={previousStep}
           onSubmit={handleSubmit}

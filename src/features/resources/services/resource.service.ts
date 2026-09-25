@@ -1,6 +1,9 @@
 import { supabase } from "@/lib/supabase";
 
-import type { Resource, CreateResourceForm } from "../types/resource.types";
+import type {
+  Resource,
+  CreateResourceForm,
+} from "../types/resource.types";
 
 class ResourceService {
   async list(clubId: string) {
@@ -27,7 +30,10 @@ class ResourceService {
     return data as Resource;
   }
 
-  async create(clubId: string, form: CreateResourceForm) {
+  async create(
+    clubId: string,
+    form: CreateResourceForm,
+  ) {
     const { data, error } = await supabase
       .from("resources")
       .insert({
@@ -35,9 +41,17 @@ class ResourceService {
         name: form.name,
         type: form.type,
         capacity: form.capacity,
-        reservation_duration: form.reservation_duration,
+        reservation_duration:
+          form.reservation_duration,
         price: form.price,
         deposit_amount: form.deposit_amount,
+
+        // Características
+        covered: form.covered,
+        surface: form.surface,
+        football_format: form.football_format,
+        lighting: form.lighting,
+        beelup: form.beelup,
       })
       .select()
       .single();
@@ -47,7 +61,10 @@ class ResourceService {
     return data as Resource;
   }
 
-  async update(id: string, values: Partial<Resource>) {
+  async update(
+    id: string,
+    values: Partial<Resource>,
+  ) {
     const { error } = await supabase
       .from("resources")
       .update(values)
@@ -57,10 +74,14 @@ class ResourceService {
   }
 
   async remove(id: string) {
-    const { error } = await supabase.from("resources").delete().eq("id", id);
+    const { error } = await supabase
+      .from("resources")
+      .delete()
+      .eq("id", id);
 
     if (error) throw error;
   }
 }
 
-export const resourceService = new ResourceService();
+export const resourceService =
+  new ResourceService();

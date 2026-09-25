@@ -7,6 +7,10 @@ import {
   reservationCreatedTemplate,
 } from "../../src/features/notifications/templates/reservationCreated.js";
 
+import {
+  reservationCancelledTemplate,
+} from "../../src/features/notifications/templates/reservationCancelled.js";
+
 const FROM_EMAIL =
   "Maneja Tu Cancha <notificaciones@manejatucancha.com.ar>";
 
@@ -23,51 +27,74 @@ export default async function handler(
   try {
     const {
       to,
-      subject,
-      html,
       template,
       data,
     } = req.body ?? {};
 
-    let finalSubject = subject;
-    let finalHtml = html;
-
     /*
      * ---------------------------------------------------------
-     * TEMPLATES
+     * VALIDACIÓN BÁSICA
      * ---------------------------------------------------------
      */
 
-    if (template === "reservationCreated") {
-      if (!data) {
-        return res.status(400).json({
-          error:
-            "Faltan los datos del template reservationCreated.",
-        });
-      }
-
-      const rendered =
-        reservationCreatedTemplate(data);
-
-      finalSubject =
-        rendered.subject;
-
-      finalHtml =
-        rendered.html;
-    }
-
-    /*
-     * ---------------------------------------------------------
-     * VALIDACIÓN
-     * ---------------------------------------------------------
-     */
-
-    if (!to || !finalSubject || !finalHtml) {
+    if (
+      typeof to !== "string" ||
+      !to.trim()
+    ) {
       return res.status(400).json({
-        error:
-          "to, subject/html o template son obligatorios.",
+        error: "El destinatario es obligatorio.",
       });
     }
+
+    /*
+     * ---------------------------------------------------------
+     * TEMPLATES PERMITIDOS
+     * ---------------------------------------------------------
+     */
+
+    if (
+      template !== "reservationCreated" &&
+      template !== "reservationCancelled"
+    ) {
+      return res.status(400).json({
+        error: "Template de email no permitido.",
+      });
+    }
+
+    if (!data || typeof data !== "object") {
+      return res.status(400).json({
+        error: "Faltan los datos del template.",
+      });
+    }
+
+    let rendered;
+
+    switch (template) {
+      case "reservationCreated":
+        rendered = reservationCreatedTemplate(data);
+        break;
+
+      case "reservationCancelled":
+        rendered = reservationCancelledTemplate(data);
+        break;
+
+      default:
+        return res.status(400).json({
+          error: "Template de email no permitido.",
+        });
+    }
+
+    if (!rendered?.subject || !rendered?.html) {
+      return res.status(400).json({
+        error: "No se pudo generar el email.",
+      });
+    }
+
+    /*
+     * ---------------------------------------------------------
+     * RESEND
+     * ---------------------------------------------------------
+     */
 
     const apiKey =
       process.env.RESEND_API_KEY;
@@ -82,12 +109,6 @@ export default async function handler(
           "Resend no está configurado correctamente.",
       });
     }
-
-    /*
-     * ---------------------------------------------------------
-     * RESEND
-     * ---------------------------------------------------------
-     */
 
     const resendResponse =
       await fetch(
@@ -105,9 +126,9 @@ export default async function handler(
 
           body: JSON.stringify({
             from: FROM_EMAIL,
-            to: [to],
-            subject: finalSubject,
-            html: finalHtml,
+            to: [to.trim()],
+            subject: rendered.subject,
+            html: rendered.html,
           }),
         },
       );
@@ -126,7 +147,6 @@ export default async function handler(
       ).json({
         error:
           "No se pudo enviar el email.",
-        details: responseData,
       });
     }
 
@@ -134,10 +154,8 @@ export default async function handler(
       "Email enviado correctamente:",
       {
         id: responseData.id,
-        to,
-        subject: finalSubject,
-        template:
-          template ?? null,
+        to: to.trim(),
+        template,
       },
     );
 
@@ -153,9 +171,7 @@ export default async function handler(
 
     return res.status(500).json({
       error:
-        error instanceof Error
-          ? error.message
-          : "Error interno enviando email.",
+        "Error interno enviando email.",
     });
   }
 }

@@ -29,6 +29,35 @@ function formatClubTime(value: string, timezone?: string | null) {
 }
 
 export default function PublicBookingPage() {
+  const clubServiceLabels: Record<string, string> = {
+    wifi: "Wi-Fi",
+    locker_room: "Vestuario",
+    parking: "Estacionamiento",
+    medical_aid: "Ayuda médica",
+    tournaments: "Torneos",
+    birthdays: "Cumpleaños",
+    grill: "Parrilla",
+    sports_school: "Escuelita deportiva",
+    schools: "Colegios",
+    bar_restaurant: "Bar / Restaurante",
+    quincho: "Quincho",
+    beelup: "Beelup",
+  };
+
+  const resourceTypeLabel: Record<string, string> = {
+    football: "Fútbol",
+    padel: "Pádel",
+    tennis: "Tenis",
+    basket: "Básquet",
+    gym: "Gimnasio",
+    room: "Sala",
+  };
+
+  const surfaceLabels: Record<string, string> = {
+    synthetic: "Sintético",
+    floor: "Piso",
+  };
+
   const { slug } = useParams<{
     slug: string;
   }>();
@@ -38,6 +67,12 @@ export default function PublicBookingPage() {
   const [club, setClub] = useState<Club | null>(null);
 
   const [resources, setResources] = useState<Resource[]>([]);
+
+  const [clubServices, setClubServices] = useState<string[]>([]);
+
+  const [mobileTab, setMobileTab] = useState<"reservas" | "detalles">(
+    "reservas",
+  );
 
   const [selectedResource, setSelectedResource] = useState<Resource | null>(
     null,
@@ -50,11 +85,6 @@ export default function PublicBookingPage() {
   const [selectedSlot, setSelectedSlot] = useState<PublicAvailableSlot | null>(
     null,
   );
-  
-  const resourceTypeLabels: Record<string, string> = {
-  football: "Fútbol",
-  gym: "Gimnasio",
-};
 
   const [workingHours, setWorkingHours] = useState<PublicWorkingHour[]>([]);
 
@@ -102,12 +132,14 @@ export default function PublicBookingPage() {
           return;
         }
 
-        const resourceData = await publicBookingService.getResources(
-          clubData.id,
-        );
+        const [resourceData, servicesData] = await Promise.all([
+          publicBookingService.getResources(clubData.id),
+          publicBookingService.getClubServices(clubData.id),
+        ]);
 
         setClub(clubData);
         setResources(resourceData);
+        setClubServices(servicesData);
 
         // console.log("STATE RESOURCES", resourceData);
       } catch (error) {
@@ -706,269 +738,646 @@ export default function PublicBookingPage() {
           </div>
         </header>
 
-        {/* CANCHAS */}
+        {/* NAVEGACIÓN MOBILE */}
+        <div className="mb-8 grid grid-cols-2 rounded-2xl border bg-[var(--color-card)] p-1 sm:hidden">
+          <button
+            type="button"
+            onClick={() => setMobileTab("reservas")}
+            className={`rounded-xl px-3 py-3 text-sm font-semibold transition ${
+              mobileTab === "reservas"
+                ? "bg-blue-600 text-white shadow-sm"
+                : "text-slate-500"
+            }`}
+          >
+            Reservas
+          </button>
 
-        <section>
-          <div className="mb-5">
-            <h2 className="text-xl font-semibold text-[var(--color-title)] sm:text-2xl">
-              Elegí dónde querés jugar
-            </h2>
+          <button
+            type="button"
+            onClick={() => setMobileTab("detalles")}
+            className={`rounded-xl px-3 py-3 text-sm font-semibold transition ${
+              mobileTab === "detalles"
+                ? "bg-blue-600 text-white shadow-sm"
+                : "text-slate-500"
+            }`}
+          >
+            Detalles del club
+          </button>
+        </div>
 
-            <p className="mt-1 text-sm text-slate-500">
-              Seleccioná una cancha para ver los horarios disponibles.
-            </p>
-          </div>
+        {/* DETALLES DEL CLUB */}
+        <section
+          className={`mb-10 ${
+            mobileTab === "detalles" ? "block" : "hidden"
+          } sm:block`}
+        >
+          <div className="rounded-3xl border bg-[var(--color-card)] p-5 shadow-sm sm:p-7">
+            <div>
+              <h2 className="text-xl font-semibold text-[var(--color-title)] sm:text-2xl">
+                Detalles del club
+              </h2>
 
-          {resources.length === 0 ? (
-            <EmptyState
-              title="No hay canchas disponibles"
-              description="Este complejo todavía no tiene recursos habilitados para reservas."
-            />
-          ) : (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {resources.map((resource) => {
-                const selected = selectedResource?.id === resource.id;
-
-                return (
-                  <button
-                    key={resource.id}
-                    type="button"
-                    onClick={() => {
-                      setSelectedResource(resource);
-                      setSelectedSlot(null);
-                      setReservationCreated(false);
-                      setReservationError("");
-                    }}
-                    className={`group rounded-2xl border p-5 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${
-                      selected
-                        ? "bg-[var(--color-card)] border-blue-500"
-                        : "bg-[var(--color-card)]"
-                    }`}
-                  >
-                    <div className="flex items-start justify-between gap-4">
-                      <div>
-                        <h3 className="text-lg font-semibold text-[var(--color-title)]">
-                          {resource.name}
-                        </h3>
-
-                        <p className="mt-1 text-sm text-slate-500">
-                          {resourceTypeLabels[resource.type] ?? resource.type}
-                        </p>
-                      </div>
-
-                      <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-medium text-blue-600">
-                        Reservar
-                      </span>
-                    </div>
-
-                    <div className="mt-5 space-y-3">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-slate-500">Precio total</span>
-
-                        <span className="font-semibold text-[var(--color-title)]">
-                          ${resource.price.toLocaleString("es-AR")}
-                        </span>
-                      </div>
-
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-slate-500">Para reservar</span>
-
-                        <span className="font-semibold text-blue-600">
-                          ${resource.deposit_amount.toLocaleString("es-AR")}
-                        </span>
-                      </div>
-
-                      <div className="flex items-center justify-between border-t pt-3 text-sm text-slate-500">
-                        <span>Duración</span>
-
-                        <span>
-                          {resource.reservation_duration === 90
-                            ? "1:30 hs"
-                            : `${resource.reservation_duration / 60} hs`}
-                        </span>
-                      </div>
-                    </div>
-                  </button>
-                );
-              })}
+              <p className="mt-1 text-sm text-slate-500">
+                Información y servicios disponibles en {club.name}.
+              </p>
             </div>
-          )}
+
+            <div className="mt-6 grid gap-6 sm:grid-cols-2">
+              {/* INFORMACIÓN */}
+              <div>
+                <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-400">
+                  Información
+                </h3>
+
+                <div className="mt-4 space-y-4">
+                  {club.address && (
+                    <div>
+                      <p className="text-xs font-medium text-slate-400">
+                        Dirección
+                      </p>
+
+                      <p className="mt-1 text-sm font-medium text-[var(--color-title)]">
+                        {club.address}
+                      </p>
+                    </div>
+                  )}
+
+                  {(club.city || club.province) && (
+                    <div>
+                      <p className="text-xs font-medium text-slate-400">
+                        Ubicación
+                      </p>
+
+                      <p className="mt-1 text-sm font-medium text-[var(--color-title)]">
+                        {[club.city, club.province].filter(Boolean).join(", ")}
+                      </p>
+                    </div>
+                  )}
+
+                  {club.phone && (
+                    <div>
+                      <p className="text-xs font-medium text-slate-400">
+                        Teléfono
+                      </p>
+
+                      <p className="mt-1 text-sm font-medium text-[var(--color-title)]">
+                        {club.phone}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* SERVICIOS */}
+              <div>
+                <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-400">
+                  Servicios
+                </h3>
+
+                {clubServices.length === 0 ? (
+                  <p className="mt-4 text-sm text-slate-500">
+                    El club todavía no informó servicios adicionales.
+                  </p>
+                ) : (
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    {clubServices.map((service) => (
+                      <span
+                        key={service}
+                        className="rounded-full border bg-[var(--color-background)] px-3 py-2 text-sm font-medium text-[var(--color-title)]"
+                      >
+                        {clubServiceLabels[service] ?? service}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
         </section>
 
-        {isGym ? (
-          <div className="mt-10 space-y-6">
-            {/* FRECUENCIA */}
-            <div>
-              <h3 className="text-lg font-semibold text-[var(--color-title)]">
-                ¿Qué días vas a ir?
-              </h3>
+        {/* CANCHAS */}
 
-              <p className="mt-1 text-sm text-gray-500">
-                Elegí cuántos días por semana querés asistir.
+        <div
+          className={`${
+            mobileTab === "reservas" ? "block" : "hidden"
+          } sm:block`}
+        >
+          <section>
+            <div className="mb-5">
+              <h2 className="text-xl font-semibold text-[var(--color-title)] sm:text-2xl">
+                Elegí dónde querés jugar
+              </h2>
+
+              <p className="mt-1 text-sm text-slate-500">
+                Seleccioná una cancha para ver los horarios disponibles.
               </p>
-
-              <select
-                value={gymVisitsPerWeek}
-                onChange={(e) => {
-                  setGymVisitsPerWeek(Number(e.target.value));
-                  setGymStartTime("");
-                  setGymEndTime("");
-                  setReservationError("");
-                }}
-                className="mt-3 w-full rounded-xl border p-3"
-              >
-                {gymEnabledDays.map((_, index) => (
-                  <option
-                    key={index + 1}
-                    value={index + 1}
-                    className="bg-[var(--color-card)]"
-                  >
-                    {index + 1} {index === 0 ? "día" : "días"} por semana
-                  </option>
-                ))}
-              </select>
             </div>
 
-            {/* DÍAS */}
-            <div>
-              <h3 className="text-lg font-semibold text-[var(--color-title)]">
-                Días de asistencia
-              </h3>
-
-              <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
-                {gymEnabledDays.map((day) => {
-                  const selected = gymVisitDays.includes(day.day_of_week);
-
-                  const labels = [
-                    "Domingo",
-                    "Lunes",
-                    "Martes",
-                    "Miércoles",
-                    "Jueves",
-                    "Viernes",
-                    "Sábado",
-                  ];
+            {resources.length === 0 ? (
+              <EmptyState
+                title="No hay canchas disponibles"
+                description="Este complejo todavía no tiene recursos habilitados para reservas."
+              />
+            ) : (
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {resources.map((resource) => {
+                  const selected = selectedResource?.id === resource.id;
 
                   return (
                     <button
-                      key={day.day_of_week}
+                      key={resource.id}
                       type="button"
                       onClick={() => {
-                        toggleGymVisitDay(day.day_of_week);
-                        setGymStartTime("");
-                        setGymEndTime("");
+                        setSelectedResource(resource);
+                        setSelectedSlot(null);
+                        setReservationCreated(false);
                         setReservationError("");
                       }}
-                      className={`rounded-xl border p-3 text-sm font-medium transition ${
+                      className={`group rounded-2xl border p-5 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${
                         selected
-                          ? "border-black bg-[var(--color-card)] text-gray-700"
-                          : "border-gray-200 bg-[var(--color-card)] text-[var(--color-text)]"
+                          ? "bg-[var(--color-card)] border-blue-500"
+                          : "bg-[var(--color-card)]"
                       }`}
                     >
-                      {labels[day.day_of_week]}
+                      <div className="flex items-start justify-between gap-4">
+                        <div>
+                          <h3 className="text-lg font-semibold text-[var(--color-title)]">
+                            {resource.name}
+                          </h3>
+
+                          <p className="mt-1 text-sm text-slate-500">
+                            {resourceTypeLabel[resource.type] ?? resource.type}
+                          </p>
+
+                          <div className="mt-3 flex flex-wrap gap-1.5">
+                            {["football", "padel", "tennis", "gym"].includes(
+                              resource.type,
+                            ) &&
+                              resource.covered !== null && (
+                                <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600">
+                                  {resource.type === "gym"
+                                    ? resource.covered
+                                      ? "Techado"
+                                      : "Descubierto"
+                                    : resource.covered
+                                      ? "Techada"
+                                      : "Descubierta"}
+                                </span>
+                              )}
+
+                            {["football", "padel"].includes(resource.type) &&
+                              resource.surface && (
+                                <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600">
+                                  {surfaceLabels[resource.surface] ??
+                                    resource.surface}
+                                </span>
+                              )}
+
+                            {resource.type === "football" &&
+                              resource.football_format && (
+                                <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600">
+                                  Fútbol {resource.football_format}
+                                </span>
+                              )}
+
+                            {resource.type === "football" &&
+                              resource.lighting === true && (
+                                <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600">
+                                  Iluminación
+                                </span>
+                              )}
+
+                            {resource.type === "football" &&
+                              resource.beelup === true && (
+                                <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600">
+                                  Beelup
+                                </span>
+                              )}
+                          </div>
+                        </div>
+
+                        <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-medium text-blue-600">
+                          Reservar
+                        </span>
+                      </div>
+
+                      <div className="mt-5 space-y-3">
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-slate-500">Precio total</span>
+
+                          <span className="font-semibold text-[var(--color-title)]">
+                            ${resource.price.toLocaleString("es-AR")}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-slate-500">Para reservar</span>
+
+                          <span className="font-semibold text-blue-600">
+                            ${resource.deposit_amount.toLocaleString("es-AR")}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center justify-between border-t pt-3 text-sm text-slate-500">
+                          <span>Duración</span>
+
+                          <span>
+                            {resource.reservation_duration === 90
+                              ? "1:30 hs"
+                              : `${resource.reservation_duration / 60} hs`}
+                          </span>
+                        </div>
+                      </div>
                     </button>
                   );
                 })}
               </div>
+            )}
+          </section>
 
-              <p className="mt-2 text-sm text-gray-500">
-                Seleccioná exactamente {gymVisitsPerWeek}{" "}
-                {gymVisitsPerWeek === 1 ? "día" : "días"}.
-              </p>
-            </div>
-
-            {/* HORARIO */}
-            {gymVisitDays.length === gymVisitsPerWeek && (
+          {isGym ? (
+            <div className="mt-10 space-y-6">
+              {/* FRECUENCIA */}
               <div>
                 <h3 className="text-lg font-semibold text-[var(--color-title)]">
-                  Horario
+                  ¿Qué días vas a ir?
                 </h3>
 
                 <p className="mt-1 text-sm text-gray-500">
-                  El horario debe estar disponible en todos los días
-                  seleccionados.
+                  Elegí cuántos días por semana querés asistir.
                 </p>
 
                 <select
-                  value={gymStartTime}
+                  value={gymVisitsPerWeek}
                   onChange={(e) => {
-                    const value = e.target.value;
-
-                    setGymStartTime(value);
-
-                    const duration =
-                      selectedResource?.reservation_duration ?? 60;
-
-                    const start = timeToMinutes(value);
-
-                    setGymEndTime(minutesToTime(start + duration));
+                    setGymVisitsPerWeek(Number(e.target.value));
+                    setGymStartTime("");
+                    setGymEndTime("");
                     setReservationError("");
                   }}
                   className="mt-3 w-full rounded-xl border p-3"
                 >
-                  <option value="" className="bg-[var(--color-card)]">
-                    Seleccioná un horario
-                  </option>
-
-                  {getGymTimeOptionsForSelectedDays().map((time) => (
+                  {gymEnabledDays.map((_, index) => (
                     <option
-                      key={time}
-                      value={time}
+                      key={index + 1}
+                      value={index + 1}
                       className="bg-[var(--color-card)]"
                     >
-                      {time}
+                      {index + 1} {index === 0 ? "día" : "días"} por semana
                     </option>
                   ))}
                 </select>
               </div>
-            )}
 
-            {/* RESUMEN DE CUOTA */}
-            {gymTotalVisits > 0 && gymStartTime && (
-              <div className="rounded-xl border bg-[var(--color-card)] p-4">
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Visitas del mes</span>
+              {/* DÍAS */}
+              <div>
+                <h3 className="text-lg font-semibold text-[var(--color-title)]">
+                  Días de asistencia
+                </h3>
 
-                  <strong>{gymTotalVisits}</strong>
+                <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                  {gymEnabledDays.map((day) => {
+                    const selected = gymVisitDays.includes(day.day_of_week);
+
+                    const labels = [
+                      "Domingo",
+                      "Lunes",
+                      "Martes",
+                      "Miércoles",
+                      "Jueves",
+                      "Viernes",
+                      "Sábado",
+                    ];
+
+                    return (
+                      <button
+                        key={day.day_of_week}
+                        type="button"
+                        onClick={() => {
+                          toggleGymVisitDay(day.day_of_week);
+                          setGymStartTime("");
+                          setGymEndTime("");
+                          setReservationError("");
+                        }}
+                        className={`rounded-xl border p-3 text-sm font-medium transition ${
+                          selected
+                            ? "border-black bg-[var(--color-card)] text-gray-700"
+                            : "border-gray-200 bg-[var(--color-card)] text-[var(--color-text)]"
+                        }`}
+                      >
+                        {labels[day.day_of_week]}
+                      </button>
+                    );
+                  })}
                 </div>
 
-                <div className="mt-2 flex justify-between">
-                  <span className="text-gray-600">Total de la cuota</span>
-
-                  <strong>
-                    $
-                    {Number(selectedResource?.price ?? 0).toLocaleString(
-                      "es-AR",
-                    )}
-                  </strong>
-                </div>
-
-                <div className="mt-2 flex justify-between">
-                  <span className="text-gray-600">Horario</span>
-
-                  <strong>
-                    {gymStartTime} → {gymEndTime}
-                  </strong>
-                </div>
+                <p className="mt-2 text-sm text-gray-500">
+                  Seleccioná exactamente {gymVisitsPerWeek}{" "}
+                  {gymVisitsPerWeek === 1 ? "día" : "días"}.
+                </p>
               </div>
-            )}
 
-            {/* DATOS DEL CLIENTE */}
-            {gymTotalVisits > 0 &&
-              gymStartTime &&
-              gymEndTime &&
-              !reservationCreated && (
-                <section>
+              {/* HORARIO */}
+              {gymVisitDays.length === gymVisitsPerWeek && (
+                <div>
+                  <h3 className="text-lg font-semibold text-[var(--color-title)]">
+                    Horario
+                  </h3>
+
+                  <p className="mt-1 text-sm text-gray-500">
+                    El horario debe estar disponible en todos los días
+                    seleccionados.
+                  </p>
+
+                  <select
+                    value={gymStartTime}
+                    onChange={(e) => {
+                      const value = e.target.value;
+
+                      setGymStartTime(value);
+
+                      const duration =
+                        selectedResource?.reservation_duration ?? 60;
+
+                      const start = timeToMinutes(value);
+
+                      setGymEndTime(minutesToTime(start + duration));
+                      setReservationError("");
+                    }}
+                    className="mt-3 w-full rounded-xl border p-3"
+                  >
+                    <option value="" className="bg-[var(--color-card)]">
+                      Seleccioná un horario
+                    </option>
+
+                    {getGymTimeOptionsForSelectedDays().map((time) => (
+                      <option
+                        key={time}
+                        value={time}
+                        className="bg-[var(--color-card)]"
+                      >
+                        {time}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {/* RESUMEN DE CUOTA */}
+              {gymTotalVisits > 0 && gymStartTime && (
+                <div className="rounded-xl border bg-[var(--color-card)] p-4">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Visitas del mes</span>
+
+                    <strong>{gymTotalVisits}</strong>
+                  </div>
+
+                  <div className="mt-2 flex justify-between">
+                    <span className="text-gray-600">Total de la cuota</span>
+
+                    <strong>
+                      $
+                      {Number(selectedResource?.price ?? 0).toLocaleString(
+                        "es-AR",
+                      )}
+                    </strong>
+                  </div>
+
+                  <div className="mt-2 flex justify-between">
+                    <span className="text-gray-600">Horario</span>
+
+                    <strong>
+                      {gymStartTime} → {gymEndTime}
+                    </strong>
+                  </div>
+                </div>
+              )}
+
+              {/* DATOS DEL CLIENTE */}
+              {gymTotalVisits > 0 &&
+                gymStartTime &&
+                gymEndTime &&
+                !reservationCreated && (
+                  <section>
+                    <div className="mx-auto max-w-xl rounded-2xl border bg-[var(--color-card)] p-5 shadow-sm sm:p-6">
+                      <div className="mb-6">
+                        <h2 className="text-xl font-semibold text-[var(--color-title)]">
+                          Registrá tus datos
+                        </h2>
+
+                        <p className="mt-1 text-sm text-slate-500">
+                          Completá tus datos para continuar con el pago de la
+                          cuota.
+                        </p>
+                      </div>
+
+                      {reservationError && (
+                        <div className="mb-5 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-600">
+                          {reservationError}
+                        </div>
+                      )}
+
+                      <PublicReservationForm
+                        onSubmit={handleCreateGymMonthlyFee}
+                        loading={creatingReservation}
+                      />
+                    </div>
+                  </section>
+                )}
+            </div>
+          ) : (
+            <>
+              {/* FECHA */}
+              {selectedResource && (
+                <section className="mt-10">
+                  <div className="mb-5">
+                    <h2 className="text-xl font-semibold text-[var(--color-title)]">
+                      Elegí el día
+                    </h2>
+
+                    <p className="mt-1 text-sm text-slate-500">
+                      Seleccioná la fecha en la que querés jugar.
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7">
+                    {dates.map((date) => {
+                      const selected =
+                        format(date, "yyyy-MM-dd") ===
+                        format(selectedDate, "yyyy-MM-dd");
+
+                      return (
+                        <button
+                          key={date.toISOString()}
+                          type="button"
+                          onClick={() => {
+                            setSelectedDate(date);
+                            setSelectedSlot(null);
+                            setReservationCreated(false);
+                            setReservationError("");
+                          }}
+                          className={`rounded-xl border px-3 py-4 text-center transition ${
+                            selected
+                              ? "border-blue-600 bg-blue-600 text-white"
+                              : "bg-[var(--color-card)] hover:bg-blue-50"
+                          }`}
+                        >
+                          <span className="block text-xs uppercase">
+                            {format(date, "EEE", {
+                              locale: es,
+                            })}
+                          </span>
+
+                          <span className="mt-1 block text-lg font-bold">
+                            {format(date, "dd")}
+                          </span>
+
+                          <span className="block text-xs">
+                            {format(date, "MMM", {
+                              locale: es,
+                            })}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </section>
+              )}
+
+              {/* HORARIOS */}
+              {selectedResource && (
+                <section className="mt-10">
+                  <div className="mb-5">
+                    <h2 className="text-xl font-semibold text-[var(--color-title)]">
+                      Horarios disponibles
+                    </h2>
+
+                    <p className="mt-1 text-sm text-slate-500">
+                      {selectedResource.name}
+                    </p>
+                  </div>
+
+                  {loadingSlots ? (
+                    <div className="rounded-2xl border bg-[var(--color-card)] p-8 text-center">
+                      <p className="text-sm text-slate-500">
+                        Buscando horarios...
+                      </p>
+                    </div>
+                  ) : slots.length === 0 ? (
+                    <div className="rounded-2xl border bg-[var(--color-card)] p-8 text-center">
+                      <p className="font-medium text-[var(--color-title)]">
+                        No hay horarios disponibles
+                      </p>
+
+                      <p className="mt-1 text-sm text-slate-500">
+                        Probá seleccionando otro día.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                      {slots.map((slot) => {
+                        const starts = formatClubTime(
+                          slot.starts_at,
+                          club.timezone,
+                        );
+
+                        const ends = formatClubTime(
+                          slot.ends_at,
+                          club.timezone,
+                        );
+
+                        return (
+                          <button
+                            key={slot.starts_at}
+                            type="button"
+                            onClick={() => {
+                              setSelectedSlot(slot);
+                              setReservationCreated(false);
+                              setReservationError("");
+                            }}
+                            className={`rounded-xl border px-4 py-4 text-left shadow-sm transition ${
+                              selectedSlot?.starts_at === slot.starts_at
+                                ? "border-blue-600 bg-blue-600 text-white"
+                                : "bg-[var(--color-card)] hover:border-blue-500 hover:bg-blue-50"
+                            }`}
+                          >
+                            <span className="block text-base font-semibold text-[var(--color-title)]">
+                              {starts} → {ends}
+                            </span>
+
+                            <span
+                              className={`mt-1 block text-xs ${
+                                selectedSlot?.starts_at === slot.starts_at
+                                  ? "text-blue-100"
+                                  : "text-slate-500"
+                              }`}
+                            >
+                              Disponible
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </section>
+              )}
+
+              {/* DATOS DEL CLIENTE - RESERVA NORMAL */}
+              {selectedResource && selectedSlot && !reservationCreated && (
+                <section className="mt-10">
                   <div className="mx-auto max-w-xl rounded-2xl border bg-[var(--color-card)] p-5 shadow-sm sm:p-6">
                     <div className="mb-6">
                       <h2 className="text-xl font-semibold text-[var(--color-title)]">
-                        Registrá tus datos
+                        Reservá tu cancha
                       </h2>
 
                       <p className="mt-1 text-sm text-slate-500">
-                        Completá tus datos para continuar con el pago de la
-                        cuota.
+                        Completá tus datos para continuar con la reserva.
                       </p>
+                    </div>
+
+                    <div className="mb-6 rounded-xl border bg-[var(--color-card)] p-4">
+                      <p className="text-sm text-slate-500">Reserva</p>
+
+                      <p className="mt-1 font-semibold text-[var(--color-title)]">
+                        {selectedResource.name}
+                      </p>
+
+                      <p className="mt-1 text-sm text-slate-600">
+                        {format(selectedDate, "EEEE dd 'de' MMMM", {
+                          locale: es,
+                        })}
+                      </p>
+
+                      <p className="mt-1 text-sm font-medium text-blue-600">
+                        {formatClubTime(selectedSlot.starts_at, club.timezone)}{" "}
+                        → {formatClubTime(selectedSlot.ends_at, club.timezone)}
+                      </p>
+
+                      <div className="mt-5 space-y-3 border-t pt-4">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-slate-500">
+                            Precio total
+                          </span>
+
+                          <span className="font-semibold text-[var(--color-title)]">
+                            ${selectedResource.price.toLocaleString("es-AR")}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-slate-500">
+                            Para reservar
+                          </span>
+
+                          <span className="text-lg font-bold text-blue-600">
+                            $
+                            {selectedResource.deposit_amount.toLocaleString(
+                              "es-AR",
+                            )}
+                          </span>
+                        </div>
+                      </div>
                     </div>
 
                     {reservationError && (
@@ -978,220 +1387,15 @@ export default function PublicBookingPage() {
                     )}
 
                     <PublicReservationForm
-                      onSubmit={handleCreateGymMonthlyFee}
+                      onSubmit={handleCreateReservation}
                       loading={creatingReservation}
                     />
                   </div>
                 </section>
               )}
-          </div>
-        ) : (
-          <>
-            {/* FECHA */}
-            {selectedResource && (
-              <section className="mt-10">
-                <div className="mb-5">
-                  <h2 className="text-xl font-semibold text-[var(--color-title)]">
-                    Elegí el día
-                  </h2>
-
-                  <p className="mt-1 text-sm text-slate-500">
-                    Seleccioná la fecha en la que querés jugar.
-                  </p>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7">
-                  {dates.map((date) => {
-                    const selected =
-                      format(date, "yyyy-MM-dd") ===
-                      format(selectedDate, "yyyy-MM-dd");
-
-                    return (
-                      <button
-                        key={date.toISOString()}
-                        type="button"
-                        onClick={() => {
-                          setSelectedDate(date);
-                          setSelectedSlot(null);
-                          setReservationCreated(false);
-                          setReservationError("");
-                        }}
-                        className={`rounded-xl border px-3 py-4 text-center transition ${
-                          selected
-                            ? "border-blue-600 bg-blue-600 text-white"
-                            : "bg-[var(--color-card)] hover:bg-blue-50"
-                        }`}
-                      >
-                        <span className="block text-xs uppercase">
-                          {format(date, "EEE", {
-                            locale: es,
-                          })}
-                        </span>
-
-                        <span className="mt-1 block text-lg font-bold">
-                          {format(date, "dd")}
-                        </span>
-
-                        <span className="block text-xs">
-                          {format(date, "MMM", {
-                            locale: es,
-                          })}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </section>
-            )}
-
-            {/* HORARIOS */}
-            {selectedResource && (
-              <section className="mt-10">
-                <div className="mb-5">
-                  <h2 className="text-xl font-semibold text-[var(--color-title)]">
-                    Horarios disponibles
-                  </h2>
-
-                  <p className="mt-1 text-sm text-slate-500">
-                    {selectedResource.name}
-                  </p>
-                </div>
-
-                {loadingSlots ? (
-                  <div className="rounded-2xl border bg-[var(--color-card)] p-8 text-center">
-                    <p className="text-sm text-slate-500">
-                      Buscando horarios...
-                    </p>
-                  </div>
-                ) : slots.length === 0 ? (
-                  <div className="rounded-2xl border bg-[var(--color-card)] p-8 text-center">
-                    <p className="font-medium text-[var(--color-title)]">
-                      No hay horarios disponibles
-                    </p>
-
-                    <p className="mt-1 text-sm text-slate-500">
-                      Probá seleccionando otro día.
-                    </p>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                    {slots.map((slot) => {
-                      const starts = formatClubTime(
-                        slot.starts_at,
-                        club.timezone,
-                      );
-
-                      const ends = formatClubTime(slot.ends_at, club.timezone);
-
-                      return (
-                        <button
-                          key={slot.starts_at}
-                          type="button"
-                          onClick={() => {
-                            setSelectedSlot(slot);
-                            setReservationCreated(false);
-                            setReservationError("");
-                          }}
-                          className={`rounded-xl border px-4 py-4 text-left shadow-sm transition ${
-                            selectedSlot?.starts_at === slot.starts_at
-                              ? "border-blue-600 bg-blue-600 text-white"
-                              : "bg-[var(--color-card)] hover:border-blue-500 hover:bg-blue-50"
-                          }`}
-                        >
-                          <span className="block text-base font-semibold text-[var(--color-title)]">
-                            {starts} → {ends}
-                          </span>
-
-                          <span
-                            className={`mt-1 block text-xs ${
-                              selectedSlot?.starts_at === slot.starts_at
-                                ? "text-blue-100"
-                                : "text-slate-500"
-                            }`}
-                          >
-                            Disponible
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
-              </section>
-            )}
-
-            {/* DATOS DEL CLIENTE - RESERVA NORMAL */}
-            {selectedResource && selectedSlot && !reservationCreated && (
-              <section className="mt-10">
-                <div className="mx-auto max-w-xl rounded-2xl border bg-[var(--color-card)] p-5 shadow-sm sm:p-6">
-                  <div className="mb-6">
-                    <h2 className="text-xl font-semibold text-[var(--color-title)]">
-                      Reservá tu cancha
-                    </h2>
-
-                    <p className="mt-1 text-sm text-slate-500">
-                      Completá tus datos para continuar con la reserva.
-                    </p>
-                  </div>
-
-                  <div className="mb-6 rounded-xl border bg-[var(--color-card)] p-4">
-                    <p className="text-sm text-slate-500">Reserva</p>
-
-                    <p className="mt-1 font-semibold text-[var(--color-title)]">
-                      {selectedResource.name}
-                    </p>
-
-                    <p className="mt-1 text-sm text-slate-600">
-                      {format(selectedDate, "EEEE dd 'de' MMMM", {
-                        locale: es,
-                      })}
-                    </p>
-
-                    <p className="mt-1 text-sm font-medium text-blue-600">
-                      {formatClubTime(selectedSlot.starts_at, club.timezone)} →{" "}
-                      {formatClubTime(selectedSlot.ends_at, club.timezone)}
-                    </p>
-
-                    <div className="mt-5 space-y-3 border-t pt-4">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-slate-500">
-                          Precio total
-                        </span>
-
-                        <span className="font-semibold text-[var(--color-title)]">
-                          ${selectedResource.price.toLocaleString("es-AR")}
-                        </span>
-                      </div>
-
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-slate-500">
-                          Para reservar
-                        </span>
-
-                        <span className="text-lg font-bold text-blue-600">
-                          $
-                          {selectedResource.deposit_amount.toLocaleString(
-                            "es-AR",
-                          )}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {reservationError && (
-                    <div className="mb-5 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-600">
-                      {reservationError}
-                    </div>
-                  )}
-
-                  <PublicReservationForm
-                    onSubmit={handleCreateReservation}
-                    loading={creatingReservation}
-                  />
-                </div>
-              </section>
-            )}
-          </>
-        )}
+            </>
+          )}
+        </div>
       </div>
     </main>
   );

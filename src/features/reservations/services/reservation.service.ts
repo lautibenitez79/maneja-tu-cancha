@@ -12,7 +12,6 @@ import type {
   UpdateReservationForm,
 } from "../types/reservation.types";
 import { validateReservation } from "../utils/reservationValidator";
-import { reservationCancelledTemplate } from "../../notifications/templates/reservationCancelled";
 
 class ReservationService {
   async listByDay(
@@ -365,19 +364,6 @@ class ReservationService {
 
         const endTime = formatInTimeZone(current.ends_at, timezone, "HH:mm");
 
-        const email = reservationCancelledTemplate({
-          customerName: current.customer_name,
-
-          clubName: club.name,
-
-          resourceName: resource.name,
-
-          date,
-
-          startTime,
-
-          endTime,
-        });
 
         const response = await fetch("/api/notifications/send-email", {
           method: "POST",
@@ -389,9 +375,16 @@ class ReservationService {
           body: JSON.stringify({
             to: current.customer_email,
 
-            subject: email.subject,
+            template: "reservationCancelled",
 
-            html: email.html,
+            data: {
+              customerName: current.customer_name,
+              clubName: club.name,
+              resourceName: resource.name,
+              date,
+              startTime,
+              endTime,
+            },
           }),
         });
 

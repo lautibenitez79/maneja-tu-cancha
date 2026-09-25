@@ -1,10 +1,12 @@
-import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { createClient } from "@supabase/supabase-js";
+import type {
+  VercelRequest,
+  VercelResponse,
+} from "@vercel/node";
 
-const supabaseAdmin = createClient(
-  process.env.SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-);
+import {
+  requireAdmin,
+  supabaseAdmin,
+} from "../_lib/auth";
 
 export default async function handler(
   req: VercelRequest,
@@ -17,6 +19,8 @@ export default async function handler(
   }
 
   try {
+    const admin = await requireAdmin(req);
+
     const { club_id } = req.body ?? {};
 
     if (!club_id) {
@@ -25,17 +29,19 @@ export default async function handler(
       });
     }
 
-    console.log("=== DISCONNECT MERCADO PAGO ===");
-    console.log("club_id:", club_id);
-
     /*
-     * No eliminamos la conexión.
-     *
-     * Simplemente la marcamos como inactiva.
-     *
-     * Esto permite volver a conectarla posteriormente
-     * sin perder el registro de la cuenta.
+     * El club recibido por el frontend debe coincidir
+     * con el club del usuario autenticado.
      */
+    if (club_id !== admin.clubId) {
+      return res.status(403).json({
+        error:
+          "No tenés permisos para modificar este complejo.",
+      });
+    }
+
+    console.log("=== DISCONNECT MERCADO PAGO ===");
+    console.log("club_id:", admin.clubId);
 
     const { data, error } = await supabaseAdmin
       .from("club_marketplace_accounts")
@@ -43,7 +49,7 @@ export default async function handler(
         active: false,
         updated_at: new Date().toISOString(),
       })
-      .eq("club_id", club_id)
+      .eq("club_id", admin.clubId)
       .eq("provider", "mercadopago")
       .select(
         `
@@ -66,7 +72,6 @@ export default async function handler(
       return res.status(500).json({
         error:
           "No se pudo desconectar Mercado Pago.",
-        details: error.message,
       });
     }
 
@@ -91,6 +96,34 @@ export default async function handler(
       connection: data,
     });
   } catch (error) {
+    if (error instanceof Error) {
+      switch (error.message) {
+        case "AUTH_MISSING":
+          return res.status(401).json({
+            error:
+              "Falta el token de autenticación.",
+          });
+
+        case "AUTH_INVALID":
+          return res.status(401).json({
+            error:
+              "Sesión inválida o expirada.",
+          });
+
+        case "ADMIN_REQUIRED":
+          return res.status(403).json({
+            error:
+              "Necesitás permisos de administrador.",
+          });
+
+        case "PROFILE_ERROR":
+          return res.status(500).json({
+            error:
+              "No se pudo validar el perfil.",
+          });
+      }
+    }
+
     console.error(
       "Disconnect Mercado Pago error:",
       error,

@@ -14,6 +14,20 @@ interface UpdateClubData {
   country: string;
 }
 
+export type ClubServiceKey =
+  | "wifi"
+  | "locker_room"
+  | "parking"
+  | "medical_aid"
+  | "tournaments"
+  | "birthdays"
+  | "grill"
+  | "sports_school"
+  | "schools"
+  | "bar_restaurant"
+  | "quincho"
+  | "beelup";
+
 class ClubService {
   private generateSlug(name: string) {
     return name
@@ -156,48 +170,84 @@ class ClubService {
   }
 
   async uploadClubAsset(
-  clubId: string,
-  file: File,
-  type: "logo" | "banner",
-): Promise<string> {
-  const path = `${clubId}/${type}`;
+    clubId: string,
+    file: File,
+    type: "logo" | "banner",
+  ): Promise<string> {
+    const path = `${clubId}/${type}`;
 
-  const { error: uploadError } = await supabase.storage
-    .from("club-assets")
-    .upload(path, file, {
-      cacheControl: "3600",
-      upsert: true,
-      contentType: file.type,
-    });
+    const { error: uploadError } = await supabase.storage
+      .from("club-assets")
+      .upload(path, file, {
+        cacheControl: "3600",
+        upsert: true,
+        contentType: file.type,
+      });
 
-  if (uploadError) {
-    throw uploadError;
+    if (uploadError) {
+      throw uploadError;
+    }
+
+    const { data } = supabase.storage.from("club-assets").getPublicUrl(path);
+
+    const url = data.publicUrl;
+
+    const column = type === "logo" ? "logo_url" : "banner_url";
+
+    const { error: updateError } = await supabase
+      .from("clubs")
+      .update({
+        [column]: url,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", clubId);
+
+    if (updateError) {
+      throw updateError;
+    }
+
+    return url;
   }
 
-  const { data } = supabase.storage
-    .from("club-assets")
-    .getPublicUrl(path);
+  async getServices(clubId: string): Promise<ClubServiceKey[]> {
+    const { data, error } = await supabase
+      .from("club_services")
+      .select("service")
+      .eq("club_id", clubId)
+      .order("service");
 
-  const url = data.publicUrl;
+    if (error) throw error;
 
-  const column = type === "logo"
-    ? "logo_url"
-    : "banner_url";
-
-  const { error: updateError } = await supabase
-    .from("clubs")
-    .update({
-      [column]: url,
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", clubId);
-
-  if (updateError) {
-    throw updateError;
+    return (data ?? []).map((item) => item.service as ClubServiceKey);
   }
 
-  return url;
-}
+  async setServices(clubId: string, services: ClubServiceKey[]): Promise<void> {
+    const { error: deleteError } = await supabase
+      .from("club_services")
+      .delete()
+      .eq("club_id", clubId);
+
+    if (deleteError) {
+      throw deleteError;
+    }
+
+    if (services.length === 0) {
+      return;
+    }
+
+    const rows = services.map((service) => ({
+      club_id: clubId,
+      service,
+    }));
+
+    const { error: insertError } = await supabase
+      .from("club_services")
+      .insert(rows);
+
+    if (insertError) {
+      throw insertError;
+    }
+  }
 }
 
 export const clubService = new ClubService();

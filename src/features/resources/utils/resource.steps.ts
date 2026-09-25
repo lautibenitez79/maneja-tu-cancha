@@ -1,11 +1,8 @@
 export const RESOURCE_STEPS = {
-
   INFO: 1,
-
-  SCHEDULE: 2,
-
-  CAPACITY: 3,
-
+  CHARACTERISTICS: 2,
+  SCHEDULE: 3,
+  CAPACITY: 4,
 } as const;
 
-export const TOTAL_RESOURCE_STEPS = 3;
+export const TOTAL_RESOURCE_STEPS = 4;
