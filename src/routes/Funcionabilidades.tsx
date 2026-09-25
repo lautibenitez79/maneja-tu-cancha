@@ -257,7 +257,7 @@ function FeaturePlaceholder({ feature }: { feature: Feature }) {
 
 function PublicWebsiteSection() {
   return (
-    <section className="overflow-hidden bg-white px-6 py-24 md:py-32">
+    <section className="overflow-hidden bg-[var(--color-background)] px-6 py-24 md:py-32">
       <div className="mx-auto max-w-7xl">
         <div className="grid items-center gap-14 lg:grid-cols-2 lg:gap-20">
           {/* TEXTO */}
