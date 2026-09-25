@@ -14,6 +14,10 @@ const nav = [
     label: "Nosotros",
   },
   {
+    to: "/funcionabilidades",
+    label: "Funcionabilidades",
+  },
+  {
     to: "/contacto",
     label: "Contacto",
   },
@@ -242,12 +246,103 @@ export function Header() {
 
               ))}
 
-              <Link
+              <div className="flex flex-row flex-wrap gap-4 items-center justify-evenly">
+                <Link
                 to="/login"
-                className="mt-3 rounded-full bg-primary py-3 text-center font-semibold text-white"
               >
-                Comenzar
-              </Link>
+                {theme === "dark" ? (
+                    <SpecularButton
+                      size="sm"
+                      radius={18}
+                      tint="#ffffff"
+                      tintOpacity={0}
+                      blur={0}
+                      textColor="#ffffff"
+                      lineColor="#ffffff"
+                      baseColor="#2b7fff"
+                      intensity={1}
+                      shineSize={10}
+                      shineFade={40}
+                      thickness={1}
+                      speed={0.35}
+                      followMouse
+                      proximity={250}
+                      autoAnimate={false}
+                    >
+                      Comenzar
+                    </SpecularButton>
+                  ) : (
+                    <SpecularButton
+                      size="sm"
+                      radius={18}
+                      tint="#ffffff"
+                      tintOpacity={0}
+                      blur={0}
+                      textColor="text-[var(--color-title)]"
+                      lineColor="text-[var(--color-title)]"
+                      baseColor="#2b7fff"
+                      intensity={1}
+                      shineSize={10}
+                      shineFade={40}
+                      thickness={1}
+                      speed={0.35}
+                      followMouse
+                      proximity={250}
+                      autoAnimate={false}
+                    >
+                      Comenzar
+                    </SpecularButton>
+                  )}
+                </Link>
+
+                <Link
+                  to="/login"
+                >
+                  {theme === "dark" ? (
+                      <SpecularButton
+                        size="sm"
+                        radius={18}
+                        tint="#ffffff"
+                        tintOpacity={0}
+                        blur={0}
+                        textColor="#ffffff"
+                        lineColor="#ffffff"
+                        baseColor="#2b7fff"
+                        intensity={1}
+                        shineSize={10}
+                        shineFade={40}
+                        thickness={1}
+                        speed={0.35}
+                        followMouse
+                        proximity={250}
+                        autoAnimate={false}
+                      >
+                        Login
+                      </SpecularButton>
+                    ) : (
+                      <SpecularButton
+                        size="sm"
+                        radius={18}
+                        tint="#ffffff"
+                        tintOpacity={0}
+                        blur={0}
+                        textColor="text-[var(--color-title)]"
+                        lineColor="text-[var(--color-title)]"
+                        baseColor="#2b7fff"
+                        intensity={1}
+                        shineSize={10}
+                        shineFade={40}
+                        thickness={1}
+                        speed={0.35}
+                        followMouse
+                        proximity={250}
+                        autoAnimate={false}
+                      >
+                        Login
+                      </SpecularButton>
+                    )}
+                </Link>
+              </div>
 
             </div>
 

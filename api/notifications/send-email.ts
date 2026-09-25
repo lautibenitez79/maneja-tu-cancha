@@ -11,8 +11,15 @@ import {
   reservationCancelledTemplate,
 } from "../../src/features/notifications/templates/reservationCancelled.js";
 
+import {
+  contactFormTemplate,
+} from "../../src/features/notifications/templates/contactForm.js";
+
 const FROM_EMAIL =
   "Maneja Tu Cancha <notificaciones@manejatucancha.com.ar>";
+
+const CONTACT_EMAIL =
+  "lauti.benitez.nahuel@gmail.com";
 
 export default async function handler(
   req: VercelRequest,
@@ -33,49 +40,85 @@ export default async function handler(
 
     /*
      * ---------------------------------------------------------
-     * VALIDACIÓN BÁSICA
-     * ---------------------------------------------------------
-     */
-
-    if (
-      typeof to !== "string" ||
-      !to.trim()
-    ) {
-      return res.status(400).json({
-        error: "El destinatario es obligatorio.",
-      });
-    }
-
-    /*
-     * ---------------------------------------------------------
      * TEMPLATES PERMITIDOS
      * ---------------------------------------------------------
      */
 
     if (
       template !== "reservationCreated" &&
-      template !== "reservationCancelled"
+      template !== "reservationCancelled" &&
+      template !== "contactForm"
     ) {
       return res.status(400).json({
         error: "Template de email no permitido.",
       });
     }
 
-    if (!data || typeof data !== "object") {
+    /*
+     * ---------------------------------------------------------
+     * DESTINATARIO
+     * ---------------------------------------------------------
+     *
+     * Para contacto NO utilizamos el "to" enviado
+     * desde el frontend.
+     *
+     * Siempre llega al email configurado del sitio.
+     */
+
+    let recipient: string;
+
+    if (template === "contactForm") {
+      recipient = CONTACT_EMAIL;
+    } else {
+      if (
+        typeof to !== "string" ||
+        !to.trim()
+      ) {
+        return res.status(400).json({
+          error: "El destinatario es obligatorio.",
+        });
+      }
+
+      recipient = to.trim();
+    }
+
+    /*
+     * ---------------------------------------------------------
+     * VALIDACIÓN DE DATA
+     * ---------------------------------------------------------
+     */
+
+    if (
+      !data ||
+      typeof data !== "object"
+    ) {
       return res.status(400).json({
         error: "Faltan los datos del template.",
       });
     }
 
+    /*
+     * ---------------------------------------------------------
+     * RENDER TEMPLATE
+     * ---------------------------------------------------------
+     */
+
     let rendered;
 
     switch (template) {
       case "reservationCreated":
-        rendered = reservationCreatedTemplate(data);
+        rendered =
+          reservationCreatedTemplate(data);
         break;
 
       case "reservationCancelled":
-        rendered = reservationCancelledTemplate(data);
+        rendered =
+          reservationCancelledTemplate(data);
+        break;
+
+      case "contactForm":
+        rendered =
+          contactFormTemplate(data);
         break;
 
       default:
@@ -84,7 +127,10 @@ export default async function handler(
         });
     }
 
-    if (!rendered?.subject || !rendered?.html) {
+    if (
+      !rendered?.subject ||
+      !rendered?.html
+    ) {
       return res.status(400).json({
         error: "No se pudo generar el email.",
       });
@@ -126,7 +172,7 @@ export default async function handler(
 
           body: JSON.stringify({
             from: FROM_EMAIL,
-            to: [to.trim()],
+            to: [recipient],
             subject: rendered.subject,
             html: rendered.html,
           }),
@@ -154,7 +200,7 @@ export default async function handler(
       "Email enviado correctamente:",
       {
         id: responseData.id,
-        to: to.trim(),
+        to: recipient,
         template,
       },
     );

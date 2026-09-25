@@ -8,8 +8,10 @@ import {
   ChevronRight,
   CircleDollarSign,
   Clock3,
+  Globe,
   MapPin,
   MessageCircle,
+  Smartphone,
   WalletCards,
 } from "lucide-react";
 import { useState } from "react";
@@ -201,15 +203,16 @@ function FeaturePlaceholder({ feature }: { feature: Feature }) {
                 {feature.eyebrow}
               </h4>
             </div>
-            { feature.id === "pagos" ? (
-                    <div className="h-11 w-11 flex items-center justify-center rounded-xl bg-blue-50 text-[var(--color-primary)]">                
-                        <img src="/mercado-pago.svg" alt="Mercado Pago" />
-                    </div>
-                    ) : 
-                    <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-[var(--color-primary)]">
-                        <Icon size={22} />
-                    </div>
-            }
+
+            {feature.id === "pagos" ? (
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-[var(--color-primary)]">
+                <img src="/mercado-pago.svg" alt="Mercado Pago" />
+              </div>
+            ) : (
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-[var(--color-primary)]">
+                <Icon size={22} />
+              </div>
+            )}
           </div>
 
           <div className="mt-6 space-y-3">
@@ -248,6 +251,172 @@ function FeaturePlaceholder({ feature }: { feature: Feature }) {
   );
 }
 
+/* ============================================================
+   PÁGINA WEB PÚBLICA
+============================================================ */
+
+function PublicWebsiteSection() {
+  return (
+    <section className="overflow-hidden bg-white px-6 py-24 md:py-32">
+      <div className="mx-auto max-w-7xl">
+        <div className="grid items-center gap-14 lg:grid-cols-2 lg:gap-20">
+          {/* TEXTO */}
+          <div>
+            <div className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-4 py-2 text-xs font-bold uppercase tracking-[0.16em] text-[var(--color-primary)]">
+              <Globe size={15} />
+              Página web pública
+            </div>
+
+            <h2 className="mt-6 max-w-2xl text-4xl font-bold tracking-tight text-[var(--color-title)] md:text-6xl">
+              Tu complejo también puede tener su{" "}
+              <span className="text-[var(--color-primary)]">
+                propia página web.
+              </span>
+            </h2>
+
+            <p className="mt-6 max-w-xl text-lg leading-8 text-slate-500">
+              Te ofrecemos una página web pública y personalizada para tu
+              complejo, donde tus clientes pueden conocer tus canchas,
+              consultar disponibilidad y realizar reservas online.
+            </p>
+
+            <div className="mt-8 space-y-4">
+              {[
+                "Página pública personalizada para tu complejo",
+                "Diseño adaptado a la identidad de tu marca",
+                "Reservas online integradas con Maneja Tu Cancha",
+                "Diseño responsive para celulares, tablets y computadoras",
+                "Información, ubicación y servicios de tu complejo",
+              ].map((point) => (
+                <div key={point} className="flex items-start gap-3">
+                  <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-green-50 text-green-600">
+                    <Check size={14} />
+                  </div>
+
+                  <span className="text-sm font-medium text-slate-700 md:text-base">
+                    {point}
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-9 flex flex-wrap gap-3">
+              <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-600">
+                <Smartphone
+                  size={17}
+                  className="text-[var(--color-primary)]"
+                />
+                100% responsive
+              </div>
+
+              <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-600">
+                <Globe size={17} className="text-[var(--color-primary)]" />
+                Presencia online
+              </div>
+            </div>
+
+            <p className="mt-7 text-sm leading-6 text-slate-400">
+              Servicio opcional. Podemos crear y personalizar la página de tu
+              complejo según tus necesidades.
+            </p>
+          </div>
+
+          {/* MOCKUP */}
+          <div className="relative">
+            <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-blue-500/10 blur-3xl" />
+
+            <div className="relative rounded-[2rem] border border-slate-200 bg-slate-50 p-3 shadow-[0_30px_100px_rgba(15,23,42,0.14)] md:p-5">
+              {/* BROWSER */}
+              <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+                <div className="flex items-center gap-2 border-b border-slate-100 bg-slate-50 px-4 py-3">
+                  <div className="h-2.5 w-2.5 rounded-full bg-slate-300" />
+                  <div className="h-2.5 w-2.5 rounded-full bg-slate-300" />
+                  <div className="h-2.5 w-2.5 rounded-full bg-slate-300" />
+
+                  <div className="ml-3 flex-1 rounded-lg bg-white px-3 py-1.5 text-[10px] text-slate-400">
+                    manejatucancha.com.ar/tu-complejo
+                  </div>
+                </div>
+
+                {/* WEBSITE PREVIEW */}
+                <div className="p-5 md:p-7">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--color-primary)]">
+                        Complejo deportivo
+                      </p>
+
+                      <h3 className="mt-1 text-xl font-bold text-slate-900 md:text-2xl">
+                        Tu Complejo
+                      </h3>
+                    </div>
+
+                    <div className="rounded-xl bg-[var(--color-primary)] px-3 py-2 text-[10px] font-bold text-white">
+                      Reservar
+                    </div>
+                  </div>
+
+                  <div className="mt-6 h-36 overflow-hidden rounded-2xl bg-gradient-to-br from-slate-800 via-slate-700 to-blue-600 md:h-48">
+                    <div className="flex h-full items-center justify-center">
+                      <div className="rounded-2xl border border-white/20 bg-white/10 px-6 py-4 text-center backdrop-blur-sm">
+                        <p className="text-xs font-medium text-white/70">
+                          Bienvenidos
+                        </p>
+                        <p className="mt-1 text-lg font-bold text-white md:text-2xl">
+                          Tu complejo, online.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-3">
+                    {[
+                      "Fútbol 5",
+                      "Pádel",
+                      "Tenis",
+                    ].map((item) => (
+                      <div
+                        key={item}
+                        className="rounded-xl border border-slate-100 bg-slate-50 p-3"
+                      >
+                        <div className="h-12 rounded-lg bg-white" />
+
+                        <p className="mt-2 text-xs font-bold text-slate-700">
+                          {item}
+                        </p>
+
+                        <p className="mt-1 text-[10px] text-green-600">
+                          Disponible
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="mt-5 flex items-center justify-between rounded-xl bg-slate-50 p-4">
+                    <div>
+                      <p className="text-[10px] text-slate-400">
+                        Reservá tu turno
+                      </p>
+
+                      <p className="mt-1 text-xs font-bold text-slate-800">
+                        Elegí cancha y horario
+                      </p>
+                    </div>
+
+                    <div className="rounded-lg bg-green-500 px-3 py-2 text-[10px] font-bold text-white">
+                      Ver horarios
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 export default function Funcionalidades() {
   const [activeFeature, setActiveFeature] = useState("reservas");
 
@@ -258,13 +427,13 @@ export default function Funcionalidades() {
 
   return (
     <div className="">
-      <Header></Header>
+      <Header />
+
       <main className="bg-white">
         {/* HERO */}
         <section className="relative overflow-hidden bg-[var(--color-background)]">
           <div className="mx-auto max-w-7xl px-6 pb-24 pt-28 md:pb-32 md:pt-40">
             <div className="mx-auto max-w-4xl text-center">
-
               <h1 className="mt-7 text-5xl font-bold tracking-tight text-[var(--color-title)] md:text-7xl">
                 Todo tu complejo.
                 <br />
@@ -293,6 +462,9 @@ export default function Funcionalidades() {
             </div>
           </div>
         </section>
+
+        {/* PÁGINA WEB PÚBLICA */}
+        <PublicWebsiteSection />
 
         {/* EXPLORADOR */}
         <section
@@ -333,10 +505,15 @@ export default function Funcionalidades() {
                         : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
                     }`}
                   >
-                    { feature.id === "pagos" ? (
-                            <img src="/mercado-pago.svg" className="w-10 h-10" alt="Mercado Pago" />
-                        ) : <FeatureIcon size={17} />
-                    }
+                    {feature.id === "pagos" ? (
+                      <img
+                        src="/mercado-pago.svg"
+                        className="h-10 w-10"
+                        alt="Mercado Pago"
+                      />
+                    ) : (
+                      <FeatureIcon size={17} />
+                    )}
 
                     {feature.eyebrow}
                   </button>
@@ -348,12 +525,15 @@ export default function Funcionalidades() {
             <div className="mt-10 grid items-center gap-12 md:grid-cols-2 md:gap-20">
               <div>
                 <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-50 text-[var(--color-primary)]">
-                    <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-50 text-[var(--color-primary)]">
-                        { currentFeature.id === "pagos" ? (
-                            <img src="/mercado-pago.svg" className="w-14 h-14" alt="Mercado Pago" />
-                        ) : <Icon size={28} /> 
-                        }
-                    </div>
+                  {currentFeature.id === "pagos" ? (
+                    <img
+                      src="/mercado-pago.svg"
+                      className="h-14 w-14"
+                      alt="Mercado Pago"
+                    />
+                  ) : (
+                    <Icon size={28} />
+                  )}
                 </div>
 
                 <p className="mt-7 text-sm font-bold uppercase tracking-[0.16em] text-[var(--color-primary)]">
@@ -417,7 +597,8 @@ export default function Funcionalidades() {
           </a>
         </section>
       </main>
-      <Footer></Footer>
+
+      <Footer />
     </div>
   );
 }
