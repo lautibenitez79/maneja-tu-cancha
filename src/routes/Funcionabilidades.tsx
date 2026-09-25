@@ -293,7 +293,7 @@ function PublicWebsiteSection() {
                     <Check size={14} />
                   </div>
 
-                  <span className="text-sm font-medium text-slate-700 md:text-base">
+                  <span className="text-sm font-medium text-slate-600 md:text-base">
                     {point}
                   </span>
                 </div>
