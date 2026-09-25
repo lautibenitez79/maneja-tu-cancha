@@ -340,7 +340,7 @@ export default function PublicBookingPage() {
         totalAmount: Number(selectedResource.price ?? 0),
       });
 
-      console.log("Cuota mensual creada:", fee);
+      // console.log("Cuota mensual creada:", fee);
 
       const feeId = typeof fee === "string" ? fee : fee?.id;
 
