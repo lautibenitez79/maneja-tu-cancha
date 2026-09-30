@@ -1595,13 +1595,13 @@ function RoundBasedFixture({
 }) {
   const [selectedRound, setSelectedRound] = useState(1);
 
-  function getTeamName(teamId: string | null) {
-    if (!teamId) {
-      return "Por definir";
-    }
+  // function getTeamName(teamId: string | null) {
+  //   if (!teamId) {
+  //     return "Por definir";
+  //   }
 
-    return teams.find((team) => team.id === teamId)?.name ?? "Por definir";
-  }
+  //   return teams.find((team) => team.id === teamId)?.name ?? "Por definir";
+  // }
 
   const rounds = Array.from(
     new Set(matches.map((match) => match.round_number ?? 1)),
