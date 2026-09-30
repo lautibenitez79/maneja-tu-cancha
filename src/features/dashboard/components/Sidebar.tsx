@@ -1,8 +1,10 @@
 import { Link, NavLink, useNavigate } from "react-router-dom";
+import { supabase } from "@/lib/supabase";
 import {
   LogOut,
   PanelLeftClose,
   PanelLeftOpen,
+  Trophy,
   UserRound,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -41,11 +43,6 @@ const items = [
     href: "/dashboard/subscription",
     roles: ["admin"],
   },
-  {
-    label: "Torneos",
-    href: "/dashboard/tournaments",
-    roles: ["admin", "user"],
-  }
 ];
 
 interface Props {
@@ -65,6 +62,8 @@ export default function Sidebar({
 
   const [theme, setTheme] = useState<"light" | "dark">("light");
 
+  const [tournamentsEnabled, setTournamentsEnabled] = useState(false);
+
   useEffect(() => {
     const savedTheme = localStorage.getItem("theme");
 
@@ -72,6 +71,48 @@ export default function Sidebar({
       setTheme(savedTheme);
     }
   }, []);
+
+  useEffect(() => {
+  let cancelled = false;
+
+  async function loadTournamentAccess() {
+    if (!profile?.club_id) {
+      setTournamentsEnabled(false);
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from("clubs")
+        .select("tournaments_enabled")
+        .eq("id", profile.club_id)
+        .maybeSingle();
+
+      if (error) {
+        throw error;
+      }
+
+      if (!cancelled) {
+        setTournamentsEnabled(Boolean(data?.tournaments_enabled));
+      }
+    } catch (error) {
+      console.error(
+        "Error cargando acceso a torneos:",
+        error,
+      );
+
+      if (!cancelled) {
+        setTournamentsEnabled(false);
+      }
+    }
+  }
+
+  loadTournamentAccess();
+
+  return () => {
+    cancelled = true;
+  };
+}, [profile?.club_id]);
 
   async function handleLogout() {
     try {
@@ -93,7 +134,18 @@ export default function Sidebar({
     }
   }
 
-  const visibleItems = items.filter(
+  const visibleItems = [
+    ...items,
+    ...(tournamentsEnabled
+      ? [
+          {
+            label: "Torneos",
+            href: "/dashboard/tournaments",
+            roles: ["admin", "user"],
+          },
+        ]
+      : []),
+  ].filter(
     (item) =>
       profile &&
       item.roles.includes(profile.role),
@@ -178,6 +230,10 @@ export default function Sidebar({
                 }`
               }
             >
+              {item.href === "/dashboard/tournaments" && (
+                <Trophy className="mr-3 h-5 w-5 shrink-0" />
+              )}
+
               <span>{item.label}</span>
             </NavLink>
           ))}

@@ -17,4 +17,5 @@ export interface Club {
   active: boolean;
   created_at: string;
   updated_at: string;
+  tournaments_enabled: boolean;
 }

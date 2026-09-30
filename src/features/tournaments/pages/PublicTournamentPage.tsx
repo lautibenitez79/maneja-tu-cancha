@@ -147,25 +147,25 @@ function PublicTournamentContent({ data }: { data: PublicTournamentData }) {
 
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="rounded-full bg-secondary px-3 py-1 text-xs font-medium">
+                  <span className="rounded-full bg-primary text-[var(--color-title)] px-3 py-1 text-xs font-medium">
                     {sportLabels[tournament.sport]}
                   </span>
 
-                  <span className="rounded-full bg-secondary px-3 py-1 text-xs font-medium">
+                  <span className="rounded-full bg-primary text-[var(--color-title)] px-3 py-1 text-xs font-medium">
                     {formatLabels[tournament.format]}
                   </span>
 
-                  <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
+                  <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-[var(--color-title)]">
                     {statusLabels[tournament.status]}
                   </span>
                 </div>
 
-                <h1 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">
+                <h1 className="mt-3 text-3xl font-bold tracking-tight text-[var(--color-title)] sm:text-4xl">
                   {tournament.name}
                 </h1>
 
                 {tournament.description && (
-                  <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground sm:text-base">
+                  <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600 sm:text-base">
                     {tournament.description}
                   </p>
                 )}
@@ -202,7 +202,7 @@ function PublicTournamentContent({ data }: { data: PublicTournamentData }) {
               <div className="flex items-center gap-2 border-t border-border pt-5 text-sm text-muted-foreground">
                 <CalendarDays className="h-4 w-4 shrink-0" />
 
-                <span>{formatDate(tournament.start_date)}</span>
+                <span className="text-[var(--color-title)]">{formatDate(tournament.start_date)}</span>
 
                 {tournament.end_date && (
                   <>
@@ -239,20 +239,17 @@ function PublicTournamentContent({ data }: { data: PublicTournamentData }) {
             <EmptyState text="Todavía no hay participantes." />
           ) : (
             <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {teams.map((team, index) => (
+              {teams.map((team) => (
                 <div
                   key={team.id}
-                  className="rounded-2xl border border-border bg-card p-4"
+                  className="rounded-2xl border border-border bg-primary p-4"
                 >
                   <div className="flex items-start gap-3">
-                    <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-primary/10 text-sm font-semibold text-primary">
-                      {index + 1}
-                    </div>
 
                     <div className="min-w-0">
-                      <p className="truncate font-semibold">{team.name}</p>
+                      <p className="truncate text-[var(--color-title)] font-semibold">{team.name}</p>
 
-                      <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                      <p className="mt-1 text-xs leading-5 text-[var(--color-title)]">
                         {team.player_1_name}
 
                         {team.player_2_name && (
@@ -312,7 +309,7 @@ function PublicTournamentContent({ data }: { data: PublicTournamentData }) {
                       key={group.id}
                       className="rounded-2xl border border-border bg-card p-5"
                     >
-                      <h3 className="font-semibold">{group.name}</h3>
+                      <h3 className="font-semibold text-[var(--color-title)]">{group.name}</h3>
 
                       <div className="mt-4">
                         {groupTeams.length > 0 && (
@@ -394,15 +391,15 @@ function PublicInfo({
   value: string;
 }) {
   return (
-    <div className="flex items-center gap-3 rounded-xl bg-secondary/50 p-4">
-      <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-background">
+    <div className="flex items-center gap-3 rounded-xl bg-secondary/70 p-4">
+      <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-primary">
         {icon}
       </div>
 
       <div>
-        <p className="text-xs text-muted-foreground">{label}</p>
+        <p className="text-xs text-[var(--color-title)]">{label}</p>
 
-        <p className="mt-0.5 text-sm font-semibold">{value}</p>
+        <p className="mt-0.5 text-sm text-[var(--color-title)] font-semibold">{value}</p>
       </div>
     </div>
   );
@@ -422,10 +419,10 @@ function SectionTitle({
       <div className="flex items-center gap-2">
         <span className="text-primary">{icon}</span>
 
-        <h2 className="text-xl font-semibold tracking-tight">{title}</h2>
+        <h2 className="text-xl font-semibold text-[var(--color-title)] tracking-tight">{title}</h2>
       </div>
 
-      <p className="mt-1 text-sm text-muted-foreground">{description}</p>
+      <p className="mt-1 text-sm text-slate-600">{description}</p>
     </div>
   );
 }
@@ -441,19 +438,19 @@ function ChampionCard({
 }) {
   return (
     <section className="overflow-hidden rounded-3xl border border-primary/20 bg-primary/5">
-      <div className="flex flex-col items-center gap-5 px-6 py-8 text-center sm:flex-row sm:text-left">
-        <div className="grid h-16 w-16 shrink-0 place-items-center rounded-2xl bg-primary/10">
+      <div className="flex flex-col items-center gap-5 bg-primary px-6 py-8 text-center sm:flex-row sm:text-left">
+        <div className="grid h-16 w-16 shrink-0 place-items-center rounded-2xl bg-secondary">
           <Trophy className="h-8 w-8 text-primary" />
         </div>
 
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.15em] text-primary">
+          <p className="text-xs font-semibold uppercase tracking-[0.15em] text-[var(--color-title)]">
             Campeón
           </p>
 
-          <h2 className="mt-1 text-2xl font-bold">{name}</h2>
+          <h2 className="mt-1 text-2xl text-[var(--color-title)] font-bold">{name}</h2>
 
-          <p className="mt-1 text-sm text-muted-foreground">
+          <p className="mt-1 text-sm text-[var(--color-title)]">
             {player1}
             {player2 ? ` · ${player2}` : ""}
           </p>
@@ -487,7 +484,7 @@ function PublicGroupStandings({
       <div className="overflow-x-auto">
         <table className="w-full min-w-[620px] text-sm">
           <thead>
-            <tr className="border-b border-border bg-secondary/50 text-xs text-muted-foreground">
+            <tr className="border-b border-border bg-secondary/50 text-xs text-[var(--color-title)]">
               <th className="px-3 py-2.5 text-left">#</th>
               <th className="px-3 py-2.5 text-left">Equipo</th>
               <th className="px-3 py-2.5 text-center">PJ</th>
@@ -511,11 +508,11 @@ function PublicGroupStandings({
                     qualified ? "bg-primary/5" : "",
                   ].join(" ")}
                 >
-                  <td className="px-3 py-3 font-semibold">{row.position}</td>
+                  <td className="px-3 py-3 font-semibold text-[var(--color-title)]">{row.position}</td>
 
                   <td className="px-3 py-3">
                     <div className="flex items-center gap-2">
-                      <span className="font-medium">{row.teamName}</span>
+                      <span className="font-medium text-[var(--color-title)]">{row.teamName}</span>
 
                       {qualified && (
                         <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">
@@ -525,21 +522,21 @@ function PublicGroupStandings({
                     </div>
                   </td>
 
-                  <td className="px-3 py-3 text-center">{row.played}</td>
+                  <td className="px-3 py-3 text-center text-[var(--color-title)]">{row.played}</td>
 
-                  <td className="px-3 py-3 text-center">{row.won}</td>
+                  <td className="px-3 py-3 text-center text-[var(--color-title)]">{row.won}</td>
 
-                  <td className="px-3 py-3 text-center">{row.drawn}</td>
+                  <td className="px-3 py-3 text-center text-[var(--color-title)]">{row.drawn}</td>
 
-                  <td className="px-3 py-3 text-center">{row.lost}</td>
+                  <td className="px-3 py-3 text-center text-[var(--color-title)]">{row.lost}</td>
 
-                  <td className="px-3 py-3 text-center font-medium">
+                  <td className="px-3 py-3 text-center font-medium text-[var(--color-title)]">
                     {row.goalDifference > 0
                       ? `+${row.goalDifference}`
                       : row.goalDifference}
                   </td>
 
-                  <td className="px-3 py-3 text-center font-bold">
+                  <td className="px-3 py-3 text-center font-bold text-[var(--color-title)]">
                     {row.points}
                   </td>
                 </tr>
@@ -677,7 +674,7 @@ function KnockoutBracket({
 
         return (
           <div key={phase} className="space-y-3">
-            <h3 className="text-sm font-semibold">{phaseLabels[phase]}</h3>
+            <h3 className="text-sm font-semibold text-[var(--color-title)]">{phaseLabels[phase]}</h3>
 
             {phaseMatches.map((match) => (
               <PublicMatch key={match.id} match={match} teamMap={teamMap} />
@@ -708,7 +705,7 @@ function PublicMatch({
         <div className="min-w-0 flex-1">
           <p
             className={[
-              "truncate text-sm font-medium",
+              "truncate text-sm text-[var(--color-title)] font-medium",
               match.winner_team_id === teamA?.id ? "font-bold" : "",
             ].join(" ")}
           >
@@ -717,7 +714,7 @@ function PublicMatch({
 
           <p
             className={[
-              "mt-2 truncate text-sm font-medium",
+              "mt-2 truncate text-sm text-[var(--color-title)] font-medium",
               match.winner_team_id === teamB?.id ? "font-bold" : "",
             ].join(" ")}
           >
@@ -728,9 +725,9 @@ function PublicMatch({
         <div className="w-12 shrink-0 text-center">
           {isFinished ? (
             <>
-              <p className="text-sm font-bold">{match.score_a ?? 0}</p>
+              <p className="text-sm font-bold text-[var(--color-title)]">{match.score_a ?? 0}</p>
 
-              <p className="mt-2 text-sm font-bold">{match.score_b ?? 0}</p>
+              <p className="mt-2 text-sm font-bold text-[var(--color-title)]">{match.score_b ?? 0}</p>
             </>
           ) : (
             <span className="text-xs text-muted-foreground">—</span>
@@ -738,7 +735,7 @@ function PublicMatch({
         </div>
       </div>
 
-      <div className="mt-3 flex items-center justify-between border-t border-border pt-3 text-[11px] text-muted-foreground">
+      <div className="mt-3 flex items-center justify-between border-t border-border pt-3 text-[11px] text-[var(--color-title)]">
         <span>{phaseLabels[match.phase]}</span>
 
         <span>{isFinished ? "Finalizado" : "Pendiente"}</span>
