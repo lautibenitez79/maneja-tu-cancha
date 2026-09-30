@@ -41,6 +41,11 @@ const items = [
     href: "/dashboard/subscription",
     roles: ["admin"],
   },
+  {
+    label: "Torneos",
+    href: "/dashboard/tournaments",
+    roles: ["admin", "user"],
+  }
 ];
 
 interface Props {

@@ -92,9 +92,6 @@ function Contacto() {
             animate={{ opacity: 1, y: 0 }}
             className="mx-auto max-w-3xl text-center"
           >
-            <span className="rounded-full border border-primary/20 bg-primary/10 px-4 py-2 text-sm font-medium text-primary">
-              Contacto
-            </span>
 
             <h1 className="mt-8 text-5xl font-semibold font-black tracking-tight md:text-7xl">
               Hablemos de
@@ -155,14 +152,14 @@ function Contacto() {
               <InfoCard
                 icon={MessageCircle}
                 title="WhatsApp"
-                text="+54 9 11 0000-0000"
+                text="+54 9 11 58820265"
                 accent="success"
               />
 
               <InfoCard
                 icon={Mail}
                 title="Mail"
-                text="hola@manejatucancha.com.ar"
+                text="manejatucancha@gmail.com"
               />
 
               <InfoCard

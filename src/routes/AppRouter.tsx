@@ -25,6 +25,10 @@ import ResetPassword from "./ResetPassword";
 import SubscriptionPage from "@/features/subscription/pages/SubscriptionPage";
 import ClubSettingsPage from "@/features/clubs/pages/ClubSettingsPage";
 import ReservationsPage from "@/features/reservations/pages/ReservationsPage";
+import TournamentsPage from "@/features/tournaments/pages/TournamentsPage";
+import CreateTournamentPage from "@/features/tournaments/pages/CreateTournamentPage";
+import TournamentDetailPage from "@/features/tournaments/pages/TournamentDetailPage";
+import PublicTournamentPage from "@/features/tournaments/pages/PublicTournamentPage";
 
 
 export function AppRouter() {
@@ -39,6 +43,11 @@ export function AppRouter() {
       <Route
         path="/contacto"
         element={<Contacto />}
+      />
+
+      <Route
+        path="/torneo/:slug"
+        element={<PublicTournamentPage />}
       />
 
       <Route
@@ -139,6 +148,33 @@ export function AppRouter() {
           element={
             <RoleRoute allowedRoles={["admin"]}>
               <UsersPage />
+            </RoleRoute>
+          }
+        />
+
+        <Route
+          path="tournaments"
+          element={
+            <RoleRoute allowedRoles={["admin", "user"]}>
+              {<TournamentsPage />}
+            </RoleRoute>
+          }
+        />
+
+        <Route
+          path="tournaments/new"
+          element={
+            <RoleRoute allowedRoles={["admin", "user"]}>
+              {<CreateTournamentPage />}
+            </RoleRoute>
+          }
+        />
+
+        <Route
+          path="tournaments/:tournamentId"
+          element={
+            <RoleRoute allowedRoles={["admin", "user"]}>
+              {<TournamentDetailPage />}
             </RoleRoute>
           }
         />
