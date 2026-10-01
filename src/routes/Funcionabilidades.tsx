@@ -1,691 +1,1684 @@
 import { Header } from "@/components/site/Header";
+
 import { Footer } from "@/components/site/Footer";
+
 import {
-  BarChart3,
-  CalendarDays,
-  Check,
-  ChevronDown,
-  ChevronRight,
-  CircleDollarSign,
-  Clock3,
-  Globe,
-  MapPin,
-  MessageCircle,
-  Smartphone,
-  WalletCards,
+
+  BarChart3,
+
+  CalendarDays,
+
+  Check,
+
+  ChevronDown,
+
+  ChevronRight,
+
+  CircleDollarSign,
+
+  Clock3,
+
+  Globe,
+
+  MapPin,
+
+  MessageCircle,
+
+  Smartphone,
+
+  Trophy,
+
+  Users,
+
+  WalletCards,
+
 } from "lucide-react";
+
 import { useState } from "react";
 
+
+
 type Feature = {
-  id: string;
-  icon: React.ElementType;
-  eyebrow: string;
-  title: string;
-  description: string;
-  points: string[];
+
+  id: string;
+
+  icon: React.ElementType;
+
+  eyebrow: string;
+
+  title: string;
+
+  description: string;
+
+  points: string[];
+
 };
 
+
+
 const features: Feature[] = [
+
+  {
+
+    id: "reservas",
+
+    icon: CalendarDays,
+
+    eyebrow: "RESERVAS",
+
+    title: "Gestioná tus reservas sin perderte ningún turno",
+
+    description:
+
+      "Tené todas las reservas de tu complejo organizadas en un calendario claro y fácil de usar. Creá, consultá, cancelá y administrá tus turnos desde un solo lugar.",
+
+    points: [
+
+      "Calendario semanal y diario",
+
+      "Disponibilidad en tiempo real",
+
+      "Creación y cancelación de reservas",
+
+      "Bloqueo de horarios",
+
+      "Información del cliente en cada reserva",
+
+    ],
+
+  },
+
+  {
+
+    id: "canchas",
+
+    icon: MapPin,
+
+    eyebrow: "CANCHAS Y COMPLEJOS",
+
+    title: "Configurá tu complejo exactamente como funciona",
+
+    description:
+
+      "Definí tus canchas, complejos, horarios de atención y duración de los turnos. El sistema se adapta a la estructura de tu complejo.",
+
+    points: [
+
+      "Múltiples canchas",
+
+      "Horarios de apertura y cierre",
+
+      "Horarios diferentes por día",
+
+      "Bloqueos de cancha",
+
+      "Configuración independiente por cancha",
+
+    ],
+
+  },
+
+  {
+
+    id: "pagos",
+
+    icon: CircleDollarSign,
+
+    eyebrow: "Mercado Pago",
+
+    title: "Organizá el estado de tus reservas y pagos",
+
+    description:
+
+      "Utilizamos mercado pago para organizar tus pagos, el metodo más seguro. Tus clientes, reservan, pagan y se confirma.",
+
+    points: [
+
+      "Estado de cada reserva",
+
+      "Pagos pendientes",
+
+      "Reservas confirmadas",
+
+      "Seguimiento desde el calendario",
+
+    ],
+
+  },
+
+  {
+
+    id: "estadisticas",
+
+    icon: BarChart3,
+
+    eyebrow: "ESTADÍSTICAS",
+
+    title: "Transformá tus reservas en información",
+
+    description:
+
+      "Conocé cómo se está utilizando tu complejo y obtené información que te ayude a entender mejor la actividad de tus canchas.",
+
+    points: [
+
+      "Visualización de actividad",
+
+      "Ocupación",
+
+      "Información de reservas",
+
+      "Datos para tomar decisiones",
+
+    ],
+
+  },
+
+
   {
-    id: "reservas",
-    icon: CalendarDays,
-    eyebrow: "RESERVAS",
-    title: "Gestioná tus reservas sin perderte ningún turno",
+    id: "torneos",
+    icon: Trophy,
+    eyebrow: "TORNEOS",
+    title: "Mucho más que reservas",
     description:
-      "Tené todas las reservas de tu complejo organizadas en un calendario claro y fácil de usar. Creá, consultá, cancelá y administrá tus turnos desde un solo lugar.",
+      "Organizá torneos completos desde el mismo lugar donde administrás tu complejo. Creá equipos, armá grupos, generá fixtures, cargá resultados y seguí las posiciones automáticamente.",
     points: [
-      "Calendario semanal y diario",
-      "Disponibilidad en tiempo real",
-      "Creación y cancelación de reservas",
-      "Bloqueo de horarios",
-      "Información del cliente en cada reserva",
+      "Creación y gestión de torneos",
+      "Equipos y jugadores",
+      "Fixture automático",
+      "Fase de grupos y eliminación",
+      "Tablas de posiciones",
+      "Página pública del torneo",
     ],
   },
-  {
-    id: "canchas",
-    icon: MapPin,
-    eyebrow: "CANCHAS Y COMPLEJOS",
-    title: "Configurá tu complejo exactamente como funciona",
-    description:
-      "Definí tus canchas, complejos, horarios de atención y duración de los turnos. El sistema se adapta a la estructura de tu complejo.",
-    points: [
-      "Múltiples canchas",
-      "Horarios de apertura y cierre",
-      "Horarios diferentes por día",
-      "Bloqueos de cancha",
-      "Configuración independiente por cancha",
-    ],
-  },
-  {
-    id: "pagos",
-    icon: CircleDollarSign,
-    eyebrow: "Mercado Pago",
-    title: "Organizá el estado de tus reservas y pagos",
-    description:
-      "Utilizamos mercado pago para organizar tus pagos, el metodo más seguro. Tus clientes, reservan, pagan y se confirma.",
-    points: [
-      "Estado de cada reserva",
-      "Pagos pendientes",
-      "Reservas confirmadas",
-      "Seguimiento desde el calendario",
-    ],
-  },
-  {
-    id: "estadisticas",
-    icon: BarChart3,
-    eyebrow: "ESTADÍSTICAS",
-    title: "Transformá tus reservas en información",
-    description:
-      "Conocé cómo se está utilizando tu complejo y obtené información que te ayude a entender mejor la actividad de tus canchas.",
-    points: [
-      "Visualización de actividad",
-      "Ocupación",
-      "Información de reservas",
-      "Datos para tomar decisiones",
-    ],
-  },
+
 ];
 
-function CalendarDemo() {
-  const [selected, setSelected] = useState("10:00");
 
-  const slots = [
+
+function CalendarDemo() {
+
+  const [selected, setSelected] = useState("10:00");
+
+
+
+  const slots = [
+
+    {
+
+      time: "09:00",
+
+      status: "Disponible",
+
+    },
+
+    {
+
+      time: "10:00",
+
+      status: "Disponible",
+
+    },
+
+    {
+
+      time: "11:00",
+
+      status: "Reservado",
+
+    },
+
+    {
+
+      time: "12:00",
+
+      status: "Disponible",
+
+    },
+
+  ];
+
+
+
+  return (
+
+    <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-[0_25px_80px_rgba(15,23,42,0.12)] md:p-6">
+
+      <div className="mb-5 flex items-center justify-between">
+
+        <div>
+
+          <p className="text-xs font-medium text-slate-400">
+
+            Complejo deportivo
+
+          </p>
+
+
+
+          <h4 className="mt-1 font-bold text-slate-900">Calendario</h4>
+
+        </div>
+
+
+
+        <div className="rounded-lg bg-slate-100 px-3 py-2 text-xs font-semibold text-slate-600">
+
+          Esta semana
+
+        </div>
+
+      </div>
+
+
+
+      <div className="grid grid-cols-2 gap-3">
+
+        {slots.map((slot) => {
+
+          const isSelected = selected === slot.time;
+
+
+
+          const reserved = slot.status === "Reservado";
+
+
+
+          return (
+
+            <button
+
+              key={slot.time}
+
+              type="button"
+
+              onClick={() => setSelected(slot.time)}
+
+              className={`rounded-2xl border p-4 text-left transition-all ${
+
+                isSelected
+
+                  ? "border-[var(--color-primary)] bg-blue-50 shadow-md"
+
+                  : "border-slate-100 bg-slate-50 hover:border-slate-200 hover:bg-white"
+
+              }`}
+
+            >
+
+              <div className="flex items-center justify-between">
+
+                <span className="text-sm font-bold text-slate-800">
+
+                  {slot.time}
+
+                </span>
+
+
+
+                <span
+
+                  className={`h-2.5 w-2.5 rounded-full ${
+
+                    reserved ? "bg-red-500" : "bg-green-500"
+
+                  }`}
+
+                />
+
+              </div>
+
+
+
+              <p
+
+                className={`mt-2 text-xs font-semibold ${
+
+                  reserved ? "text-red-500" : "text-green-600"
+
+                }`}
+
+              >
+
+                {slot.status}
+
+              </p>
+
+            </button>
+
+          );
+
+        })}
+
+      </div>
+
+
+
+      <div className="mt-5 rounded-2xl bg-slate-50 p-4">
+
+        <div className="flex items-center gap-3">
+
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white shadow-sm">
+
+            <Clock3 size={18} className="text-[var(--color-primary)]" />
+
+          </div>
+
+
+
+          <div>
+
+            <p className="text-xs text-slate-400">Horario seleccionado</p>
+
+
+
+            <p className="text-sm font-bold text-slate-800">
+
+              {selected} · Cancha 1
+
+            </p>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  );
+
+}
+
+
+
+function FeaturePlaceholder({ feature }: { feature: Feature }) {
+
+  const Icon = feature.icon;
+
+
+
+  return (
+
+    <div className="relative overflow-hidden rounded-3xl border border-slate-200 bg-slate-50 p-6 shadow-[0_25px_80px_rgba(15,23,42,0.08)] md:p-8">
+
+      <div className="absolute -right-20 -top-20 h-48 w-48 rounded-full bg-blue-500/5" />
+
+
+
+      <div className="relative">
+
+        <div className="rounded-2xl border border-slate-200 bg-white p-6">
+
+          <div className="flex items-center justify-between">
+
+            <div>
+
+              <p className="text-xs font-medium text-slate-400">
+
+                Maneja Tu Cancha
+
+              </p>
+
+
+
+              <h4 className="mt-1 text-lg font-bold text-slate-900">
+
+                {feature.eyebrow}
+
+              </h4>
+
+            </div>
+
+
+
+            {feature.id === "pagos" ? (
+
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-[var(--color-primary)]">
+
+                <img src="/mercado-pago.svg" alt="Mercado Pago" />
+
+              </div>
+
+            ) : (
+
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-[var(--color-primary)]">
+
+                <Icon size={22} />
+
+              </div>
+
+            )}
+
+          </div>
+
+
+
+          <div className="mt-6 space-y-3">
+
+            {feature.points.map((point, index) => (
+
+              <div
+
+                key={point}
+
+                className="flex items-center gap-3 rounded-xl border border-slate-100 bg-slate-50 px-4 py-3"
+
+              >
+
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-white text-xs font-bold text-[var(--color-primary)] shadow-sm">
+
+                  {index + 1}
+
+                </div>
+
+
+
+                <span className="text-sm font-medium text-slate-700">
+
+                  {point}
+
+                </span>
+
+              </div>
+
+            ))}
+
+          </div>
+
+        </div>
+
+
+
+        <div className="mt-4 grid grid-cols-2 gap-4">
+
+          <div className="rounded-2xl border border-slate-200 bg-white p-5">
+
+            <p className="text-xs text-slate-400">Estado</p>
+
+            <p className="mt-2 text-lg font-bold text-green-600">Activo</p>
+
+          </div>
+
+
+
+          <div className="rounded-2xl border border-slate-200 bg-white p-5">
+
+            <p className="text-xs text-slate-400">Información</p>
+
+            <p className="mt-2 text-lg font-bold text-slate-900">
+
+              En un solo lugar
+
+            </p>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  );
+
+}
+
+
+
+//  ============================================================
+
+//    PÁGINA WEB PÚBLICA
+
+// ============================================================ 
+
+
+
+function PublicWebsiteSection() {
+
+  return (
+
+    <section className="overflow-hidden bg-[var(--color-background)] px-6 py-24 md:py-32">
+
+      <div className="mx-auto max-w-7xl">
+
+        <div className="grid items-center gap-14 lg:grid-cols-2 lg:gap-20">
+
+          {/* TEXTO */}
+
+          <div>
+
+            <div className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-4 py-2 text-xs font-bold uppercase tracking-[0.16em] text-[var(--color-primary)]">
+
+              <Globe size={15} />
+
+              Página web pública
+
+            </div>
+
+
+
+            <h2 className="mt-6 max-w-2xl text-4xl font-bold tracking-tight text-[var(--color-title)] md:text-6xl">
+
+              Tu complejo también puede tener su{" "}
+
+              <span className="text-[var(--color-primary)]">
+
+                propia página web.
+
+              </span>
+
+            </h2>
+
+
+
+            <p className="mt-6 max-w-xl text-lg leading-8 text-slate-500">
+
+              Te ofrecemos una página web pública y personalizada para tu
+
+              complejo, donde tus clientes pueden conocer tus canchas,
+
+              consultar disponibilidad y realizar reservas online.
+
+            </p>
+
+
+
+            <div className="mt-8 space-y-4">
+
+              {[
+
+                "Página pública personalizada para tu complejo",
+
+                "Diseño adaptado a la identidad de tu marca",
+
+                "Reservas online integradas con Maneja Tu Cancha",
+
+                "Diseño responsive para celulares, tablets y computadoras",
+
+                "Información, ubicación y servicios de tu complejo",
+
+              ].map((point) => (
+
+                <div key={point} className="flex items-start gap-3">
+
+                  <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-green-50 text-green-600">
+
+                    <Check size={14} />
+
+                  </div>
+
+
+
+                  <span className="text-sm font-medium text-slate-600 md:text-base">
+
+                    {point}
+
+                  </span>
+
+                </div>
+
+              ))}
+
+            </div>
+
+
+
+            <div className="mt-9 flex flex-wrap gap-3">
+
+              <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-600">
+
+                <Smartphone
+
+                  size={17}
+
+                  className="text-[var(--color-primary)]"
+
+                />
+
+                100% responsive
+
+              </div>
+
+
+
+              <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-600">
+
+                <Globe size={17} className="text-[var(--color-primary)]" />
+
+                Presencia online
+
+              </div>
+
+            </div>
+
+
+
+            <p className="mt-7 text-sm leading-6 text-slate-400">
+
+              Servicio opcional. Podemos crear y personalizar la página de tu
+
+              complejo según tus necesidades.
+
+            </p>
+
+          </div>
+
+
+
+          {/* MOCKUP */}
+
+          <div className="relative">
+
+            <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-blue-500/10 blur-3xl" />
+
+
+
+            <div className="relative rounded-[2rem] border border-slate-200 bg-slate-50 p-3 shadow-[0_30px_100px_rgba(15,23,42,0.14)] md:p-5">
+
+              {/* BROWSER */}
+
+              <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+
+                <div className="flex items-center gap-2 border-b border-slate-100 bg-slate-50 px-4 py-3">
+
+                  <div className="h-2.5 w-2.5 rounded-full bg-slate-300" />
+
+                  <div className="h-2.5 w-2.5 rounded-full bg-slate-300" />
+
+                  <div className="h-2.5 w-2.5 rounded-full bg-slate-300" />
+
+
+
+                  <div className="ml-3 flex-1 rounded-lg bg-white px-3 py-1.5 text-[10px] text-slate-400">
+
+                    manejatucancha.com.ar/tu-complejo
+
+                  </div>
+
+                </div>
+
+
+
+                {/* WEBSITE PREVIEW */}
+
+                <div className="p-5 md:p-7">
+
+                  <div className="flex items-center justify-between">
+
+                    <div>
+
+                      <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--color-primary)]">
+
+                        Complejo deportivo
+
+                      </p>
+
+
+
+                      <h3 className="mt-1 text-xl font-bold text-slate-900 md:text-2xl">
+
+                        Tu Complejo
+
+                      </h3>
+
+                    </div>
+
+
+
+                    <div className="rounded-xl bg-[var(--color-primary)] px-3 py-2 text-[10px] font-bold text-white">
+
+                      Reservar
+
+                    </div>
+
+                  </div>
+
+
+
+                  <div className="mt-6 h-36 overflow-hidden rounded-2xl bg-gradient-to-br from-slate-800 via-slate-700 to-blue-600 md:h-48">
+
+                    <div className="flex h-full items-center justify-center">
+
+                      <div className="rounded-2xl border border-white/20 bg-white/10 px-6 py-4 text-center backdrop-blur-sm">
+
+                        <p className="text-xs font-medium text-white/70">
+
+                          Bienvenidos
+
+                        </p>
+
+                        <p className="mt-1 text-lg font-bold text-white md:text-2xl">
+
+                          Tu complejo, online.
+
+                        </p>
+
+                      </div>
+
+                    </div>
+
+                  </div>
+
+
+
+                  <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-3">
+
+                    {[
+
+                      "Fútbol 5",
+
+                      "Pádel",
+
+                      "Tenis",
+
+                    ].map((item) => (
+
+                      <div
+
+                        key={item}
+
+                        className="rounded-xl border border-slate-100 bg-slate-50 p-3"
+
+                      >
+
+                        <div className="h-12 rounded-lg bg-white" />
+
+
+
+                        <p className="mt-2 text-xs font-bold text-slate-700">
+
+                          {item}
+
+                        </p>
+
+
+
+                        <p className="mt-1 text-[10px] text-green-600">
+
+                          Disponible
+
+                        </p>
+
+                      </div>
+
+                    ))}
+
+                  </div>
+
+
+
+                  <div className="mt-5 flex items-center justify-between rounded-xl bg-slate-50 p-4">
+
+                    <div>
+
+                      <p className="text-[10px] text-slate-400">
+
+                        Reservá tu turno
+
+                      </p>
+
+
+
+                      <p className="mt-1 text-xs font-bold text-slate-800">
+
+                        Elegí cancha y horario
+
+                      </p>
+
+                    </div>
+
+
+
+                    <div className="rounded-lg bg-green-500 px-3 py-2 text-[10px] font-bold text-white">
+
+                      Ver horarios
+
+                    </div>
+
+                  </div>
+
+                </div>
+
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </section>
+
+  );
+
+}
+
+function TournamentDemo() {
+  const stages = [
     {
-      time: "09:00",
-      status: "Disponible",
+      number: "01",
+      label: "Equipos",
+      title: "Armá la competencia",
+      description:
+        "Registrá equipos y jugadores y dejá todo listo para empezar.",
+      icon: Users,
     },
     {
-      time: "10:00",
-      status: "Disponible",
+      number: "02",
+      label: "Fixture",
+      title: "Generá los cruces",
+      description:
+        "Maneja Tu Cancha arma automáticamente las fechas y enfrentamientos.",
+      icon: CalendarDays,
     },
     {
-      time: "11:00",
-      status: "Reservado",
-    },
-    {
-      time: "12:00",
-      status: "Disponible",
+      number: "03",
+      label: "Resultados",
+      title: "Seguí cada partido",
+      description:
+        "Cargá resultados y mantené las posiciones actualizadas.",
+      icon: Trophy,
     },
   ];
 
   return (
-    <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-[0_25px_80px_rgba(15,23,42,0.12)] md:p-6">
-      <div className="mb-5 flex items-center justify-between">
-        <div>
-          <p className="text-xs font-medium text-slate-400">
-            Complejo deportivo
-          </p>
+    <div className="relative">
+      {/* Background glow */}
+      <div className="absolute -right-24 top-0 h-72 w-72 rounded-full bg-blue-500/10 blur-3xl" />
+      <div className="absolute -bottom-20 left-10 h-60 w-60 rounded-full bg-green-400/10 blur-3xl" />
 
-          <h4 className="mt-1 font-bold text-slate-900">Calendario</h4>
-        </div>
+      <div className="relative px-2 py-4 md:px-6 md:py-8">
+        {/* Grid decorativo */}
+        <div className="absolute inset-0 rounded-[2.5rem] bg-[linear-gradient(to_right,rgba(148,163,184,0.08)_1px,transparent_1px),linear-gradient(to_bottom,rgba(148,163,184,0.08)_1px,transparent_1px)] bg-[size:32px_32px]" />
 
-        <div className="rounded-lg bg-slate-100 px-3 py-2 text-xs font-semibold text-slate-600">
-          Esta semana
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-3">
-        {slots.map((slot) => {
-          const isSelected = selected === slot.time;
-
-          const reserved = slot.status === "Reservado";
-
-          return (
-            <button
-              key={slot.time}
-              type="button"
-              onClick={() => setSelected(slot.time)}
-              className={`rounded-2xl border p-4 text-left transition-all ${
-                isSelected
-                  ? "border-[var(--color-primary)] bg-blue-50 shadow-md"
-                  : "border-slate-100 bg-slate-50 hover:border-slate-200 hover:bg-white"
-              }`}
-            >
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-bold text-slate-800">
-                  {slot.time}
-                </span>
-
-                <span
-                  className={`h-2.5 w-2.5 rounded-full ${
-                    reserved ? "bg-red-500" : "bg-green-500"
-                  }`}
-                />
-              </div>
-
-              <p
-                className={`mt-2 text-xs font-semibold ${
-                  reserved ? "text-red-500" : "text-green-600"
-                }`}
-              >
-                {slot.status}
-              </p>
-            </button>
-          );
-        })}
-      </div>
-
-      <div className="mt-5 rounded-2xl bg-slate-50 p-4">
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white shadow-sm">
-            <Clock3 size={18} className="text-[var(--color-primary)]" />
-          </div>
-
-          <div>
-            <p className="text-xs text-slate-400">Horario seleccionado</p>
-
-            <p className="text-sm font-bold text-slate-800">
-              {selected} · Cancha 1
-            </p>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function FeaturePlaceholder({ feature }: { feature: Feature }) {
-  const Icon = feature.icon;
-
-  return (
-    <div className="relative overflow-hidden rounded-3xl border border-slate-200 bg-slate-50 p-6 shadow-[0_25px_80px_rgba(15,23,42,0.08)] md:p-8">
-      <div className="absolute -right-20 -top-20 h-48 w-48 rounded-full bg-blue-500/5" />
-
-      <div className="relative">
-        <div className="rounded-2xl border border-slate-200 bg-white p-6">
-          <div className="flex items-center justify-between">
+        <div className="relative">
+          {/* Header del torneo */}
+          <div className="flex items-end justify-between gap-5">
             <div>
-              <p className="text-xs font-medium text-slate-400">
-                Maneja Tu Cancha
-              </p>
+              <div className="flex items-center gap-2">
+                <span className="h-2 w-2 rounded-full bg-green-500" />
 
-              <h4 className="mt-1 text-lg font-bold text-slate-900">
-                {feature.eyebrow}
-              </h4>
-            </div>
-
-            {feature.id === "pagos" ? (
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-[var(--color-primary)]">
-                <img src="/mercado-pago.svg" alt="Mercado Pago" />
-              </div>
-            ) : (
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-[var(--color-primary)]">
-                <Icon size={22} />
-              </div>
-            )}
-          </div>
-
-          <div className="mt-6 space-y-3">
-            {feature.points.map((point, index) => (
-              <div
-                key={point}
-                className="flex items-center gap-3 rounded-xl border border-slate-100 bg-slate-50 px-4 py-3"
-              >
-                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-white text-xs font-bold text-[var(--color-primary)] shadow-sm">
-                  {index + 1}
-                </div>
-
-                <span className="text-sm font-medium text-slate-700">
-                  {point}
+                <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-green-600">
+                  Torneo en curso
                 </span>
               </div>
-            ))}
-          </div>
-        </div>
 
-        <div className="mt-4 grid grid-cols-2 gap-4">
-          <div className="rounded-2xl border border-slate-200 bg-white p-5">
-            <p className="text-xs text-slate-400">Estado</p>
-            <p className="mt-2 text-lg font-bold text-green-600">Activo</p>
-          </div>
+              <h3 className="mt-2 text-3xl font-black tracking-tight text-slate-900 md:text-4xl">
+                Apertura
+                <span className="text-[var(--color-primary)]"> 2026</span>
+              </h3>
 
-          <div className="rounded-2xl border border-slate-200 bg-white p-5">
-            <p className="text-xs text-slate-400">Información</p>
-            <p className="mt-2 text-lg font-bold text-slate-900">
-              En un solo lugar
-            </p>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* ============================================================
-   PÁGINA WEB PÚBLICA
-============================================================ */
-
-function PublicWebsiteSection() {
-  return (
-    <section className="overflow-hidden bg-[var(--color-background)] px-6 py-24 md:py-32">
-      <div className="mx-auto max-w-7xl">
-        <div className="grid items-center gap-14 lg:grid-cols-2 lg:gap-20">
-          {/* TEXTO */}
-          <div>
-            <div className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-4 py-2 text-xs font-bold uppercase tracking-[0.16em] text-[var(--color-primary)]">
-              <Globe size={15} />
-              Página web pública
-            </div>
-
-            <h2 className="mt-6 max-w-2xl text-4xl font-bold tracking-tight text-[var(--color-title)] md:text-6xl">
-              Tu complejo también puede tener su{" "}
-              <span className="text-[var(--color-primary)]">
-                propia página web.
-              </span>
-            </h2>
-
-            <p className="mt-6 max-w-xl text-lg leading-8 text-slate-500">
-              Te ofrecemos una página web pública y personalizada para tu
-              complejo, donde tus clientes pueden conocer tus canchas,
-              consultar disponibilidad y realizar reservas online.
-            </p>
-
-            <div className="mt-8 space-y-4">
-              {[
-                "Página pública personalizada para tu complejo",
-                "Diseño adaptado a la identidad de tu marca",
-                "Reservas online integradas con Maneja Tu Cancha",
-                "Diseño responsive para celulares, tablets y computadoras",
-                "Información, ubicación y servicios de tu complejo",
-              ].map((point) => (
-                <div key={point} className="flex items-start gap-3">
-                  <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-green-50 text-green-600">
-                    <Check size={14} />
-                  </div>
-
-                  <span className="text-sm font-medium text-slate-600 md:text-base">
-                    {point}
-                  </span>
-                </div>
-              ))}
-            </div>
-
-            <div className="mt-9 flex flex-wrap gap-3">
-              <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-600">
-                <Smartphone
-                  size={17}
-                  className="text-[var(--color-primary)]"
-                />
-                100% responsive
-              </div>
-
-              <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-600">
-                <Globe size={17} className="text-[var(--color-primary)]" />
-                Presencia online
-              </div>
-            </div>
-
-            <p className="mt-7 text-sm leading-6 text-slate-400">
-              Servicio opcional. Podemos crear y personalizar la página de tu
-              complejo según tus necesidades.
-            </p>
-          </div>
-
-          {/* MOCKUP */}
-          <div className="relative">
-            <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-blue-500/10 blur-3xl" />
-
-            <div className="relative rounded-[2rem] border border-slate-200 bg-slate-50 p-3 shadow-[0_30px_100px_rgba(15,23,42,0.14)] md:p-5">
-              {/* BROWSER */}
-              <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
-                <div className="flex items-center gap-2 border-b border-slate-100 bg-slate-50 px-4 py-3">
-                  <div className="h-2.5 w-2.5 rounded-full bg-slate-300" />
-                  <div className="h-2.5 w-2.5 rounded-full bg-slate-300" />
-                  <div className="h-2.5 w-2.5 rounded-full bg-slate-300" />
-
-                  <div className="ml-3 flex-1 rounded-lg bg-white px-3 py-1.5 text-[10px] text-slate-400">
-                    manejatucancha.com.ar/tu-complejo
-                  </div>
-                </div>
-
-                {/* WEBSITE PREVIEW */}
-                <div className="p-5 md:p-7">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--color-primary)]">
-                        Complejo deportivo
-                      </p>
-
-                      <h3 className="mt-1 text-xl font-bold text-slate-900 md:text-2xl">
-                        Tu Complejo
-                      </h3>
-                    </div>
-
-                    <div className="rounded-xl bg-[var(--color-primary)] px-3 py-2 text-[10px] font-bold text-white">
-                      Reservar
-                    </div>
-                  </div>
-
-                  <div className="mt-6 h-36 overflow-hidden rounded-2xl bg-gradient-to-br from-slate-800 via-slate-700 to-blue-600 md:h-48">
-                    <div className="flex h-full items-center justify-center">
-                      <div className="rounded-2xl border border-white/20 bg-white/10 px-6 py-4 text-center backdrop-blur-sm">
-                        <p className="text-xs font-medium text-white/70">
-                          Bienvenidos
-                        </p>
-                        <p className="mt-1 text-lg font-bold text-white md:text-2xl">
-                          Tu complejo, online.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-3">
-                    {[
-                      "Fútbol 5",
-                      "Pádel",
-                      "Tenis",
-                    ].map((item) => (
-                      <div
-                        key={item}
-                        className="rounded-xl border border-slate-100 bg-slate-50 p-3"
-                      >
-                        <div className="h-12 rounded-lg bg-white" />
-
-                        <p className="mt-2 text-xs font-bold text-slate-700">
-                          {item}
-                        </p>
-
-                        <p className="mt-1 text-[10px] text-green-600">
-                          Disponible
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="mt-5 flex items-center justify-between rounded-xl bg-slate-50 p-4">
-                    <div>
-                      <p className="text-[10px] text-slate-400">
-                        Reservá tu turno
-                      </p>
-
-                      <p className="mt-1 text-xs font-bold text-slate-800">
-                        Elegí cancha y horario
-                      </p>
-                    </div>
-
-                    <div className="rounded-lg bg-green-500 px-3 py-2 text-[10px] font-bold text-white">
-                      Ver horarios
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-export default function Funcionalidades() {
-  const [activeFeature, setActiveFeature] = useState("reservas");
-
-  const currentFeature =
-    features.find((feature) => feature.id === activeFeature) ?? features[0];
-
-  const Icon = currentFeature.icon;
-
-  return (
-    <div className="">
-      <Header />
-
-      <main className="bg-white">
-        {/* HERO */}
-        <section className="relative overflow-hidden bg-[var(--color-background)]">
-          <div className="mx-auto max-w-7xl px-6 pb-24 pt-28 md:pb-32 md:pt-40">
-            <div className="mx-auto max-w-4xl text-center">
-              <h1 className="mt-7 text-5xl font-bold tracking-tight text-[var(--color-title)] md:text-7xl">
-                Todo tu complejo.
-                <br />
-                <span className="text-[var(--color-primary)]">
-                  Un solo lugar.
-                </span>
-              </h1>
-
-              <p className="mx-auto mt-7 max-w-2xl text-lg leading-8 text-slate-500 md:text-xl">
-                Manejá reservas, canchas, clientes, horarios y pagos desde una
-                plataforma diseñada para complejos deportivos.
-              </p>
-
-              <button
-                type="button"
-                onClick={() =>
-                  document.getElementById("explorar")?.scrollIntoView({
-                    behavior: "smooth",
-                  })
-                }
-                className="mt-9 inline-flex items-center gap-2 rounded-xl bg-[var(--color-primary)] px-6 py-3.5 font-semibold text-white shadow-lg shadow-blue-500/20 transition hover:-translate-y-0.5 hover:bg-[var(--color-primary-hover)]"
-              >
-                Explorar funcionalidades
-                <ChevronDown size={18} />
-              </button>
-            </div>
-          </div>
-        </section>
-
-        {/* PÁGINA WEB PÚBLICA */}
-        <PublicWebsiteSection />
-
-        {/* EXPLORADOR */}
-        <section
-          id="explorar"
-          className="scroll-mt-20 border-y border-slate-100 bg-[#111623]"
-        >
-          <div className="mx-auto max-w-7xl px-6 py-20 md:py-28">
-            <div className="max-w-3xl">
-              <span className="text-sm font-bold uppercase tracking-[0.18em] text-[var(--color-primary)]">
-                Explorá la plataforma
-              </span>
-
-              <h2 className="mt-4 text-4xl font-bold tracking-tight text-[var(--color-primary)] md:text-5xl">
-                Una herramienta para cada parte de tu negocio
-              </h2>
-
-              <p className="mt-5 text-lg leading-8 text-slate-500">
-                Elegí una funcionalidad para conocer cómo puede ayudarte en el
-                día a día.
+              <p className="mt-1 text-xs text-slate-400">
+                8 equipos · 2 grupos · eliminación directa
               </p>
             </div>
 
-            {/* TABS */}
-            <div className="mt-12 flex gap-3 overflow-x-auto pb-3">
-              {features.map((feature) => {
-                const FeatureIcon = feature.icon;
+            <div className="hidden rounded-2xl border border-slate-200 bg-white px-4 py-3 text-right shadow-sm sm:block">
+              <p className="text-[9px] font-bold uppercase tracking-[0.12em] text-slate-400">
+                Próximo partido
+              </p>
 
-                const active = activeFeature === feature.id;
+              <p className="mt-1 text-sm font-black text-slate-800">
+                19:00 hs
+              </p>
+            </div>
+          </div>
+
+          {/* Recorrido del torneo */}
+          <div className="relative mt-8">
+            {/* Línea vertical */}
+            <div className="absolute left-5 top-6 bottom-6 w-px bg-gradient-to-b from-blue-200 via-slate-200 to-green-200 md:left-7" />
+
+            <div className="space-y-5">
+              {stages.map((stage, index) => {
+                const Icon = stage.icon;
 
                 return (
-                  <button
-                    key={feature.id}
-                    type="button"
-                    onClick={() => setActiveFeature(feature.id)}
-                    className={`flex shrink-0 items-center gap-2 rounded-xl border px-4 py-3 text-sm font-semibold transition ${
-                      active
-                        ? "border-[var(--color-primary)] bg-[var(--color-primary)] text-white shadow-md"
-                        : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
-                    }`}
+                  <div
+                    key={stage.number}
+                    className="relative grid grid-cols-[42px_1fr] gap-4 md:grid-cols-[56px_1fr] md:gap-5"
                   >
-                    {feature.id === "pagos" ? (
-                      <img
-                        src="/mercado-pago.svg"
-                        className="h-10 w-10"
-                        alt="Mercado Pago"
-                      />
-                    ) : (
-                      <FeatureIcon size={17} />
-                    )}
+                    {/* Icono */}
+                    <div className="relative z-10 flex h-10 w-10 items-center justify-center rounded-2xl border border-blue-100 bg-white text-[var(--color-primary)] shadow-[0_8px_25px_rgba(15,23,42,0.08)] md:h-14 md:w-14">
+                      <Icon size={18} />
+                    </div>
 
-                    {feature.eyebrow}
-                  </button>
+                    {/* Contenido */}
+                    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_15px_40px_rgba(15,23,42,0.06)] md:p-5">
+                      <div className="flex items-center justify-between gap-4">
+                        <div>
+                          <span className="text-[9px] font-black uppercase tracking-[0.16em] text-[var(--color-primary)]">
+                            {stage.number} · {stage.label}
+                          </span>
+
+                          <h4 className="mt-1 text-sm font-bold text-slate-900 md:text-base">
+                            {stage.title}
+                          </h4>
+
+                          <p className="mt-1 max-w-md text-[11px] leading-5 text-slate-400 md:text-xs">
+                            {stage.description}
+                          </p>
+                        </div>
+
+                        {/* Métrica etapa 1 */}
+                        {index === 0 && (
+                          <div className="hidden shrink-0 rounded-xl bg-slate-50 px-3 py-2 text-right sm:block">
+                            <p className="text-[8px] font-bold uppercase tracking-wide text-slate-400">
+                              Equipos
+                            </p>
+
+                            <p className="mt-0.5 text-sm font-black text-slate-800">
+                              08
+                            </p>
+                          </div>
+                        )}
+
+                        {/* Métrica etapa 2 */}
+                        {index === 1 && (
+                          <div className="hidden shrink-0 rounded-xl bg-blue-50 px-3 py-2 text-right sm:block">
+                            <p className="text-[8px] font-bold uppercase tracking-wide text-blue-400">
+                              Partidos
+                            </p>
+
+                            <p className="mt-0.5 text-sm font-black text-blue-700">
+                              24
+                            </p>
+                          </div>
+                        )}
+
+                        {/* Métrica etapa 3 */}
+                        {index === 2 && (
+                          <div className="hidden shrink-0 rounded-xl bg-green-50 px-3 py-2 text-right sm:block">
+                            <p className="text-[8px] font-bold uppercase tracking-wide text-green-500">
+                              Jugados
+                            </p>
+
+                            <p className="mt-0.5 text-sm font-black text-green-700">
+                              18
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
                 );
               })}
             </div>
+          </div>
 
-            {/* FEATURE */}
-            <div className="mt-10 grid items-center gap-12 md:grid-cols-2 md:gap-20">
-              <div>
-                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-50 text-[var(--color-primary)]">
-                  {currentFeature.id === "pagos" ? (
-                    <img
-                      src="/mercado-pago.svg"
-                      className="h-14 w-14"
-                      alt="Mercado Pago"
-                    />
-                  ) : (
-                    <Icon size={28} />
-                  )}
+          {/* Resultado destacado */}
+          <div className="mt-6 ml-0 md:ml-16">
+            <div className="rounded-2xl bg-slate-900 p-4 shadow-[0_25px_60px_rgba(15,23,42,0.18)] md:p-5">
+              <div className="flex items-center justify-between gap-5">
+                <div className="min-w-0">
+                  <p className="text-[9px] font-bold uppercase tracking-[0.16em] text-slate-500">
+                    Último resultado
+                  </p>
+
+                  <div className="mt-2 flex items-center gap-3">
+                    <div className="min-w-0">
+                      <p className="truncate text-xs font-bold text-white">
+                        Los Pibes
+                      </p>
+
+                      <p className="mt-1 text-[9px] text-slate-500">
+                        Semifinal
+                      </p>
+                    </div>
+
+                    <span className="text-xl font-black text-white">
+                      3
+                    </span>
+
+                    <span className="text-xs text-slate-600">
+                      —
+                    </span>
+
+                    <span className="text-xl font-black text-slate-500">
+                      1
+                    </span>
+
+                    <p className="truncate text-xs font-semibold text-slate-400">
+                      La Banda
+                    </p>
+                  </div>
                 </div>
 
-                <p className="mt-7 text-sm font-bold uppercase tracking-[0.16em] text-[var(--color-primary)]">
-                  {currentFeature.eyebrow}
-                </p>
-
-                <h3 className="mt-4 text-3xl font-bold tracking-tight text-white md:text-5xl">
-                  {currentFeature.title}
-                </h3>
-
-                <p className="mt-6 text-lg leading-8 text-slate-500">
-                  {currentFeature.description}
-                </p>
-
-                <div className="mt-8 space-y-4">
-                  {currentFeature.points.map((point) => (
-                    <div key={point} className="flex items-start gap-3">
-                      <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-green-50 text-green-600">
-                        <Check size={14} />
-                      </div>
-
-                      <span className="text-sm font-medium text-slate-600 md:text-base">
-                        {point}
-                      </span>
-                    </div>
-                  ))}
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white/10">
+                  <Trophy
+                    size={18}
+                    className="text-white"
+                  />
                 </div>
               </div>
 
-              {/* DEMO */}
-              <div className="md:sticky md:top-24">
-                {activeFeature === "reservas" ? (
-                  <CalendarDemo />
-                ) : (
-                  <FeaturePlaceholder feature={currentFeature} />
-                )}
+              {/* Progreso */}
+              <div className="mt-4 h-1 overflow-hidden rounded-full bg-white/10">
+                <div className="h-full w-3/4 rounded-full bg-[var(--color-primary)]" />
+              </div>
+
+              <div className="mt-2 flex justify-between text-[8px] font-medium text-slate-500">
+                <span>Grupos</span>
+                <span>Semifinal</span>
+                <span>Final</span>
               </div>
             </div>
           </div>
-        </section>
-
-        {/* PRÓXIMAMENTE */}
-        <UpcomingFeatures />
-
-        {/* CTA */}
-        <section className="bg-[var(--color-background)] px-6 py-24 text-center md:py-32">
-          <h2 className="mx-auto max-w-3xl text-4xl font-bold tracking-tight text-[var(--color-primary)] md:text-6xl">
-            Tu complejo puede funcionar mucho más simple.
-          </h2>
-
-          <p className="mx-auto mt-6 max-w-2xl text-lg text-slate-500">
-            Probá Maneja Tu Cancha gratis durante un mes y empezá a administrar
-            tus reservas de otra manera.
-          </p>
-
-          <a
-            href="/login"
-            className="mt-9 inline-flex rounded-xl bg-[var(--color-success)] px-7 py-4 font-bold text-white transition hover:-translate-y-0.5"
-          >
-            Probar gratis
-          </a>
-        </section>
-      </main>
-
-      <Footer />
+        </div>
+      </div>
     </div>
   );
 }
 
-function UpcomingFeatures() {
+function TournamentsSection() {
   return (
     <section className="overflow-hidden bg-[var(--color-background)] px-6 py-24 md:py-32">
-      <div className="mx-auto max-w-6xl">
-        <div className="text-center">
-          <span className="inline-flex rounded-full bg-amber-50 px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] text-amber-600">
-            Próximamente
-          </span>
+      <div className="mx-auto max-w-7xl">
+        <div className="grid items-center gap-16 lg:grid-cols-[0.85fr_1.15fr] lg:gap-24">
 
-          <h2 className="mt-5 text-4xl font-bold tracking-tight text-[var(--color-title)] md:text-6xl">
-            Y esto recién empieza.
-          </h2>
+          {/* Texto */}
+          <div>
+            <span className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-4 py-2 text-xs font-bold uppercase tracking-[0.16em] text-[var(--color-primary)]">
+              <Trophy size={15} />
+              Torneos
+            </span>
 
-          <p className="mx-auto mt-6 max-w-2xl text-lg leading-8 text-slate-500">
-            Estamos trabajando en nuevas herramientas para que puedas
-            administrar todavía más aspectos de tu complejo desde Maneja Tu
-            Cancha.
-          </p>
-        </div>
+            <h2 className="mt-6 max-w-xl text-4xl font-bold tracking-tight text-[var(--color-title)] md:text-6xl">
+              De la primera fecha
+              <span className="text-[var(--color-primary)]">
+                {" "}a la final.
+              </span>
+            </h2>
 
-        <div className="mt-16 grid gap-6 md:grid-cols-2">
-          <UpcomingCard
-            icon={WalletCards}
-            number="01"
-            title="Control de stock y caja"
-            description="Llevá el control de tus productos, movimientos de caja y operaciones del día desde el mismo lugar donde gestionás tus reservas."
-          />
+            <p className="mt-6 max-w-lg text-lg leading-8 text-slate-500">
+              Creá el torneo, organizá los equipos y dejá que Maneja Tu Cancha
+              se encargue del fixture, los resultados y las posiciones.
+            </p>
 
-          <UpcomingCard
-            icon={MessageCircle}
-            number="02"
-            title="API de WhatsApp"
-            description="Automatizá confirmaciones, recordatorios y comunicaciones con tus clientes directamente desde WhatsApp."
-          />
+            {/* Tags */}
+            <div className="mt-8 flex flex-wrap gap-2">
+              {[
+                "Equipos",
+                "Fixture automático",
+                "Resultados",
+                "Posiciones",
+                "Eliminación",
+              ].map((item) => (
+                <span
+                  key={item}
+                  className="rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600"
+                >
+                  {item}
+                </span>
+              ))}
+            </div>
+
+            {/* Mensaje */}
+            <div className="mt-10 border-l-2 border-blue-100 pl-5">
+              <p className="text-sm font-semibold leading-6 text-slate-700">
+                Todo el torneo organizado sin tener que llevar planillas,
+                calcular posiciones ni armar cruces manualmente.
+              </p>
+            </div>
+          </div>
+
+          {/* Visual */}
+          <TournamentDemo />
         </div>
       </div>
     </section>
   );
 }
 
+
+export default function Funcionalidades() {
+
+  const [activeFeature, setActiveFeature] = useState("reservas");
+
+
+
+  const currentFeature =
+
+    features.find((feature) => feature.id === activeFeature) ?? features[0];
+
+
+
+  const Icon = currentFeature.icon;
+
+
+
+  return (
+
+    <div className="">
+
+      <Header />
+
+
+
+      <main className="bg-white">
+
+        {/* HERO */
+
+        <section className="relative overflow-hidden bg-[var(--color-background)]">
+
+          <div className="mx-auto max-w-7xl px-6 pb-24 pt-28 md:pb-32 md:pt-40">
+
+            <div className="mx-auto max-w-4xl text-center">
+
+              <h1 className="mt-7 text-5xl font-bold tracking-tight text-[var(--color-title)] md:text-7xl">
+
+                Todo tu complejo.
+
+                <br />
+
+                <span className="text-[var(--color-primary)]">
+
+                  Un solo lugar.
+
+                </span>
+
+              </h1>
+
+
+
+              <p className="mx-auto mt-7 max-w-2xl text-lg leading-8 text-slate-500 md:text-xl">
+
+                Manejá reservas, canchas, clientes, horarios, pagos y torneos desde una
+
+                plataforma diseñada para complejos deportivos.
+
+              </p>
+
+
+
+              <button
+
+                type="button"
+
+                onClick={() =>
+
+                  document.getElementById("explorar")?.scrollIntoView({
+
+                    behavior: "smooth",
+
+                  })
+
+                }
+
+                className="mt-9 inline-flex items-center gap-2 rounded-xl bg-[var(--color-primary)] px-6 py-3.5 font-semibold text-white shadow-lg shadow-blue-500/20 transition hover:-translate-y-0.5 hover:bg-[var(--color-primary-hover)]"
+
+              >
+
+                Explorar funcionalidades
+
+                <ChevronDown size={18} />
+
+              </button>
+
+            </div>
+
+          </div>
+
+        </section>
+
+
+}
+        {/* PÁGINA WEB PÚBLICA */}
+
+        <PublicWebsiteSection />
+
+        {/* TORNEOS */}
+        <TournamentsSection />
+
+
+
+
+
+        {/* EXPLORADOR */}
+
+        <section
+
+          id="explorar"
+
+          className="scroll-mt-20 border-y border-slate-100 bg-[#111623]"
+
+        >
+
+          <div className="mx-auto max-w-7xl px-6 py-20 md:py-28">
+
+            <div className="max-w-3xl">
+
+              <span className="text-sm font-bold uppercase tracking-[0.18em] text-[var(--color-primary)]">
+
+                Explorá la plataforma
+
+              </span>
+
+
+
+              <h2 className="mt-4 text-4xl font-bold tracking-tight text-[var(--color-primary)] md:text-5xl">
+
+                Una herramienta para cada parte de tu negocio
+
+              </h2>
+
+
+
+              <p className="mt-5 text-lg leading-8 text-slate-500">
+
+                Elegí una funcionalidad para conocer cómo puede ayudarte en el
+
+                día a día.
+
+              </p>
+
+            </div>
+
+
+
+            {/* TABS */}
+
+            <div className="mt-12 flex gap-3 overflow-x-auto pb-3">
+
+              {features.map((feature) => {
+
+                const FeatureIcon = feature.icon;
+
+
+
+                const active = activeFeature === feature.id;
+
+
+
+                return (
+
+                  <button
+
+                    key={feature.id}
+
+                    type="button"
+
+                    onClick={() => setActiveFeature(feature.id)}
+
+                    className={`flex shrink-0 items-center gap-2 rounded-xl border px-4 py-3 text-sm font-semibold transition ${
+
+                      active
+
+                        ? "border-[var(--color-primary)] bg-[var(--color-primary)] text-white shadow-md"
+
+                        : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
+
+                    }`}
+
+                  >
+
+                    {feature.id === "pagos" ? (
+
+                      <img
+
+                        src="/mercado-pago.svg"
+
+                        className="h-10 w-10"
+
+                        alt="Mercado Pago"
+
+                      />
+
+                    ) : (
+
+                      <FeatureIcon size={17} />
+
+                    )}
+
+
+
+                    {feature.eyebrow}
+
+                  </button>
+
+                );
+
+              })}
+
+            </div>
+
+
+
+            {/* FEATURE */}
+
+            <div className="mt-10 grid items-center gap-12 md:grid-cols-2 md:gap-20">
+
+              <div>
+
+                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-50 text-[var(--color-primary)]">
+
+                  {currentFeature.id === "pagos" ? (
+
+                    <img
+
+                      src="/mercado-pago.svg"
+
+                      className="h-14 w-14"
+
+                      alt="Mercado Pago"
+
+                    />
+
+                  ) : (
+
+                    <Icon size={28} />
+
+                  )}
+
+                </div>
+
+
+
+                <p className="mt-7 text-sm font-bold uppercase tracking-[0.16em] text-[var(--color-primary)]">
+
+                  {currentFeature.eyebrow}
+
+                </p>
+
+
+
+                <h3 className="mt-4 text-3xl font-bold tracking-tight text-[var(--color-title)] md:text-5xl">
+
+                  {currentFeature.title}
+
+                </h3>
+
+
+
+                <p className="mt-6 text-lg leading-8 text-slate-500">
+
+                  {currentFeature.description}
+
+                </p>
+
+
+
+                <div className="mt-8 space-y-4">
+
+                  {currentFeature.points.map((point) => (
+
+                    <div key={point} className="flex items-start gap-3">
+
+                      <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-green-50 text-green-600">
+
+                        <Check size={14} />
+
+                      </div>
+
+
+
+                      <span className="text-sm font-medium text-slate-600 md:text-base">
+
+                        {point}
+
+                      </span>
+
+                    </div>
+
+                  ))}
+
+                </div>
+
+              </div>
+
+
+
+              {/* DEMO */}
+
+              <div className="md:sticky md:top-24">
+
+                {activeFeature === "reservas" ? (
+
+                  <CalendarDemo />
+
+                ) : (
+
+                  <FeaturePlaceholder feature={currentFeature} />
+
+                )}
+
+              </div>
+
+            </div>
+
+          </div>
+
+        </section>
+
+
+
+        {/* PRÓXIMAMENTE */}
+
+        <UpcomingFeatures />
+
+
+
+        {/* CTA */}
+
+        <section className="bg-[var(--color-background)] px-6 py-24 text-center md:py-32">
+
+          <h2 className="mx-auto max-w-3xl text-4xl font-bold tracking-tight text-[var(--color-primary)] md:text-6xl">
+
+            Tu complejo puede funcionar mucho más simple.
+
+          </h2>
+
+
+
+          <p className="mx-auto mt-6 max-w-2xl text-lg text-slate-500">
+
+            Probá Maneja Tu Cancha gratis durante un mes y empezá a administrar
+
+            tus reservas de otra manera.
+
+          </p>
+
+
+
+          <a
+
+            href="/login"
+
+            className="mt-9 inline-flex rounded-xl bg-[var(--color-success)] px-7 py-4 font-bold text-white transition hover:-translate-y-0.5"
+
+          >
+
+            Probar gratis
+
+          </a>
+
+        </section>
+
+      </main>
+
+
+
+      <Footer />
+
+    </div>
+
+  );
+
+}
+
+
+
+function UpcomingFeatures() {
+
+  return (
+
+    <section className="overflow-hidden bg-[var(--color-background)] px-6 py-24 md:py-32">
+
+      <div className="mx-auto max-w-6xl">
+
+        <div className="text-center">
+
+          <span className="inline-flex rounded-full bg-amber-50 px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] text-amber-600">
+
+            Próximamente
+
+          </span>
+
+
+
+          <h2 className="mt-5 text-4xl font-bold tracking-tight text-[var(--color-title)] md:text-6xl">
+
+            Y esto recién empieza.
+
+          </h2>
+
+
+
+          <p className="mx-auto mt-6 max-w-2xl text-lg leading-8 text-slate-500">
+
+            Estamos trabajando en nuevas herramientas para que puedas
+
+            administrar todavía más aspectos de tu complejo desde Maneja Tu
+
+            Cancha.
+
+          </p>
+
+        </div>
+
+
+
+        <div className="mt-16 grid gap-6 md:grid-cols-2">
+
+          <UpcomingCard
+
+            icon={WalletCards}
+
+            number="01"
+
+            title="Control de stock y caja"
+
+            description="Llevá el control de tus productos, movimientos de caja y operaciones del día desde el mismo lugar donde gestionás tus reservas."
+
+          />
+
+
+
+          <UpcomingCard
+
+            icon={MessageCircle}
+
+            number="02"
+
+            title="API de WhatsApp"
+
+            description="Automatizá confirmaciones, recordatorios y comunicaciones con tus clientes directamente desde WhatsApp."
+
+          />
+
+        </div>
+
+      </div>
+
+    </section>
+
+  );
+
+}
+
+
+
 function UpcomingCard({
-  icon: Icon,
-  number,
-  title,
-  description,
+
+  icon: Icon,
+
+  number,
+
+  title,
+
+  description,
+
 }: {
-  icon: React.ElementType;
-  number: string;
-  title: string;
-  description: string;
+
+  icon: React.ElementType;
+
+  number: string;
+
+  title: string;
+
+  description: string;
+
 }) {
-  return (
-    <div className="group relative overflow-hidden rounded-3xl border border-slate-200 bg-[var(--color-background)] p-8 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl md:p-10">
-      <div className="absolute right-0 top-0 h-40 w-40 translate-x-1/3 -translate-y-1/3 rounded-full bg-[var(--color-primary)] transition group-hover:scale-150" />
 
-      <div className="relative">
-        <div className="flex items-start justify-between">
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-50 text-[var(--color-primary)]">
-            <Icon size={27} />
-          </div>
+  return (
 
-          <span className="text-sm font-bold text-slate-300">{number}</span>
-        </div>
+    <div className="group relative overflow-hidden rounded-3xl border border-slate-200 bg-[var(--color-background)] p-8 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl md:p-10">
 
-        <div className="mt-8">
-          <span className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-slate-500">
-            En desarrollo
-          </span>
+      <div className="absolute right-0 top-0 h-40 w-40 translate-x-1/3 -translate-y-1/3 rounded-full bg-[var(--color-primary)] transition group-hover:scale-150" />
 
-          <h3 className="mt-5 text-2xl font-bold text-[var(--color-title)] md:text-3xl">
-            {title}
-          </h3>
 
-          <p className="mt-4 text-base leading-7 text-slate-500">
-            {description}
-          </p>
-        </div>
 
-        <div className="mt-8 flex items-center gap-2 text-sm font-semibold text-[var(--color-primary)]">
-          Próximamente
-          <ChevronRight size={16} />
-        </div>
-      </div>
-    </div>
-  );
+      <div className="relative">
+
+        <div className="flex items-start justify-between">
+
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-50 text-[var(--color-primary)]">
+
+            <Icon size={27} />
+
+          </div>
+
+
+
+          <span className="text-sm font-bold text-slate-300">{number}</span>
+
+        </div>
+
+
+
+        <div className="mt-8">
+
+          <span className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-slate-500">
+
+            En desarrollo
+
+          </span>
+
+
+
+          <h3 className="mt-5 text-2xl font-bold text-[var(--color-title)] md:text-3xl">
+
+            {title}
+
+          </h3>
+
+
+
+          <p className="mt-4 text-base leading-7 text-slate-500">
+
+            {description}
+
+          </p>
+
+        </div>
+
+
+
+        <div className="mt-8 flex items-center gap-2 text-sm font-semibold text-[var(--color-primary)]">
+
+          Próximamente
+
+          <ChevronRight size={16} />
+
+        </div>
+
+      </div>
+
+    </div>
+
+  );
+
 }

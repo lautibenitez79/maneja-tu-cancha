@@ -223,7 +223,7 @@ export default function Sidebar({
               end={item.href === "/dashboard"}
               onClick={onNavigate}
               className={({ isActive }) =>
-                `mb-2 flex w-full items-center rounded-xl px-4 py-4 text-sm transition ${
+                `mb-2 flex w-full items-center rounded-xl px-2 py-2 text-sm transition ${
                   isActive
                     ? "bg-[var(--color-primary)] text-white"
                     : "hover:bg-[var(--color-hover)]"
